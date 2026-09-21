@@ -1,0 +1,14 @@
+fastapi>=0.115
+aiofiles>=23.0
+uvicorn[standard]>=0.30
+python-multipart>=0.0.12
+pdfplumber>=0.11
+langchain>=0.3
+langchain-text-splitters>=0.3
+langchain-openai>=0.2
+langchain-chroma>=0.1
+chromadb>=0.5
+pydantic-settings>=2.5
+python-dotenv>=1.0
+sqlalchemy>=2.0
+# pyodbc>=5.1  # MS SQL Server 배포 시 주석 해제 (ODBC 드라이버 별도 설치 필요)

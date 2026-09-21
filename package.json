@@ -1,0 +1,10 @@
+{
+  "scripts": {
+    "dev": "concurrently -n \"backend,frontend\" -c \"blue,green\" \"cd backend && uvicorn app.main:app --reload\" \"cd frontend && npm run dev\"",
+    "start": "node -e \"require('child_process').execSync('powershell -File start.ps1', {stdio:'inherit'})\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0",
+    "playwright": "^1.63.0"
+  }
+}
