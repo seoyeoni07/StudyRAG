@@ -23,7 +23,7 @@ node_modules/
 frontend/node_modules/
 
 # Build output
-dist/
+/dist/
 
 # OS
 .DS_Store
