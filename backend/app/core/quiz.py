@@ -47,7 +47,7 @@ _GRADE_PROMPT = """\
 
 
 def _llm() -> ChatGroq:
-    return ChatGroq(model="llama-3.1-8b-instant", api_key=settings.groq_api_key)
+    return ChatGroq(model="llama3-8b-8192", api_key=settings.groq_api_key)
 
 
 def generate_quiz(doc_id: str, n: int = 5) -> list[dict]:

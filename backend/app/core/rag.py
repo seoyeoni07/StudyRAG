@@ -39,7 +39,7 @@ def add_chunks(collection_name: str, chunks: list[str], metadatas: list[dict] | 
 def query_rag(collection_name: str, question: str) -> dict:
     vs = get_vectorstore(collection_name)
     retriever = vs.as_retriever(search_type="mmr", search_kwargs={"k": 5, "fetch_k": 20})
-    llm = ChatGroq(model="llama-3.1-8b-instant", api_key=settings.groq_api_key)
+    llm = ChatGroq(model="llama3-8b-8192", api_key=settings.groq_api_key)
 
     chain = (
         {"context": retriever | (lambda docs: "\n\n".join(d.page_content for d in docs)),
