@@ -7,6 +7,9 @@ export default defineConfig({
   resolve: {
     alias: { '@': `${import.meta.dirname}/src` },
   },
+  optimizeDeps: {
+    include: ['@hugeicons/core-free-icons', '@hugeicons/react'],
+  },
   server: {
     proxy: {
       '/documents': 'http://localhost:8000',
