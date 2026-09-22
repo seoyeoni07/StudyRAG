@@ -2,6 +2,7 @@ services:
   - type: web
     name: studyrag-frontend
     runtime: static
+    rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
     pullRequestPreviewsEnabled: false
