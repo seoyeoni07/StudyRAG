@@ -13,7 +13,7 @@ from .config import settings
 
 def _llm() -> ChatOpenAI:
     return ChatOpenAI(
-        model="google/gemma-3-12b-it:free",
+        model="mistralai/mistral-7b-instruct:free",
         openai_api_key=settings.openrouter_api_key,
         openai_api_base="https://openrouter.ai/api/v1",
     )
