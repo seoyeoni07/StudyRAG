@@ -23,7 +23,7 @@ _PROMPT = PromptTemplate.from_template(
 
 @lru_cache(maxsize=1)
 def _get_embedding() -> FastEmbedEmbeddings:
-    return FastEmbedEmbeddings(model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+    return FastEmbedEmbeddings(model_name="BAAI/bge-small-en-v1.5")
 
 
 def get_vectorstore(collection_name: str) -> Chroma:

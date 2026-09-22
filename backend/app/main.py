@@ -14,6 +14,12 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="StudyRAG API", version="0.1.0")
 
+
+@app.on_event("startup")
+async def preload_model():
+    from .core.rag import _get_embedding
+    _get_embedding()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
