@@ -1,6 +1,7 @@
 import os
 from functools import lru_cache
 
+import google.generativeai as genai
 from langchain_chroma import Chroma
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
@@ -9,7 +10,8 @@ from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmb
 
 from .config import settings
 
-os.environ.setdefault("GOOGLE_API_KEY", settings.google_api_key)
+os.environ["GOOGLE_API_KEY"] = settings.google_api_key
+genai.configure(api_key=settings.google_api_key)
 
 _PROMPT = PromptTemplate.from_template(
     "아래 강의자료 내용을 참고하여 질문에 한국어로 답하세요. "
