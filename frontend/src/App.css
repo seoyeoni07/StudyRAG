@@ -367,6 +367,18 @@ body {
   animation: fadeUp .25s ease both;
 }
 .answer-text  { line-height: 1.8; color: var(--text-1); font-size: 15px; }
+.answer-text p { margin: 0 0 10px; }
+.answer-text p:last-child { margin-bottom: 0; }
+.answer-text strong { font-weight: 700; color: var(--text-1); }
+.answer-text ul, .answer-text ol { margin: 0 0 10px 20px; }
+.answer-text li { margin: 4px 0; }
+.answer-text h1, .answer-text h2, .answer-text h3 {
+  font-size: 15px; font-weight: 700; margin: 14px 0 6px; color: var(--text-1);
+}
+.answer-text h1:first-child, .answer-text h2:first-child, .answer-text h3:first-child { margin-top: 0; }
+.answer-text code {
+  background: var(--primary-light); padding: 1px 5px; border-radius: 4px; font-size: 13px;
+}
 .sources      { margin-top: 14px; }
 .sources summary {
   color: var(--text-4);

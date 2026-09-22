@@ -13,4 +13,3 @@ fastembed>=0.3
 pydantic-settings>=2.5
 python-dotenv>=1.0
 sqlalchemy>=2.0
-# pyodbc>=5.1  # MS SQL Server 배포 시 주석 해제 (ODBC 드라이버 별도 설치 필요)

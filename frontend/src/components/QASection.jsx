@@ -1,4 +1,8 @@
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 import { apiFetch } from "../api";
 
 const EXAMPLES = [
@@ -94,7 +98,11 @@ export default function QASection({ docId }) {
 
       {!loading && answer && (
         <div className="answer-box">
-          <p className="answer-text">{answer.answer}</p>
+          <div className="answer-text">
+            <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+              {answer.answer}
+            </ReactMarkdown>
+          </div>
           {answer.sources?.length > 0 && (
             <details className="sources">
               <summary>참조 구간 보기 ({answer.sources.length})</summary>
