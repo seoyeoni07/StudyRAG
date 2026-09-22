@@ -13,7 +13,7 @@ from .config import settings
 
 def _llm() -> ChatOpenAI:
     return ChatOpenAI(
-        model="mistralai/mistral-7b-instruct:free",
+        model="nvidia/nemotron-3-ultra-550b-a55b:free",
         openai_api_key=settings.openrouter_api_key,
         openai_api_base="https://openrouter.ai/api/v1",
     )
