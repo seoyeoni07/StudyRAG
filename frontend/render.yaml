@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: studyrag-frontend
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    pullRequestPreviewsEnabled: false
+    routes:
+      # SPA fallback: 새로고침 시 모든 경로를 index.html로 보내되,
+      # 정적 자산(css/js 등)은 그대로 서빙되도록 순서를 유지합니다.
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
