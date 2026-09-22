@@ -3,8 +3,7 @@ import random
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-from .config import settings
-from .rag import get_vectorstore
+from .rag import get_vectorstore  # rag.py sets GOOGLE_API_KEY env var on import
 
 _GENERATE_PROMPT = """\
 당신은 대학 강의자료 기반 퀴즈 출제 전문가입니다.
@@ -48,11 +47,7 @@ _GRADE_PROMPT = """\
 
 def _llm(json_mode: bool = True) -> ChatGoogleGenerativeAI:
     kwargs = {"response_mime_type": "application/json"} if json_mode else {}
-    return ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash",
-        google_api_key=settings.google_api_key,
-        model_kwargs=kwargs,
-    )
+    return ChatGoogleGenerativeAI(model="gemini-2.0-flash", model_kwargs=kwargs)
 
 
 def generate_quiz(doc_id: str, n: int = 5) -> list[dict]:
