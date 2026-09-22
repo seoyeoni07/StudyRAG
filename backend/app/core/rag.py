@@ -5,8 +5,8 @@ from langchain_chroma import Chroma
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
+from langchain_community.embeddings import FastEmbedEmbeddings
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_huggingface import HuggingFaceEmbeddings
 
 from .config import settings
 
@@ -22,8 +22,8 @@ _PROMPT = PromptTemplate.from_template(
 
 
 @lru_cache(maxsize=1)
-def _get_embedding() -> HuggingFaceEmbeddings:
-    return HuggingFaceEmbeddings(model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+def _get_embedding() -> FastEmbedEmbeddings:
+    return FastEmbedEmbeddings(model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
 
 
 def get_vectorstore(collection_name: str) -> Chroma:
