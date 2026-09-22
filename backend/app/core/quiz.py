@@ -1,10 +1,7 @@
 import json
 import random
 
-from langchain_groq import ChatGroq
-
-from .config import settings
-from .rag import get_vectorstore
+from .rag import _llm, get_vectorstore
 
 _GENERATE_PROMPT = """\
 당신은 대학 강의자료 기반 퀴즈 출제 전문가입니다.
@@ -46,8 +43,6 @@ _GRADE_PROMPT = """\
 {{"correct": true, "feedback": "간략한 피드백 (1~2줄)"}}"""
 
 
-def _llm() -> ChatGroq:
-    return ChatGroq(model="openai/gpt-oss-20b", api_key=settings.groq_api_key)
 
 
 def generate_quiz(doc_id: str, n: int = 5) -> list[dict]:
