@@ -1,7 +1,7 @@
 import json
 import random
 
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 from .config import settings
 from .rag import get_vectorstore
@@ -46,11 +46,11 @@ _GRADE_PROMPT = """\
 {{"correct": true, "feedback": "간략한 피드백 (1~2줄)"}}"""
 
 
-def _llm(json_mode: bool = True) -> ChatOpenAI:
-    kwargs = {"response_format": {"type": "json_object"}} if json_mode else {}
-    return ChatOpenAI(
-        model="gpt-4o-mini",
-        openai_api_key=settings.openai_api_key,
+def _llm(json_mode: bool = True) -> ChatGoogleGenerativeAI:
+    kwargs = {"response_mime_type": "application/json"} if json_mode else {}
+    return ChatGoogleGenerativeAI(
+        model="gemini-2.0-flash",
+        google_api_key=settings.google_api_key,
         model_kwargs=kwargs,
     )
 

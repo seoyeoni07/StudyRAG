@@ -4,7 +4,7 @@ from langchain_chroma import Chroma
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 
 from .config import settings
 
@@ -18,10 +18,10 @@ _PROMPT = PromptTemplate.from_template(
 
 
 @lru_cache(maxsize=1)
-def _get_embedding() -> OpenAIEmbeddings:
-    return OpenAIEmbeddings(
-        model="text-embedding-3-small",
-        openai_api_key=settings.openai_api_key,
+def _get_embedding() -> GoogleGenerativeAIEmbeddings:
+    return GoogleGenerativeAIEmbeddings(
+        model="models/text-embedding-004",
+        google_api_key=settings.google_api_key,
     )
 
 
@@ -40,7 +40,7 @@ def add_chunks(collection_name: str, chunks: list[str], metadatas: list[dict] | 
 def query_rag(collection_name: str, question: str) -> dict:
     vs = get_vectorstore(collection_name)
     retriever = vs.as_retriever(search_type="mmr", search_kwargs={"k": 5, "fetch_k": 20})
-    llm = ChatOpenAI(model="gpt-4o-mini", openai_api_key=settings.openai_api_key)
+    llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", google_api_key=settings.google_api_key)
 
     chain = (
         {"context": retriever | (lambda docs: "\n\n".join(d.page_content for d in docs)),
