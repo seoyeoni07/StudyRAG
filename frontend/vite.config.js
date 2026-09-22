@@ -3,12 +3,10 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
+  base: '/StudyRAG/',
   plugins: [tailwindcss(), react()],
   resolve: {
     alias: { '@': `${import.meta.dirname}/src` },
-  },
-  optimizeDeps: {
-    include: ['@hugeicons/core-free-icons', '@hugeicons/react'],
   },
   server: {
     proxy: {
