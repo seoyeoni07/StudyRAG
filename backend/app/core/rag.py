@@ -6,11 +6,9 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_community.embeddings import FastEmbedEmbeddings
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
 
 from .config import settings
-
-os.environ["GOOGLE_API_KEY"] = settings.google_api_key
 
 _PROMPT = PromptTemplate.from_template(
     "아래 강의자료 내용을 참고하여 질문에 한국어로 답하세요. "
@@ -41,7 +39,7 @@ def add_chunks(collection_name: str, chunks: list[str], metadatas: list[dict] | 
 def query_rag(collection_name: str, question: str) -> dict:
     vs = get_vectorstore(collection_name)
     retriever = vs.as_retriever(search_type="mmr", search_kwargs={"k": 5, "fetch_k": 20})
-    llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
+    llm = ChatGroq(model="llama-3.1-8b-instant", api_key=settings.groq_api_key)
 
     chain = (
         {"context": retriever | (lambda docs: "\n\n".join(d.page_content for d in docs)),

@@ -1,9 +1,10 @@
 import json
 import random
 
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
 
-from .rag import get_vectorstore  # rag.py sets GOOGLE_API_KEY env var on import
+from .config import settings
+from .rag import get_vectorstore
 
 _GENERATE_PROMPT = """\
 당신은 대학 강의자료 기반 퀴즈 출제 전문가입니다.
@@ -45,9 +46,8 @@ _GRADE_PROMPT = """\
 {{"correct": true, "feedback": "간략한 피드백 (1~2줄)"}}"""
 
 
-def _llm(json_mode: bool = True) -> ChatGoogleGenerativeAI:
-    kwargs = {"response_mime_type": "application/json"} if json_mode else {}
-    return ChatGoogleGenerativeAI(model="gemini-2.0-flash", model_kwargs=kwargs)
+def _llm() -> ChatGroq:
+    return ChatGroq(model="llama-3.1-8b-instant", api_key=settings.groq_api_key)
 
 
 def generate_quiz(doc_id: str, n: int = 5) -> list[dict]:
