@@ -103,8 +103,8 @@ export default function QuizSection({ docId }) {
   }
 
   if (results) {
-    const pct = Math.round((results.correct / results.total) * 100);
-    const wrongCount = results.total - results.correct;
+    const pct = Math.round((results.score / results.total) * 100);
+    const wrongCount = results.total - results.score;
     const scoreClass = pct >= 80 ? "good" : pct >= 50 ? "mid" : "low";
     const scoreMsg   = pct >= 80 ? "훌륭해요!" : pct >= 50 ? "절반 이상 맞혔어요" : "복습이 필요해요";
     return (
@@ -112,7 +112,7 @@ export default function QuizSection({ docId }) {
         <div className={`score-header ${scoreClass}`}>
           <span className="score-big">{pct}%</span>
           <div className="score-meta">
-            <span className="score-fraction">{results.correct}/{results.total} 정답</span>
+            <span className="score-fraction">{results.score}/{results.total} 정답</span>
             <span className="score-label">{scoreMsg}</span>
           </div>
         </div>
