@@ -1,5 +1,17 @@
 services:
   - type: web
+    name: studyrag-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: DB_CONNECTION_STRING
+        value: sqlite:///./studyrag.db
+
+  - type: web
     name: studyrag-frontend
     runtime: static
     rootDir: frontend
