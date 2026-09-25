@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth, logout } from "./firebase";
 import { apiFetch } from "./api";
 import QASection from "./components/QASection";
 import QuizSection from "./components/QuizSection";
 import WrongAnswerBook from "./components/WrongAnswerBook";
+import LoginPage from "./components/LoginPage";
 import { GradientBlurBg } from "./components/ui/gradient-blur-bg";
 import { FileUpload } from "./components/ui/file-upload-2";
 import "./App.css";
@@ -16,11 +19,19 @@ const FEATURES = [
 ];
 
 export default function App() {
+  const [user, setUser] = useState(undefined); // undefined = 로딩 중
   const [docId, setDocId] = useState(null);
   const [filename, setFilename] = useState("");
   const [uploading, setUploading] = useState(false);
   const [tab, setTab] = useState("qa");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    return onAuthStateChanged(auth, (u) => setUser(u ?? null));
+  }, []);
+
+  if (user === undefined) return null; // 로딩 중
+  if (!user) return <LoginPage />;
 
   async function handleFilesAccepted(files) {
     if (!files[0]) return;
@@ -46,6 +57,12 @@ export default function App() {
         <div className="header-logo">SR</div>
         <span className="header-title">StudyRAG</span>
         <span className="header-sub">/ 강의자료 AI 학습</span>
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <span style={{ fontSize: "0.875rem", color: "#6b7280" }}>{user.displayName}</span>
+          <button onClick={logout} style={{ fontSize: "0.8rem", padding: "0.25rem 0.75rem", borderRadius: "0.5rem", border: "1px solid #e5e7eb", background: "white", cursor: "pointer", color: "#374151" }}>
+            로그아웃
+          </button>
+        </div>
       </header>
 
       <div className="container">
