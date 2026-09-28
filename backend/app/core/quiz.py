@@ -47,12 +47,12 @@ _GRADE_PROMPT = """\
 
 def generate_quiz(doc_id: str, n: int = 5) -> list[dict]:
     vs = get_vectorstore(doc_id)
-    all_docs = vs.get()["documents"]
-    if not all_docs:
+    docs = vs.as_retriever(search_type="mmr", search_kwargs={"k": 15, "fetch_k": 40}).invoke("강의 핵심 개념")
+    if not docs:
         raise ValueError("문서를 찾을 수 없습니다.")
 
-    sample = random.sample(all_docs, min(12, len(all_docs)))
-    context = "\n\n---\n\n".join(sample)
+    sample = random.sample(docs, min(12, len(docs)))
+    context = "\n\n---\n\n".join(d.page_content for d in sample)
 
     response = _llm().invoke(_GENERATE_PROMPT.format(n=n, context=context))
     return json.loads(response.content)["questions"]
