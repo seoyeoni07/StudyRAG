@@ -11,8 +11,8 @@ import { GradientBlurBg } from "./components/ui/gradient-blur-bg";
 import "./App.css";
 
 const TABS = [
-  ["qa",    "Q&A",    "원하는 내용 바로 검색"],
-  ["tutor", "AI 튜터", "소크라테스식 단계별 학습"],
+  ["qa",    "Q&A",    "물어보면 답을 바로 줍니다"],
+  ["tutor", "AI 튜터", "답 대신 이해할 때까지 가르쳐줍니다"],
   ["quiz",  "퀴즈",   "자동 문제 생성·채점"],
   ["wrong", "오답노트","틀린 문제 복습"],
 ];
