@@ -33,8 +33,7 @@ def _get_embedding() -> FastEmbedEmbeddings:
 
 
 def _pg_conn() -> str:
-    url = settings.db_connection_string
-    # SQLAlchemy needs postgresql+psycopg2:// scheme
+    url = settings.db_connection_string.strip()
     if url.startswith("postgresql://"):
         return url.replace("postgresql://", "postgresql+psycopg2://", 1)
     if url.startswith("postgres://"):
