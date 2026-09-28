@@ -10,7 +10,12 @@ import LoginPage from "./components/LoginPage";
 import { GradientBlurBg } from "./components/ui/gradient-blur-bg";
 import "./App.css";
 
-const TABS = [["qa", "Q&A"], ["tutor", "AI 튜터"], ["quiz", "퀴즈"], ["wrong", "오답노트"]];
+const TABS = [
+  ["qa",    "Q&A",    "원하는 내용 바로 검색"],
+  ["tutor", "AI 튜터", "소크라테스식 단계별 학습"],
+  ["quiz",  "퀴즈",   "자동 문제 생성·채점"],
+  ["wrong", "오답노트","틀린 문제 복습"],
+];
 
 export default function App() {
   const [user, setUser] = useState(undefined); // undefined = 로딩 중
@@ -36,6 +41,16 @@ export default function App() {
 
   if (user === undefined) return null; // 로딩 중
   if (!user) return <LoginPage />;
+
+  async function handleDeleteDoc(doc_id) {
+    try {
+      await apiFetch(`/documents/${doc_id}`, { method: "DELETE" });
+      setPastDocs(prev => prev.filter(d => d.doc_id !== doc_id));
+      if (docId === doc_id) { setDocId(null); setFilename(""); }
+    } catch (err) {
+      setError(err.message);
+    }
+  }
 
   async function handleFilesAccepted(files) {
     if (!files[0]) return;
@@ -100,11 +115,15 @@ export default function App() {
                 <p className="past-docs-label">이전에 업로드한 자료</p>
                 <div className="past-docs-list">
                   {pastDocs.map(d => (
-                    <button key={d.doc_id} className="past-doc-item"
-                      onClick={() => { setDocId(d.doc_id); setFilename(d.filename); setTab("qa"); }}>
-                      <span className="past-doc-name">{d.filename}</span>
-                      <span className="past-doc-date">{new Date(d.created_at).toLocaleDateString("ko-KR")}</span>
-                    </button>
+                    <div key={d.doc_id} className="past-doc-item">
+                      <button className="past-doc-main"
+                        onClick={() => { setDocId(d.doc_id); setFilename(d.filename); setTab("qa"); }}>
+                        <span className="past-doc-name">{d.filename}</span>
+                        <span className="past-doc-date">{new Date(d.created_at).toLocaleDateString("ko-KR")}</span>
+                      </button>
+                      <button className="past-doc-del" onClick={() => handleDeleteDoc(d.doc_id)}
+                        title="삭제">×</button>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -130,9 +149,9 @@ export default function App() {
         {docId && (
           <>
             <div className="tabs">
-              {TABS.map(([key, label]) => (
+              {TABS.map(([key, label, desc]) => (
                 <button key={key} className={`tab ${tab === key ? "active" : ""}`}
-                  onClick={() => setTab(key)}>
+                  onClick={() => setTab(key)} title={desc}>
                   {label}
                 </button>
               ))}

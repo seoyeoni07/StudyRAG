@@ -7,6 +7,9 @@ export default function WrongAnswerBook({ docId }) {
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState("wrong");
   const [error, setError] = useState("");
+  const [expandedSession, setExpandedSession] = useState(null);
+  const [sessionDetail, setSessionDetail] = useState({});
+  const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -17,6 +20,24 @@ export default function WrongAnswerBook({ docId }) {
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [docId]);
+
+  async function toggleSession(session_id) {
+    if (expandedSession === session_id) {
+      setExpandedSession(null);
+      return;
+    }
+    setExpandedSession(session_id);
+    if (sessionDetail[session_id]) return;
+    setDetailLoading(true);
+    try {
+      const data = await apiFetch(`/quiz/history/${session_id}`);
+      setSessionDetail(prev => ({ ...prev, [session_id]: data }));
+    } catch {
+      setSessionDetail(prev => ({ ...prev, [session_id]: [] }));
+    } finally {
+      setDetailLoading(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -74,11 +95,39 @@ export default function WrongAnswerBook({ docId }) {
           ? <p className="empty">퀴즈 기록이 없습니다.</p>
           : history.map((h) => {
             const cls = h.score_pct >= 80 ? "good" : h.score_pct >= 50 ? "mid" : "low";
+            const isOpen = expandedSession === h.session_id;
+            const detail = sessionDetail[h.session_id];
             return (
-              <div key={h.session_id} className="history-row">
-                <span>{new Date(h.created_at).toLocaleString("ko-KR")}</span>
-                <span>{h.correct}/{h.total}문제</span>
-                <span className={`score-badge ${cls}`}>{h.score_pct}%</span>
+              <div key={h.session_id}>
+                <button className="history-row" onClick={() => toggleSession(h.session_id)}>
+                  <span>{new Date(h.created_at).toLocaleString("ko-KR")}</span>
+                  <span>{h.correct}/{h.total}문제</span>
+                  <span className={`score-badge ${cls}`}>{h.score_pct}%</span>
+                  <span className="history-chevron">{isOpen ? "▲" : "▼"}</span>
+                </button>
+                {isOpen && (
+                  <div className="history-detail">
+                    {detailLoading && !detail ? (
+                      <div className="loading-wrap" style={{ padding: "16px 0" }}>
+                        <div className="spinner spinner-sm" />
+                      </div>
+                    ) : (detail || []).map(r => (
+                      <div key={r.id} className={`result-item ${r.correct ? "correct" : "wrong"}`}>
+                        <span className={`result-badge ${r.correct ? "badge-correct" : "badge-wrong"}`}>
+                          {r.correct ? "✓ 정답" : "✗ 오답"}
+                        </span>
+                        <p className="q-text">{r.question}</p>
+                        {!r.correct && (
+                          <>
+                            {r.user_answer && <p>내 답변: <strong>{r.user_answer}</strong></p>}
+                            <p className="correct-ans">정답: {r.correct_answer}</p>
+                          </>
+                        )}
+                        <p className="explanation">{r.explanation}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })

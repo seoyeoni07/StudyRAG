@@ -137,6 +137,30 @@ def get_wrong_answers(doc_id: str, db: Session = Depends(get_db)):
     ]
 
 
+@router.get("/history/{session_id}")
+def get_session_detail(session_id: str, db: Session = Depends(get_db)):
+    session = db.get(QuizSession, session_id)
+    if not session:
+        raise HTTPException(404, "세션을 찾을 수 없습니다.")
+    questions: list[dict] = json.loads(session.questions_json)
+    wrongs = {
+        r.question: r.user_answer
+        for r in db.query(WrongAnswer).filter(WrongAnswer.session_id == session_id).all()
+    }
+    return [
+        {
+            "id": q["id"],
+            "question": q["question"],
+            "type": q["type"],
+            "correct_answer": q["answer"],
+            "user_answer": wrongs.get(q["question"], ""),
+            "correct": q["question"] not in wrongs,
+            "explanation": q["explanation"],
+        }
+        for q in questions
+    ]
+
+
 @router.get("/history")
 def get_history(doc_id: str, db: Session = Depends(get_db)):
     rows = (

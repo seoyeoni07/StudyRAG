@@ -505,11 +505,23 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 0;
+  padding: 12px 0;
   border-bottom: 1px solid var(--border);
   font-size: 14px;
   color: var(--text-2);
+  width: 100%;
+  background: transparent;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: color .15s;
 }
+.history-row:hover { color: var(--text-1); }
+.history-chevron { font-size: 10px; color: var(--text-4); }
+.history-detail { padding: 8px 0 12px; }
 .score-badge {
   padding: 3px 12px;
   border-radius: var(--r-pill);
@@ -543,20 +555,39 @@ body {
 .past-doc-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.6rem 0.9rem;
   border-radius: var(--r-md);
   border: 1px solid var(--border);
   background: var(--bg-subtle);
+  overflow: hidden;
+  transition: border-color .15s;
+}
+.past-doc-item:hover { border-color: var(--primary-muted); }
+.past-doc-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0.9rem;
+  background: transparent;
+  border: none;
   cursor: pointer;
   text-align: left;
-  transition: border-color .15s, background .15s;
+  transition: background .15s;
 }
-.past-doc-item:hover {
-  border-color: var(--primary-muted);
-  background: var(--primary-light);
+.past-doc-main:hover { background: var(--primary-light); }
+.past-doc-del {
+  padding: 0 0.75rem;
+  align-self: stretch;
+  background: transparent;
+  border: none;
+  border-left: 1px solid var(--border);
+  color: var(--text-4);
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background .15s, color .15s;
 }
+.past-doc-del:hover { background: var(--red-bg); color: var(--red); }
 .past-doc-name {
   font-size: 0.875rem;
   color: var(--text-1);

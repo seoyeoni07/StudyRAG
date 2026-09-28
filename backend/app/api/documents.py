@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from ..core.parser import chunk_text, extract_text
 from ..core.rag import add_chunks
-from ..db.models import Document
+from ..db.models import Document, QuizHistory, QuizSession, WrongAnswer
 from ..db.session import SessionLocal
 
 router = APIRouter(prefix="/documents", tags=["documents"])
@@ -56,6 +56,32 @@ async def upload_document(
         db.commit()
 
     return {"doc_id": doc_id, "filename": file.filename, "chunks": len(chunks)}
+
+
+@router.delete("/{doc_id}")
+def delete_document(
+    doc_id: str,
+    x_user_id: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    doc = db.query(Document).filter(Document.id == doc_id).first()
+    if not doc:
+        raise HTTPException(404, "문서를 찾을 수 없습니다.")
+    if x_user_id and doc.user_id != x_user_id:
+        raise HTTPException(403, "권한이 없습니다.")
+
+    try:
+        from ..core.rag import get_vectorstore
+        get_vectorstore(doc_id).delete_collection()
+    except Exception:
+        pass
+
+    db.query(WrongAnswer).filter(WrongAnswer.doc_id == doc_id).delete()
+    db.query(QuizHistory).filter(QuizHistory.doc_id == doc_id).delete()
+    db.query(QuizSession).filter(QuizSession.doc_id == doc_id).delete()
+    db.query(Document).filter(Document.id == doc_id).delete()
+    db.commit()
+    return {"ok": True}
 
 
 @router.get("/")
