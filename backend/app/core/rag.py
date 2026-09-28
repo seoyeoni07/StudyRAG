@@ -1,7 +1,7 @@
 import os
 from functools import lru_cache
 
-from langchain_chroma import Chroma
+from langchain_postgres import PGVector
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
@@ -32,11 +32,22 @@ def _get_embedding() -> FastEmbedEmbeddings:
     return FastEmbedEmbeddings(model_name="BAAI/bge-small-en-v1.5")
 
 
-def get_vectorstore(collection_name: str) -> Chroma:
-    return Chroma(
+def _pg_conn() -> str:
+    url = settings.db_connection_string
+    # SQLAlchemy needs postgresql+psycopg2:// scheme
+    if url.startswith("postgresql://"):
+        return url.replace("postgresql://", "postgresql+psycopg2://", 1)
+    if url.startswith("postgres://"):
+        return url.replace("postgres://", "postgresql+psycopg2://", 1)
+    return url
+
+
+def get_vectorstore(collection_name: str) -> PGVector:
+    return PGVector(
+        embeddings=_get_embedding(),
         collection_name=collection_name,
-        embedding_function=_get_embedding(),
-        persist_directory=settings.chroma_persist_dir,
+        connection=_pg_conn(),
+        use_jsonb=True,
     )
 
 

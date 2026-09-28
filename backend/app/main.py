@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from .api.documents import router as doc_router
 from .api.qa import router as qa_router
 from .api.quiz import router as quiz_router
+from .api.tutor import router as tutor_router
 from .db.models import Base  # noqa: F401
 from .db.session import engine
 
@@ -36,6 +37,7 @@ async def handle_general(request: Request, exc: Exception):
 app.include_router(doc_router)
 app.include_router(qa_router)
 app.include_router(quiz_router)
+app.include_router(tutor_router)
 
 
 @app.get("/health")

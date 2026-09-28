@@ -5,6 +5,15 @@ from sqlalchemy import Column, DateTime, Integer, String, Text
 from .session import Base
 
 
+class Document(Base):
+    __tablename__ = "documents"
+    id = Column(String(36), primary_key=True)       # doc_id
+    user_id = Column(String(128), nullable=False, index=True)
+    filename = Column(String(256), nullable=False)
+    chunks = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class QuizSession(Base):
     __tablename__ = "quiz_sessions"
     id = Column(String(36), primary_key=True)

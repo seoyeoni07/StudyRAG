@@ -1,16 +1,17 @@
 import { useState, useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, logout } from "./firebase";
-import { apiFetch } from "./api";
+import { apiFetch, setUserId } from "./api";
 import QASection from "./components/QASection";
 import QuizSection from "./components/QuizSection";
 import WrongAnswerBook from "./components/WrongAnswerBook";
+import TutorSection from "./components/TutorSection";
 import LoginPage from "./components/LoginPage";
 import { GradientBlurBg } from "./components/ui/gradient-blur-bg";
 import { FileUpload } from "./components/ui/file-upload-2";
 import "./App.css";
 
-const TABS = [["qa", "Q&A"], ["quiz", "퀴즈"], ["wrong", "오답노트"]];
+const TABS = [["qa", "Q&A"], ["tutor", "AI 튜터"], ["quiz", "퀴즈"], ["wrong", "오답노트"]];
 
 const FEATURES = [
   { name: "Q&A", desc: "강의 내용 질문·검색" },
@@ -25,9 +26,19 @@ export default function App() {
   const [uploading, setUploading] = useState(false);
   const [tab, setTab] = useState("qa");
   const [error, setError] = useState("");
+  const [pastDocs, setPastDocs] = useState([]);
 
   useEffect(() => {
-    return onAuthStateChanged(auth, (u) => setUser(u ?? null));
+    return onAuthStateChanged(auth, (u) => {
+      setUser(u ?? null);
+      if (u) {
+        setUserId(u.uid);
+        apiFetch("/documents/").then(setPastDocs).catch(() => {});
+      } else {
+        setUserId(null);
+        setPastDocs([]);
+      }
+    });
   }, []);
 
   if (user === undefined) return null; // 로딩 중
@@ -44,6 +55,7 @@ export default function App() {
       setDocId(data.doc_id);
       setFilename(data.filename);
       setTab("qa");
+      setPastDocs(prev => [{ doc_id: data.doc_id, filename: data.filename, created_at: new Date().toISOString() }, ...prev]);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -91,6 +103,22 @@ export default function App() {
                 <span className="upload-btn">파일 선택</span>
               )}
             </label>
+
+            {pastDocs.length > 0 && (
+              <div className="past-docs">
+                <p className="past-docs-label">이전에 업로드한 자료</p>
+                <div className="past-docs-list">
+                  {pastDocs.map(d => (
+                    <button key={d.doc_id} className="past-doc-item"
+                      onClick={() => { setDocId(d.doc_id); setFilename(d.filename); setTab("qa"); }}>
+                      <span className="past-doc-name">{d.filename}</span>
+                      <span className="past-doc-date">{new Date(d.created_at).toLocaleDateString("ko-KR")}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="features">
               <div className="features-grid">
                 {FEATURES.map(f => (
@@ -132,6 +160,7 @@ export default function App() {
             <div className="card">
               <div key={tab} className="tab-panel">
                 {tab === "qa"    && <QASection docId={docId} />}
+                {tab === "tutor" && <TutorSection docId={docId} />}
                 {tab === "quiz"  && <QuizSection docId={docId} />}
                 {tab === "wrong" && <WrongAnswerBook docId={docId} />}
               </div>

@@ -9,7 +9,7 @@ services:
       - key: OPENROUTER_API_KEY
         sync: false
       - key: DB_CONNECTION_STRING
-        value: sqlite:///./studyrag.db
+        sync: false
 
   - type: web
     name: studyrag-frontend
