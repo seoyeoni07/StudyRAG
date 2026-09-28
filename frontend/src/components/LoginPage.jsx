@@ -19,31 +19,26 @@ export default function LoginPage() {
 
   return (
     <div className="login-root">
-      <div className="login-left">
-        <div className="login-brand">
-          <div className="login-logo">SR</div>
-          <span className="login-brand-name">StudyRAG</span>
-        </div>
-        <div className="login-copy">
-          <h1 className="login-headline">강의자료를<br />더 똑똑하게</h1>
-          <p className="login-desc">PDF를 올리면 AI가 핵심을 파악하고<br />질문에 답하고, 퀴즈를 만들어드려요.</p>
-        </div>
-        <div className="login-features">
-          <div className="lf-item"><span className="lf-dot" />강의 내용 Q&amp;A</div>
-          <div className="lf-item"><span className="lf-dot" />자동 퀴즈 생성 &amp; 채점</div>
-          <div className="lf-item"><span className="lf-dot" />오답노트 자동 정리</div>
-        </div>
-      </div>
-
       <div className="login-right">
         <div className="login-card">
-          <h2 className="login-card-title">시작하기</h2>
-          <p className="login-card-sub">Google 계정으로 바로 사용하세요</p>
+          <div className="login-brand">
+            <div className="login-logo">SR</div>
+            <span className="login-brand-name">StudyRAG</span>
+          </div>
+
+          <h1 className="login-card-title">강의자료를 AI로 학습하기</h1>
+          <p className="login-card-sub">PDF를 올리면 질문에 답하고, 퀴즈를 만들고, 오답을 정리해 드려요.</p>
+
+          <div className="login-features">
+            <div className="lf-item"><span className="lf-dot" />강의 내용 Q&amp;A</div>
+            <div className="lf-item"><span className="lf-dot" />소크라테스식 AI 튜터</div>
+            <div className="lf-item"><span className="lf-dot" />자동 퀴즈 생성 &amp; 오답노트</div>
+          </div>
 
           {error && <p className="login-error">{error}</p>}
 
           <button className="login-google-btn" onClick={handleLogin} disabled={loading}>
-            <svg className="login-google-icon" viewBox="0 0 48 48" width="18" height="18">
+            <svg viewBox="0 0 48 48" width="18" height="18">
               <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
               <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
               <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>

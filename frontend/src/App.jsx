@@ -13,12 +13,6 @@ import "./App.css";
 
 const TABS = [["qa", "Q&A"], ["tutor", "AI 튜터"], ["quiz", "퀴즈"], ["wrong", "오답노트"]];
 
-const FEATURES = [
-  { name: "Q&A", desc: "강의 내용 질문·검색" },
-  { name: "퀴즈", desc: "자동 문제 생성·채점" },
-  { name: "오답노트", desc: "틀린 문제 복습 정리" },
-];
-
 export default function App() {
   const [user, setUser] = useState(undefined); // undefined = 로딩 중
   const [docId, setDocId] = useState(null);
@@ -116,17 +110,6 @@ export default function App() {
                 </div>
               </div>
             )}
-
-            <div className="features">
-              <div className="features-grid">
-                {FEATURES.map(f => (
-                  <div key={f.name} className="feature-card">
-                    <strong className="feature-name">{f.name}</strong>
-                    <p className="feature-desc">{f.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         ) : (
           <div className="upload-card upload-done">

@@ -71,12 +71,9 @@ export default function QuizSection({ docId }) {
 
   if (loading) {
     return (
-      <div>
-        <h2 className="section-title">퀴즈</h2>
-        <div className="loading-wrap">
-          <div className="spinner" />
-          <span className="loading-text">퀴즈 생성 중... (10~20초 소요)</span>
-        </div>
+      <div className="loading-wrap">
+        <div className="spinner" />
+        <span className="loading-text">퀴즈 생성 중... (10~20초 소요)</span>
       </div>
     );
   }
@@ -84,7 +81,6 @@ export default function QuizSection({ docId }) {
   if (!questions.length) {
     return (
       <div>
-        <h2 className="section-title">퀴즈</h2>
         <ErrorBox msg={error} />
         <div className="generate-form">
           <span className="generate-label">문제 수</span>
@@ -96,7 +92,7 @@ export default function QuizSection({ docId }) {
             onChange={(e) => setN(Math.max(1, Math.min(10, parseInt(e.target.value) || 5)))}
             className="input number-input"
           />
-          <button className="btn-primary" onClick={handleGenerate}>✨ 퀴즈 생성</button>
+          <button className="btn-primary" onClick={handleGenerate}>퀴즈 생성</button>
         </div>
       </div>
     );
@@ -147,7 +143,7 @@ export default function QuizSection({ docId }) {
 
   return (
     <div>
-      <h2 className="section-title">퀴즈 ({questions.length}문제)</h2>
+      <p className="q-num" style={{ marginBottom: "16px" }}>{questions.length}문제</p>
 
       <ErrorBox msg={error} />
 

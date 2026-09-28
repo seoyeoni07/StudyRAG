@@ -35,17 +35,17 @@ export default function WrongAnswerBook({ docId }) {
             className={view === "wrong" ? "btn-primary" : "btn-secondary"}
             onClick={() => setView("wrong")}
           >
-            📝 오답노트 ({items.length})
+            오답노트 ({items.length})
           </button>
           <button
             className={view === "history" ? "btn-primary" : "btn-secondary"}
             onClick={() => setView("history")}
           >
-            📊 학습 이력 ({history.length})
+            학습 이력 ({history.length})
           </button>
         </div>
         {view === "wrong" && items.length > 0 && (
-          <button className="btn-secondary" onClick={() => window.print()}>🖨️ PDF 저장</button>
+          <button className="btn-secondary" onClick={() => window.print()}>PDF 저장</button>
         )}
       </div>
 
