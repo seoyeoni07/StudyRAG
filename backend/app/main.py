@@ -10,20 +10,13 @@ from .api.quiz import router as quiz_router
 from .api.tutor import router as tutor_router
 from .db.models import Base  # noqa: F401
 from .db.session import engine
-from .core.config import settings
-
-# 연결 문자열 로그 (비밀번호 마스킹)
-import re as _re
-_masked = _re.sub(r'(:)[^@]+(@)', r'\1***\2', settings.db_connection_string)
-print(f"[DB] connecting to: {_masked}", flush=True)
-
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="StudyRAG API", version="0.1.0")
 
 
 @app.on_event("startup")
-async def preload_model():
+async def startup():
+    Base.metadata.create_all(bind=engine)
     from .core.rag import _get_embedding
     _get_embedding()
 
