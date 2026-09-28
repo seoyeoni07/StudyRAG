@@ -157,12 +157,16 @@ export default function App() {
               ))}
             </div>
             <div className="card">
-              <div key={tab} className="tab-panel">
-                {tab === "qa"    && <QASection docId={docId} />}
-                {tab === "tutor" && <TutorSection docId={docId} />}
-                {tab === "quiz"  && <QuizSection docId={docId} />}
-                {tab === "wrong" && <WrongAnswerBook docId={docId} />}
-              </div>
+              {[
+                ["qa",    <QASection docId={docId} />],
+                ["tutor", <TutorSection docId={docId} />],
+                ["quiz",  <QuizSection docId={docId} />],
+                ["wrong", <WrongAnswerBook docId={docId} />],
+              ].map(([key, el]) => (
+                <div key={key} className="tab-panel" style={{ display: tab === key ? "" : "none" }}>
+                  {el}
+                </div>
+              ))}
             </div>
           </>
         )}
