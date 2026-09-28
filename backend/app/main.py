@@ -33,12 +33,15 @@ app.add_middleware(
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
+CORS_HEADERS = {"Access-Control-Allow-Origin": "*"}
 
 @app.exception_handler(Exception)
 async def handle_general(request: Request, exc: Exception):
-    return JSONResponse(status_code=500, content={"detail": str(exc)})
+    print(f"[ERROR] {request.method} {request.url.path}: {exc}", flush=True)
+    return JSONResponse(status_code=500, content={"detail": str(exc)}, headers=CORS_HEADERS)
 
 
 app.include_router(doc_router)
