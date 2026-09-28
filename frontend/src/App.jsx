@@ -8,7 +8,6 @@ import WrongAnswerBook from "./components/WrongAnswerBook";
 import TutorSection from "./components/TutorSection";
 import LoginPage from "./components/LoginPage";
 import { GradientBlurBg } from "./components/ui/gradient-blur-bg";
-import { FileUpload } from "./components/ui/file-upload-2";
 import "./App.css";
 
 const TABS = [["qa", "Q&A"], ["tutor", "AI 튜터"], ["quiz", "퀴즈"], ["wrong", "오답노트"]];
