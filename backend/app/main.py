@@ -16,9 +16,17 @@ app = FastAPI(title="StudyRAG API", version="0.1.0")
 
 @app.on_event("startup")
 async def startup():
-    Base.metadata.create_all(bind=engine)
-    from .core.rag import _get_embedding
-    _get_embedding()
+    try:
+        Base.metadata.create_all(bind=engine)
+        print("[DB] tables ready", flush=True)
+    except Exception as e:
+        print(f"[DB] init error: {e}", flush=True)
+    try:
+        from .core.rag import _get_embedding
+        _get_embedding()
+        print("[Embed] model ready", flush=True)
+    except Exception as e:
+        print(f"[Embed] preload error: {e}", flush=True)
 
 app.add_middleware(
     CORSMiddleware,
