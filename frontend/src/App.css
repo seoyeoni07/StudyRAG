@@ -29,8 +29,8 @@
   --border-focus:   #4da890;
 
   --bg-page:        #faf9f7;
-  --bg-card:        #ffffff;
-  --bg-subtle:      #f4f3f0;
+  --bg-card:        #faf9f7;
+  --bg-subtle:      #f0eeeb;
 
   --shadow-sm: 0 1px 2px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.04);
   --shadow-md: 0 4px 16px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.04);
@@ -88,6 +88,19 @@ body {
 }
 .header-title  { font-size: 15px; font-weight: 600; letter-spacing: -.2px; }
 .header-sub    { font-size: 13px; color: rgba(255,255,255,.4); margin-left: 2px; }
+.header-user   { font-size: 13px; color: rgba(255,255,255,.55); }
+.header-logout {
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(255,255,255,.18);
+  background: transparent;
+  cursor: pointer;
+  color: rgba(255,255,255,.7);
+  font-family: inherit;
+  transition: background .15s, color .15s;
+}
+.header-logout:hover { background: rgba(255,255,255,.1); color: #fff; }
 
 /* ── Layout ───────────────────────────────── */
 .container { max-width: 680px; margin: 0 auto; padding: 36px 20px 80px; }
@@ -213,9 +226,10 @@ body {
 /* ── Card ─────────────────────────────────── */
 .card {
   background: var(--bg-card);
-  border-radius: var(--r-md);
-  padding: 24px 0 0;
-  box-shadow: none;
+  border-radius: var(--r-lg);
+  padding: 24px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
 }
 
 /* ── Tab panel animation ───────────────────── */
@@ -340,7 +354,7 @@ body {
 
 /* Example chips — underline links, not pills */
 .qa-examples { margin-top: 20px; }
-.qa-examples-label { font-size: 12px; color: var(--text-4); margin-bottom: 8px; display: block; letter-spacing: .04em; text-transform: uppercase; }
+.qa-examples-label { font-size: 12px; color: var(--text-4); margin-bottom: 8px; display: block; }
 .qa-chips { display: flex; flex-direction: column; gap: 2px; }
 .example-chip {
   text-align: left;
@@ -532,7 +546,7 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 14px 0;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border);
   font-size: 14px;
   color: var(--text-2);
 }
@@ -557,10 +571,8 @@ body {
 }
 .past-docs-label {
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-3);
-  text-transform: uppercase;
-  letter-spacing: .04em;
   margin-bottom: 0.6rem;
 }
 .past-docs-list {

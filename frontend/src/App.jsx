@@ -70,10 +70,8 @@ export default function App() {
         <span className="header-title">StudyRAG</span>
         <span className="header-sub">/ 강의자료 AI 학습</span>
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "0.75rem" }}>
-          <span style={{ fontSize: "0.875rem", color: "#6b7280" }}>{user.displayName}</span>
-          <button onClick={logout} style={{ fontSize: "0.8rem", padding: "0.25rem 0.75rem", borderRadius: "0.5rem", border: "1px solid #e5e7eb", background: "white", cursor: "pointer", color: "#374151" }}>
-            로그아웃
-          </button>
+          <span className="header-user">{user.displayName}</span>
+          <button onClick={logout} className="header-logout">로그아웃</button>
         </div>
       </header>
 
