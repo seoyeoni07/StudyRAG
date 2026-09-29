@@ -1,13 +1,17 @@
+import asyncio
 import json
 import uuid
+from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..core.quiz import generate_quiz, grade_short_answer
-from ..db.models import QuizHistory, QuizSession, WrongAnswer
+from ..db.models import QuizHistory, QuizReport, QuizSession, WrongAnswer
 from ..db.session import SessionLocal
+
+_REVIEW_INTERVALS = [1, 3, 7, 14, 30]  # 스페이스드 리피티션 간격 (일)
 
 router = APIRouter(prefix="/quiz", tags=["quiz"])
 
@@ -23,6 +27,13 @@ def get_db():
 class GenerateRequest(BaseModel):
     doc_id: str
     n: int = 5
+    focus_difficulty: str | None = None  # 적응형: 집중할 난이도
+
+
+class ReportRequest(BaseModel):
+    session_id: str
+    question: str
+    issue: str = ""
 
 
 class AnswerItem(BaseModel):
@@ -38,7 +49,7 @@ class GradeRequest(BaseModel):
 @router.post("/generate")
 async def generate(req: GenerateRequest, db: Session = Depends(get_db)):
     try:
-        questions = generate_quiz(req.doc_id, req.n)
+        questions = await asyncio.to_thread(generate_quiz, req.doc_id, req.n, req.focus_difficulty)
     except ValueError as e:
         raise HTTPException(404, str(e))
 
@@ -159,6 +170,63 @@ def get_session_detail(session_id: str, db: Session = Depends(get_db)):
         }
         for q in questions
     ]
+
+
+@router.patch("/wrong-answers/{item_id}/reviewed")
+def toggle_reviewed(item_id: int, db: Session = Depends(get_db)):
+    item = db.get(WrongAnswer, item_id)
+    if not item:
+        raise HTTPException(404)
+    item.reviewed = not item.reviewed
+    if item.reviewed:
+        # 스페이스드 리피티션: review_count에 따라 다음 복습일 계산
+        days = _REVIEW_INTERVALS[min(item.review_count, len(_REVIEW_INTERVALS) - 1)]
+        item.next_review = datetime.utcnow() + timedelta(days=days)
+        item.review_count = (item.review_count or 0) + 1
+    else:
+        item.next_review = None
+    db.commit()
+    return {"reviewed": item.reviewed, "next_review": item.next_review.isoformat() if item.next_review else None}
+
+
+@router.post("/report")
+def report_question(req: ReportRequest, db: Session = Depends(get_db)):
+    db.add(QuizReport(session_id=req.session_id, question=req.question, issue=req.issue))
+    db.commit()
+    return {"ok": True}
+
+
+@router.get("/weak-difficulty")
+def get_weak_difficulty(doc_id: str, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    """사용자의 취약 난이도 분석 (적응형 퀴즈용)"""
+    # WrongAnswer + QuizSession에서 난이도별 오답률 계산
+    sessions = db.query(QuizSession).filter(QuizSession.doc_id == doc_id).all()
+    difficulty_wrong: dict[str, int] = {"기본": 0, "응용": 0, "심화": 0}
+    difficulty_total: dict[str, int] = {"기본": 0, "응용": 0, "심화": 0}
+    wrong_questions = {
+        r.question
+        for r in db.query(WrongAnswer).filter(WrongAnswer.doc_id == doc_id).all()
+    }
+    for s in sessions:
+        try:
+            qs = json.loads(s.questions_json)
+            for q in qs:
+                d = q.get("difficulty", "기본")
+                if d in difficulty_total:
+                    difficulty_total[d] += 1
+                    if q["question"] in wrong_questions:
+                        difficulty_wrong[d] += 1
+        except Exception:
+            pass
+    # 가장 오답률 높은 난이도 반환
+    best_weak = max(
+        difficulty_total.keys(),
+        key=lambda d: (difficulty_wrong[d] / difficulty_total[d]) if difficulty_total[d] > 0 else 0
+    )
+    return {
+        "focus_difficulty": best_weak,
+        "stats": {d: {"wrong": difficulty_wrong[d], "total": difficulty_total[d]} for d in difficulty_total},
+    }
 
 
 @router.get("/history")

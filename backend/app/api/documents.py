@@ -1,3 +1,4 @@
+import asyncio
 import os
 import shutil
 import uuid
@@ -7,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from ..core.parser import extract_chunks_with_pages
 from ..core.rag import add_chunks
+from ..core.summarizer import summarize_document
 from ..db.models import Document, QuizHistory, QuizSession, WrongAnswer
 from ..db.session import SessionLocal
 
@@ -82,6 +84,27 @@ def delete_document(
     db.query(Document).filter(Document.id == doc_id).delete()
     db.commit()
     return {"ok": True}
+
+
+@router.get("/{doc_id}/summary")
+async def get_summary(doc_id: str, db: Session = Depends(get_db)):
+    doc = db.query(Document).filter(Document.id == doc_id).first()
+    if not doc:
+        raise HTTPException(404, "문서를 찾을 수 없습니다.")
+    if doc.summary:
+        import json
+        try:
+            return json.loads(doc.summary)
+        except Exception:
+            pass
+    result = await asyncio.to_thread(summarize_document, doc_id)
+    try:
+        import json
+        doc.summary = json.dumps(result, ensure_ascii=False)
+        db.commit()
+    except Exception:
+        pass
+    return result
 
 
 @router.get("/")

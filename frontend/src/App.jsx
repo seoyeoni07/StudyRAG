@@ -6,15 +6,19 @@ import QASection from "./components/QASection";
 import QuizSection from "./components/QuizSection";
 import WrongAnswerBook from "./components/WrongAnswerBook";
 import TutorSection from "./components/TutorSection";
+import SummarySection from "./components/SummarySection";
+import StudyRoomSection from "./components/StudyRoomSection";
 import LoginPage from "./components/LoginPage";
 import { GradientBlurBg } from "./components/ui/gradient-blur-bg";
 import "./App.css";
 
 const TABS = [
-  ["qa",    "Q&A",    "물어보면 답을 바로 줍니다"],
-  ["tutor", "AI 튜터", "답 대신 이해할 때까지 가르쳐줍니다"],
-  ["quiz",  "퀴즈",   "자동 문제 생성·채점"],
-  ["wrong", "오답노트","틀린 문제 복습"],
+  ["qa",      "Q&A",      "물어보면 답을 바로 줍니다"],
+  ["tutor",   "AI 튜터",  "답 대신 이해할 때까지 가르쳐줍니다"],
+  ["quiz",    "퀴즈",     "자동 문제 생성·채점"],
+  ["wrong",   "오답노트", "틀린 문제 복습"],
+  ["summary", "요약",     "AI가 강의 전체를 핵심만 정리해드립니다"],
+  ["room",    "그룹 스터디", "친구와 함께 같은 문제 풀고 점수 비교"],
 ];
 
 export default function App() {
@@ -148,23 +152,29 @@ export default function App() {
         {/* ── Tab content ── */}
         {docId && (
           <>
-            <div className="tabs">
+            <div className="tabs" role="tablist" aria-label="학습 메뉴">
               {TABS.map(([key, label, desc]) => (
                 <button key={key} className={`tab ${tab === key ? "active" : ""}`}
+                  role="tab" aria-selected={tab === key} aria-controls={`panel-${key}`}
+                  id={`tab-${key}`}
                   onClick={() => setTab(key)} title={desc}>
                   {label}
                 </button>
               ))}
             </div>
-            <p className="tab-desc">{TABS.find(([k]) => k === tab)?.[2]}</p>
+            <p className="tab-desc" aria-live="polite">{TABS.find(([k]) => k === tab)?.[2]}</p>
             <div className="card">
               {[
-                ["qa",    <QASection docId={docId} />],
-                ["tutor", <TutorSection docId={docId} />],
-                ["quiz",  <QuizSection docId={docId} />],
-                ["wrong", <WrongAnswerBook docId={docId} />],
+                ["qa",      <QASection docId={docId} />],
+                ["tutor",   <TutorSection docId={docId} />],
+                ["quiz",    <QuizSection docId={docId} />],
+                ["wrong",   <WrongAnswerBook docId={docId} />],
+                ["summary", <SummarySection docId={docId} />],
+                ["room",    <StudyRoomSection docId={docId} userId={user?.uid} />],
               ].map(([key, el]) => (
-                <div key={key} className="tab-panel" style={{ display: tab === key ? "" : "none" }}>
+                <div key={key} className="tab-panel" role="tabpanel" id={`panel-${key}`}
+                  aria-labelledby={`tab-${key}`}
+                  style={{ display: tab === key ? "" : "none" }}>
                   {el}
                 </div>
               ))}

@@ -20,6 +20,8 @@ export default function QuizSection({ docId }) {
   const [answers, setAnswers] = useState({});
   const [results, setResults] = useState(null);
   const [error, setError] = useState("");
+  const [reportedIds, setReportedIds] = useState(new Set());
+  const [adaptive, setAdaptive] = useState(false);
 
   async function handleGenerate() {
     setLoading(true);
@@ -33,10 +35,17 @@ export default function QuizSection({ docId }) {
       setLoadingStep(step);
     }, 3500);
     try {
+      let focus_difficulty = null;
+      if (adaptive) {
+        try {
+          const weak = await apiFetch(`/quiz/weak-difficulty?doc_id=${docId}`);
+          focus_difficulty = weak.focus_difficulty;
+        } catch {}
+      }
       const data = await apiFetch("/quiz/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ doc_id: docId, n }),
+        body: JSON.stringify({ doc_id: docId, n, focus_difficulty }),
       });
       setQuestions(data.questions);
       setSessionId(data.session_id);
@@ -77,6 +86,18 @@ export default function QuizSection({ docId }) {
     setAnswers({});
     setResults(null);
     setError("");
+    setReportedIds(new Set());
+  }
+
+  async function handleReport(question) {
+    try {
+      await apiFetch("/quiz/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sessionId, question, issue: "오류 신고" }),
+      });
+      setReportedIds(prev => new Set([...prev, question]));
+    } catch {}
   }
 
   const ErrorBox = ({ msg }) => msg ? (
@@ -110,15 +131,16 @@ export default function QuizSection({ docId }) {
         <div className="generate-form">
           <span className="generate-label">문제 수</span>
           <input
-            type="number"
-            min={1}
-            max={10}
-            value={n}
+            type="number" min={1} max={10} value={n}
             onChange={(e) => setN(Math.max(1, Math.min(10, parseInt(e.target.value) || 5)))}
             className="input number-input"
           />
           <button className="btn-primary" onClick={handleGenerate}>퀴즈 생성</button>
         </div>
+        <label className="adaptive-toggle">
+          <input type="checkbox" checked={adaptive} onChange={(e) => setAdaptive(e.target.checked)} />
+          <span>취약 유형 집중 (적응형)</span>
+        </label>
       </div>
     );
   }
@@ -142,11 +164,22 @@ export default function QuizSection({ docId }) {
 
         {results.results.map((r) => {
           const q = questions.find((q) => q.id === r.id);
+          const reported = reportedIds.has(q?.question);
           return (
             <div key={r.id} className={`result-item ${r.correct ? "correct" : "wrong"}`}>
-              <span className={`result-badge ${r.correct ? "badge-correct" : "badge-wrong"}`}>
-                {r.correct ? "✓ 정답" : "✗ 오답"}
-              </span>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <span className={`result-badge ${r.correct ? "badge-correct" : "badge-wrong"}`}>
+                  {r.correct ? "✓ 정답" : "✗ 오답"}
+                </span>
+                <button
+                  className={`report-btn ${reported ? "report-btn--done" : ""}`}
+                  onClick={() => !reported && handleReport(q?.question)}
+                  title="문제 오류 신고"
+                  disabled={reported}
+                >
+                  {reported ? "신고됨" : "오류 신고"}
+                </button>
+              </div>
               <p className="q-text">{q?.question}</p>
               <p>내 답변: <strong>{r.user_answer || "(미입력)"}</strong></p>
               {!r.correct && <p className="correct-ans">정답: {r.correct_answer}</p>}

@@ -824,6 +824,65 @@ body {
 .summary-chip { font-size: 13px; background: #fff; border: 1px solid var(--green-border); color: var(--text-2); border-radius: 6px; padding: 2px 10px; }
 .summary-chip--unclear { border-color: var(--amber-border); }
 
+/* ── Summary Section ─────────────────────── */
+.summary-empty { text-align: center; padding: 40px 0; }
+.summary-wrap { display: flex; flex-direction: column; gap: 20px; }
+.summary-overview { background: var(--primary-light); border-radius: var(--r-lg); padding: 16px 20px; }
+.summary-title { font-size: 15px; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+.summary-text { font-size: 14px; color: var(--text-2); line-height: 1.65; }
+.summary-section { }
+.summary-subtitle { font-size: 13px; font-weight: 700; color: var(--text-3); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .04em; }
+.summary-concepts { padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.summary-concepts li { font-size: 14px; color: var(--text-2); line-height: 1.5; }
+.summary-keywords { display: flex; flex-wrap: wrap; gap: 6px; }
+.keyword-chip { font-size: 13px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--r-pill); padding: 3px 12px; color: var(--text-2); }
+.summary-tip { display: flex; gap: 8px; background: var(--amber-bg); border: 1px solid var(--amber-border); border-radius: var(--r-md); padding: 12px 16px; font-size: 13px; color: var(--amber); }
+.summary-tip-icon { flex-shrink: 0; }
+
+/* ── WrongAnswer reviewed ─────────────────── */
+.wrong-item--reviewed { opacity: 0.65; }
+.wrong-item-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
+.reviewed-btn { font-size: 12px; padding: 3px 10px; border-radius: var(--r-pill); border: 1px solid var(--border); background: #fff; cursor: pointer; color: var(--text-3); white-space: nowrap; }
+.reviewed-btn--done { background: var(--green-bg); border-color: var(--green-border); color: var(--green); }
+.next-review { font-size: 12px; color: var(--primary); margin-top: 4px; }
+
+/* ── Quiz report & adaptive ──────────────── */
+.report-btn { font-size: 11px; padding: 2px 8px; border-radius: var(--r-pill); border: 1px solid var(--border); background: #fff; cursor: pointer; color: var(--text-4); white-space: nowrap; }
+.report-btn--done { background: var(--amber-bg); border-color: var(--amber-border); color: var(--amber); cursor: default; }
+.adaptive-toggle { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--text-3); cursor: pointer; user-select: none; }
+.adaptive-toggle input { cursor: pointer; }
+
+/* ── Study Room ───────────────────────────── */
+.room-home { display: flex; flex-direction: column; gap: 12px; }
+.room-actions { display: flex; gap: 20px; align-items: flex-start; }
+.room-create-block, .room-join-block { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.room-divider { width: 1px; background: var(--border); align-self: stretch; }
+.room-block-title { font-size: 13px; font-weight: 600; color: var(--text-3); }
+.room-lobby { display: flex; flex-direction: column; gap: 16px; }
+.room-code-display { display: flex; flex-direction: column; align-items: center; gap: 4px; background: var(--primary-light); border-radius: var(--r-lg); padding: 20px; }
+.room-code-label { font-size: 12px; color: var(--text-3); font-weight: 600; text-transform: uppercase; letter-spacing: .08em; }
+.room-code { font-size: 32px; font-weight: 800; letter-spacing: .2em; color: var(--primary); }
+.room-code-hint { font-size: 12px; color: var(--text-4); }
+.room-members { }
+.room-members-label { font-size: 12px; font-weight: 600; color: var(--text-3); margin-bottom: 8px; }
+.room-member-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.room-member-nick { font-size: 14px; color: var(--text-2); }
+.room-host-badge { font-size: 11px; background: var(--primary); color: #fff; border-radius: var(--r-pill); padding: 1px 8px; }
+.room-lobby-actions { display: flex; gap: 10px; }
+.room-wait { font-size: 13px; color: var(--text-4); padding: 8px 0; }
+.room-quiz-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.room-badge { font-size: 11px; font-weight: 700; background: var(--primary); color: #fff; border-radius: var(--r-pill); padding: 2px 10px; }
+.room-submitted { font-size: 13px; color: var(--text-3); }
+.room-finish-btn { margin-left: auto; }
+.room-result { display: flex; flex-direction: column; gap: 8px; }
+.room-result-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.leaderboard-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: var(--r-md); background: var(--bg-subtle); }
+.leaderboard-row.first { background: var(--primary-light); border: 1px solid var(--green-border); }
+.leaderboard-rank { font-size: 18px; font-weight: 800; color: var(--text-3); width: 24px; text-align: center; }
+.leaderboard-row.first .leaderboard-rank { color: var(--primary); }
+.leaderboard-nick { flex: 1; font-size: 14px; font-weight: 600; }
+.leaderboard-score { font-size: 14px; color: var(--text-3); }
+
 /* ── Print ────────────────────────────────── */
 @media print {
   .header, .tabs, .upload-card, .btn-primary, .btn-secondary, .sub-tabs { display: none !important; }

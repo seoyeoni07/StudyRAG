@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../api";
 
+const FILTERS = [["all", "전체"], ["pending", "미복습"], ["today", "오늘 복습"]];
+
 export default function WrongAnswerBook({ docId }) {
   const [items, setItems] = useState([]);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState("wrong");
+  const [filter, setFilter] = useState("all");
   const [error, setError] = useState("");
   const [expandedSession, setExpandedSession] = useState(null);
   const [sessionDetail, setSessionDetail] = useState({});
@@ -20,6 +23,22 @@ export default function WrongAnswerBook({ docId }) {
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [docId]);
+
+  async function toggleReviewed(item) {
+    try {
+      const data = await apiFetch(`/quiz/wrong-answers/${item.id}/reviewed`, { method: "PATCH" });
+      setItems(prev => prev.map(it =>
+        it.id === item.id ? { ...it, reviewed: data.reviewed, next_review: data.next_review } : it
+      ));
+    } catch (err) { setError(err.message); }
+  }
+
+  function filteredItems() {
+    const today = new Date().toISOString().split("T")[0];
+    if (filter === "pending") return items.filter(it => !it.reviewed);
+    if (filter === "today") return items.filter(it => it.next_review && it.next_review.startsWith(today));
+    return items;
+  }
 
   async function toggleSession(session_id) {
     if (expandedSession === session_id) {
@@ -66,7 +85,13 @@ export default function WrongAnswerBook({ docId }) {
           </button>
         </div>
         {view === "wrong" && items.length > 0 && (
-          <button className="btn-secondary" onClick={() => window.print()}>PDF 저장</button>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            {FILTERS.map(([k, l]) => (
+              <button key={k} className={filter === k ? "btn-primary" : "btn-secondary"}
+                style={{ padding: "4px 10px", fontSize: 13 }}
+                onClick={() => setFilter(k)}>{l}</button>
+            ))}
+          </div>
         )}
       </div>
 
@@ -77,18 +102,33 @@ export default function WrongAnswerBook({ docId }) {
         </div>
       )}
 
-      {view === "wrong" && (
-        items.length === 0
-          ? <p className="empty">아직 오답이 없습니다. 퀴즈를 풀어보세요!</p>
-          : items.map((item) => (
-            <div key={item.id} className="wrong-item">
-              <p className="q-text"><strong>Q.</strong> {item.question}</p>
+      {view === "wrong" && (() => {
+        const visible = filteredItems();
+        return visible.length === 0
+          ? <p className="empty">{items.length === 0 ? "아직 오답이 없습니다. 퀴즈를 풀어보세요!" : "해당 필터에 해당하는 항목이 없습니다."}</p>
+          : visible.map((item) => (
+            <div key={item.id} className={`wrong-item ${item.reviewed ? "wrong-item--reviewed" : ""}`}>
+              <div className="wrong-item-header">
+                <p className="q-text" style={{ margin: 0 }}><strong>Q.</strong> {item.question}</p>
+                <button
+                  className={`reviewed-btn ${item.reviewed ? "reviewed-btn--done" : ""}`}
+                  onClick={() => toggleReviewed(item)}
+                  title={item.reviewed ? "복습 완료 취소" : "복습 완료로 표시"}
+                >
+                  {item.reviewed ? "✓ 복습 완료" : "복습 전"}
+                </button>
+              </div>
               <p className="wrong-ans">내 답변: {item.user_answer || "(미입력)"}</p>
               <p className="correct-ans">정답: {item.correct_answer}</p>
               <p className="explanation">{item.explanation}</p>
+              {item.reviewed && item.next_review && (
+                <p className="next-review">
+                  다음 복습일: {new Date(item.next_review).toLocaleDateString("ko-KR")}
+                </p>
+              )}
             </div>
-          ))
-      )}
+          ));
+      })()}
 
       {view === "history" && (
         history.length === 0

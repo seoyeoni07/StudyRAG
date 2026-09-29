@@ -53,7 +53,7 @@ _GRADE_PROMPT = """\
 {{"correct": true, "feedback": "간략한 피드백 (1~2줄)"}}"""
 
 
-def generate_quiz(doc_id: str, n: int = 5) -> list[dict]:
+def generate_quiz(doc_id: str, n: int = 5, focus_difficulty: str | None = None) -> list[dict]:
     vs = get_vectorstore(doc_id)
     docs = vs.as_retriever(search_type="mmr", search_kwargs={"k": 15, "fetch_k": 40}).invoke("강의 핵심 개념")
     if not docs:
@@ -62,7 +62,12 @@ def generate_quiz(doc_id: str, n: int = 5) -> list[dict]:
     sample = random.sample(docs, min(12, len(docs)))
     context = "\n\n---\n\n".join(d.page_content for d in sample)
 
-    response = _llm().invoke(_GENERATE_PROMPT.format(n=n, context=context))
+    # 적응형 난이도: 취약 난이도가 있으면 프롬프트에 추가
+    focus_note = ""
+    if focus_difficulty:
+        focus_note = f"\n\n⚠️ 학생이 '{focus_difficulty}' 난이도에서 오답률이 높습니다. '{focus_difficulty}' 문제를 전체의 50% 이상 포함하세요."
+
+    response = _llm().invoke(_GENERATE_PROMPT.format(n=n, context=context) + focus_note)
     return json.loads(response.content)["questions"]
 
 
