@@ -118,7 +118,7 @@ export default function App() {
                     <div key={d.doc_id} className="past-doc-item">
                       <button className="past-doc-main"
                         onClick={() => { setDocId(d.doc_id); setFilename(d.filename); setTab("qa"); }}>
-                        <span className="past-doc-name">{d.filename}</span>
+                        <span className="past-doc-name" title={d.filename}>{d.filename}</span>
                         <span className="past-doc-date">{new Date(d.created_at).toLocaleDateString("ko-KR")}</span>
                       </button>
                       <button className="past-doc-del" onClick={() => handleDeleteDoc(d.doc_id)}
@@ -156,6 +156,7 @@ export default function App() {
                 </button>
               ))}
             </div>
+            <p className="tab-desc">{TABS.find(([k]) => k === tab)?.[2]}</p>
             <div className="card">
               {[
                 ["qa",    <QASection docId={docId} />],

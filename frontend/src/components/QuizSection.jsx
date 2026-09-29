@@ -1,9 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { apiFetch } from "../api";
+
+const LOADING_STEPS = [
+  "강의자료 분석 중...",
+  "핵심 개념 추출 중...",
+  "문제 생성 중...",
+  "난이도 조정 중...",
+  "마무리 중...",
+];
 
 export default function QuizSection({ docId }) {
   const [n, setN] = useState(5);
   const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(0);
+  const stepTimerRef = useRef(null);
   const [grading, setGrading] = useState(false);
   const [questions, setQuestions] = useState([]);
   const [sessionId, setSessionId] = useState(null);
@@ -13,9 +23,15 @@ export default function QuizSection({ docId }) {
 
   async function handleGenerate() {
     setLoading(true);
+    setLoadingStep(0);
     setError("");
     setResults(null);
     setAnswers({});
+    let step = 0;
+    stepTimerRef.current = setInterval(() => {
+      step = Math.min(step + 1, LOADING_STEPS.length - 1);
+      setLoadingStep(step);
+    }, 3500);
     try {
       const data = await apiFetch("/quiz/generate", {
         method: "POST",
@@ -27,6 +43,7 @@ export default function QuizSection({ docId }) {
     } catch (err) {
       setError(err.message);
     } finally {
+      clearInterval(stepTimerRef.current);
       setLoading(false);
     }
   }
@@ -71,9 +88,17 @@ export default function QuizSection({ docId }) {
 
   if (loading) {
     return (
-      <div className="loading-wrap">
-        <div className="spinner" />
-        <span className="loading-text">퀴즈 생성 중... (10~20초 소요)</span>
+      <div className="loading-wrap" style={{ flexDirection: "column", gap: "16px", padding: "40px 0" }}>
+        <div className="spinner" style={{ width: "36px", height: "36px" }} />
+        <span className="loading-text" style={{ fontSize: "15px", fontWeight: "600" }}>
+          {LOADING_STEPS[loadingStep]}
+        </span>
+        <div className="quiz-step-dots">
+          {LOADING_STEPS.map((_, i) => (
+            <span key={i} className={`quiz-step-dot ${i <= loadingStep ? "active" : ""}`} />
+          ))}
+        </div>
+        <span style={{ fontSize: "12px", color: "var(--text-4)" }}>보통 10~20초 걸려요</span>
       </div>
     );
   }

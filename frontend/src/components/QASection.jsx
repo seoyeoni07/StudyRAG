@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
@@ -21,86 +21,111 @@ function FeedbackRow({ docId, question }) {
       body: JSON.stringify({ doc_id: docId, question, helpful }),
     }).catch(() => {});
   }
-  if (sent !== null) return <p className="feedback-thanks">피드백 감사합니다</p>;
+  if (sent !== null) return <span className="feedback-thanks">피드백 감사합니다</span>;
   return (
-    <div className="feedback-row">
-      <span className="feedback-label">답변이 도움이 됐나요?</span>
+    <span className="feedback-row">
+      <span className="feedback-label">도움이 됐나요?</span>
       <button className="feedback-btn" onClick={() => send(true)}>👍</button>
       <button className="feedback-btn" onClick={() => send(false)}>👎</button>
-    </div>
+    </span>
   );
 }
 
 export default function QASection({ docId }) {
-  const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState(null);
+  const [threads, setThreads] = useState([]); // [{question, answer, sources}]
+  const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const bottomRef = useRef(null);
+  const inputRef = useRef(null);
 
-  async function handleAsk(e) {
-    e?.preventDefault();
-    if (!question.trim()) return;
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [threads, loading]);
+
+  async function ask(q) {
+    if (!q.trim() || loading) return;
     setLoading(true);
     setError("");
-    setAnswer(null);
+    setInput("");
     try {
       const data = await apiFetch("/qa/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ doc_id: docId, question }),
+        body: JSON.stringify({ doc_id: docId, question: q }),
       });
-      setAnswer(data);
+      setThreads(prev => [...prev, { question: q, answer: data.answer, sources: data.sources }]);
     } catch (err) {
       setError(err.message);
+      setInput(q); // restore so user can retry
     } finally {
       setLoading(false);
+      setTimeout(() => inputRef.current?.focus(), 50);
     }
   }
 
-  function handleExample(q) {
-    setQuestion(q);
-    // auto-submit
-    setLoading(true);
-    setError("");
-    setAnswer(null);
-    apiFetch("/qa/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ doc_id: docId, question: q }),
-    })
-      .then(setAnswer)
-      .catch(err => setError(err.message))
-      .finally(() => setLoading(false));
+  function handleSubmit(e) {
+    e.preventDefault();
+    ask(input);
   }
 
   return (
-    <div>
-      <form onSubmit={handleAsk} className="qa-form">
-        <input
-          className="input"
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          placeholder="강의 내용에 대해 무엇이든 질문하세요"
-          disabled={loading}
-        />
-        <button type="submit" className="btn-primary" disabled={loading || !question.trim()}>
-          {loading ? "⏳" : "질문"}
-        </button>
-      </form>
-
-      {/* Example chips — shown only when no answer yet */}
-      {!answer && !loading && (
-        <div className="qa-examples">
-          <span className="qa-examples-label">예시 질문</span>
+    <div className="qa-wrap">
+      {/* Empty state */}
+      {threads.length === 0 && !loading && (
+        <div className="qa-empty">
+          <p className="qa-empty-label">예시 질문</p>
           <div className="qa-chips">
             {EXAMPLES.map(q => (
-              <button key={q} className="example-chip" onClick={() => handleExample(q)}>
-                {q}
-              </button>
+              <button key={q} className="example-chip" onClick={() => ask(q)}>{q}</button>
             ))}
           </div>
         </div>
       )}
+
+      {/* Conversation threads */}
+      <div className="qa-threads">
+        {threads.map((t, i) => (
+          <div key={i} className="qa-thread">
+            {/* User bubble */}
+            <div className="qa-bubble qa-bubble--user">
+              <span>{t.question}</span>
+            </div>
+
+            {/* Answer bubble */}
+            <div className="qa-bubble qa-bubble--ai">
+              <div className="answer-text">
+                <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+                  {t.answer}
+                </ReactMarkdown>
+              </div>
+              {t.sources?.length > 0 && (
+                <details className="sources">
+                  <summary>참조 구간 보기 ({t.sources.length})</summary>
+                  {t.sources.map((s, j) => {
+                    const text = typeof s === "string" ? s : s.text;
+                    const page = typeof s === "object" && s.page != null ? s.page : null;
+                    return (
+                      <blockquote key={j} className="source-item">
+                        {page != null && <span className="source-page">p.{page}</span>}
+                        {text}
+                      </blockquote>
+                    );
+                  })}
+                </details>
+              )}
+              <FeedbackRow docId={docId} question={t.question} />
+            </div>
+          </div>
+        ))}
+
+        {loading && (
+          <div className="qa-bubble qa-bubble--ai qa-bubble--loading">
+            <span className="tutor-dots"><span /><span /><span /></span>
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
 
       {error && (
         <div className="error-banner">
@@ -109,38 +134,19 @@ export default function QASection({ docId }) {
         </div>
       )}
 
-      {loading && (
-        <div className="loading-wrap">
-          <div className="spinner" />
-          <span className="loading-text">답변 생성 중...</span>
-        </div>
-      )}
-
-      {!loading && answer && (
-        <div className="answer-box">
-          <div className="answer-text">
-            <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
-              {answer.answer}
-            </ReactMarkdown>
-          </div>
-          {answer.sources?.length > 0 && (
-            <details className="sources">
-              <summary>참조 구간 보기 ({answer.sources.length})</summary>
-              {answer.sources.map((s, i) => {
-                const text = typeof s === "string" ? s : s.text;
-                const page = typeof s === "object" && s.page != null ? s.page : null;
-                return (
-                  <blockquote key={i} className="source-item">
-                    {page != null && <span className="source-page">p.{page}</span>}
-                    {text}
-                  </blockquote>
-                );
-              })}
-            </details>
-          )}
-          <FeedbackRow docId={docId} question={question} />
-        </div>
-      )}
+      <form onSubmit={handleSubmit} className="tutor-form">
+        <input
+          ref={inputRef}
+          className="input"
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          placeholder={threads.length === 0 ? "강의 내용에 대해 무엇이든 질문하세요" : "추가 질문을 입력하세요"}
+          disabled={loading}
+        />
+        <button type="submit" className="btn-primary" disabled={loading || !input.trim()}>
+          질문
+        </button>
+      </form>
     </div>
   );
 }
