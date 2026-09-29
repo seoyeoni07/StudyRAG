@@ -5,8 +5,16 @@ from .rag import _llm, get_vectorstore
 
 _GENERATE_PROMPT = """\
 당신은 대학 강의자료 기반 퀴즈 출제 전문가입니다.
-아래 강의자료 내용을 바탕으로 {n}개의 퀴즈를 출제하세요.
-객관식(4지선다)과 단답형을 적절히 혼합하고 강의의 핵심 개념을 다루세요.
+아래 강의자료를 바탕으로 {n}개의 퀴즈를 출제하세요.
+
+출제 기준:
+- 객관식(4지선다)과 단답형을 적절히 혼합하세요.
+- 다음 세 난이도가 균형 있게 포함되도록 하세요:
+  * 기본: 핵심 용어·정의 확인
+  * 응용: 개념을 새로운 상황에 적용
+  * 심화: 비교·분석·추론 필요
+- 객관식 오답 선택지는 헷갈릴 수 있는 그럴듯한 내용으로 만드세요.
+- 같은 개념이 반복되지 않도록 다양한 주제를 다루세요.
 
 강의자료:
 {context}
@@ -17,6 +25,7 @@ _GENERATE_PROMPT = """\
     {{
       "id": 1,
       "type": "multiple_choice",
+      "difficulty": "기본",
       "question": "질문",
       "options": ["A. 선택지1", "B. 선택지2", "C. 선택지3", "D. 선택지4"],
       "answer": "A",
@@ -25,6 +34,7 @@ _GENERATE_PROMPT = """\
     {{
       "id": 2,
       "type": "short_answer",
+      "difficulty": "심화",
       "question": "질문",
       "answer": "정답",
       "explanation": "해설"
@@ -41,8 +51,6 @@ _GRADE_PROMPT = """\
 
 의미상 유사하면 정답으로 처리하세요. 반드시 다음 JSON으로만 응답하세요:
 {{"correct": true, "feedback": "간략한 피드백 (1~2줄)"}}"""
-
-
 
 
 def generate_quiz(doc_id: str, n: int = 5) -> list[dict]:

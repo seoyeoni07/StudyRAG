@@ -11,6 +11,26 @@ const EXAMPLES = [
   "가장 자주 출제되는 내용은 무엇인가요?",
 ];
 
+function FeedbackRow({ docId, question }) {
+  const [sent, setSent] = useState(null);
+  async function send(helpful) {
+    setSent(helpful);
+    await apiFetch("/qa/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ doc_id: docId, question, helpful }),
+    }).catch(() => {});
+  }
+  if (sent !== null) return <p className="feedback-thanks">피드백 감사합니다</p>;
+  return (
+    <div className="feedback-row">
+      <span className="feedback-label">답변이 도움이 됐나요?</span>
+      <button className="feedback-btn" onClick={() => send(true)}>👍</button>
+      <button className="feedback-btn" onClick={() => send(false)}>👎</button>
+    </div>
+  );
+}
+
 export default function QASection({ docId }) {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState(null);
@@ -106,11 +126,19 @@ export default function QASection({ docId }) {
           {answer.sources?.length > 0 && (
             <details className="sources">
               <summary>참조 구간 보기 ({answer.sources.length})</summary>
-              {answer.sources.map((s, i) => (
-                <blockquote key={i} className="source-item">{s}</blockquote>
-              ))}
+              {answer.sources.map((s, i) => {
+                const text = typeof s === "string" ? s : s.text;
+                const page = typeof s === "object" && s.page != null ? s.page : null;
+                return (
+                  <blockquote key={i} className="source-item">
+                    {page != null && <span className="source-page">p.{page}</span>}
+                    {text}
+                  </blockquote>
+                );
+              })}
             </details>
           )}
+          <FeedbackRow docId={docId} question={question} />
         </div>
       )}
     </div>

@@ -3,7 +3,7 @@ services:
     name: studyrag-backend
     runtime: python
     rootDir: backend
-    buildCommand: pip install -r requirements.txt
+    buildCommand: apt-get install -y tesseract-ocr tesseract-ocr-kor poppler-utils && pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: OPENROUTER_API_KEY

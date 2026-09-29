@@ -72,5 +72,8 @@ def query_rag(collection_name: str, question: str) -> dict:
 
     return {
         "answer": answer,
-        "sources": [doc.page_content[:300] for doc in source_docs],
+        "sources": [
+            {"text": doc.page_content[:300], "page": doc.metadata.get("page")}
+            for doc in source_docs
+        ],
     }

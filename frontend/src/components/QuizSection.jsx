@@ -149,7 +149,14 @@ export default function QuizSection({ docId }) {
 
       {questions.map((q) => (
         <div key={q.id} className="question-item">
-          <div className="q-num">문제 {q.id}</div>
+          <div className="q-num">
+            문제 {q.id}
+            {q.difficulty && (
+              <span className={`diff-badge diff-${q.difficulty === "기본" ? "easy" : q.difficulty === "응용" ? "mid" : "hard"}`}>
+                {q.difficulty}
+              </span>
+            )}
+          </div>
           <p className="q-text">{q.question}</p>
           {q.type === "multiple_choice" ? (
             <div className="options">

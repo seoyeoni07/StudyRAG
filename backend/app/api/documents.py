@@ -5,7 +5,7 @@ import uuid
 from fastapi import APIRouter, Depends, File, Header, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
-from ..core.parser import chunk_text, extract_text
+from ..core.parser import extract_chunks_with_pages
 from ..core.rag import add_chunks
 from ..db.models import Document, QuizHistory, QuizSession, WrongAnswer
 from ..db.session import SessionLocal
@@ -39,16 +39,16 @@ async def upload_document(
     with open(save_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
 
-    text = extract_text(save_path)
-    if not text.strip():
+    chunks_with_pages = extract_chunks_with_pages(save_path)
+    if not chunks_with_pages:
         os.remove(save_path)
-        raise HTTPException(422, "텍스트를 추출할 수 없습니다. 이미지 기반 PDF는 지원하지 않습니다.")
+        raise HTTPException(422, "텍스트를 추출할 수 없습니다.")
 
-    chunks = chunk_text(text)
+    chunks = [c for c, _ in chunks_with_pages]
     add_chunks(
         doc_id,
         chunks,
-        [{"doc_id": doc_id, "chunk_idx": i} for i in range(len(chunks))],
+        [{"doc_id": doc_id, "chunk_idx": i, "page": p} for i, (_, p) in enumerate(chunks_with_pages)],
     )
 
     if x_user_id:

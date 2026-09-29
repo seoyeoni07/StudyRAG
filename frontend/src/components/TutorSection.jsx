@@ -16,6 +16,8 @@ export default function TutorSection({ docId }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [summary, setSummary] = useState(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -48,6 +50,23 @@ export default function TutorSection({ docId }) {
   function handleSubmit(e) {
     e.preventDefault();
     send(input);
+  }
+
+  async function handleSummary() {
+    setSummaryLoading(true);
+    setSummary(null);
+    try {
+      const data = await apiFetch("/tutor/summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ history }),
+      });
+      setSummary(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSummaryLoading(false);
+    }
   }
 
   return (
@@ -91,6 +110,23 @@ export default function TutorSection({ docId }) {
         </div>
       )}
 
+      {summary && (
+        <div className="concept-summary">
+          {summary.understood?.length > 0 && (
+            <div className="summary-group">
+              <span className="summary-label summary-ok">이해한 개념</span>
+              {summary.understood.map(c => <span key={c} className="summary-chip">{c}</span>)}
+            </div>
+          )}
+          {summary.unclear?.length > 0 && (
+            <div className="summary-group">
+              <span className="summary-label summary-no">더 공부할 개념</span>
+              {summary.unclear.map(c => <span key={c} className="summary-chip summary-chip--unclear">{c}</span>)}
+            </div>
+          )}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="tutor-form">
         <input
           className="input"
@@ -102,6 +138,11 @@ export default function TutorSection({ docId }) {
         <button type="submit" className="btn-primary" disabled={loading || !input.trim()}>
           전송
         </button>
+        {history.length >= 2 && (
+          <button type="button" className="btn-secondary" onClick={handleSummary} disabled={summaryLoading}>
+            {summaryLoading ? "정리 중..." : "배운 개념 정리"}
+          </button>
+        )}
       </form>
     </div>
   );

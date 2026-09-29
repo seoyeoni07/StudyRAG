@@ -42,3 +42,12 @@ class QuizHistory(Base):
     total = Column(Integer, nullable=False)
     correct = Column(Integer, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class QAFeedback(Base):
+    __tablename__ = "qa_feedback"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    doc_id = Column(String(36), nullable=False, index=True)
+    question = Column(Text, nullable=False)
+    helpful = Column(Integer, nullable=False)  # 1 = helpful, -1 = not helpful
+    created_at = Column(DateTime, default=datetime.utcnow)
