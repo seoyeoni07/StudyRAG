@@ -9,7 +9,6 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from ..core.quiz import generate_quiz
 from ..db.models import QuizSession, StudyRoom, StudyRoomMember
 from ..db.session import SessionLocal
 
@@ -116,6 +115,7 @@ async def start_room(room_id: str, x_user_id: str | None = Header(default=None),
         raise HTTPException(403, "호스트만 시작할 수 있습니다.")
     if room.status != "waiting":
         raise HTTPException(400, "이미 시작된 방입니다.")
+    from ..core.quiz import generate_quiz
     questions = await asyncio.to_thread(generate_quiz, room.doc_id, 5)
     session_id = str(uuid.uuid4())
     db.add(QuizSession(id=session_id, doc_id=room.doc_id, questions_json=json.dumps(questions, ensure_ascii=False)))
