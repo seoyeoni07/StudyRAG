@@ -116,7 +116,17 @@ async def start_room(room_id: str, x_user_id: str | None = Header(default=None),
     if room.status != "waiting":
         raise HTTPException(400, "이미 시작된 방입니다.")
     from ..core.quiz import generate_quiz
-    questions = await asyncio.to_thread(generate_quiz, room.doc_id, 5)
+    questions = None
+    last_err = None
+    for attempt in range(3):
+        try:
+            questions = await asyncio.to_thread(generate_quiz, room.doc_id, 5)
+            break
+        except Exception as e:
+            last_err = e
+            await asyncio.sleep(2 ** attempt)
+    if questions is None:
+        raise HTTPException(503, f"퀴즈 생성 실패 (잠시 후 다시 시도): {last_err}")
     session_id = str(uuid.uuid4())
     db.add(QuizSession(id=session_id, doc_id=room.doc_id, questions_json=json.dumps(questions, ensure_ascii=False)))
     room.session_id = session_id

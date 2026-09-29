@@ -853,8 +853,11 @@ body {
 .adaptive-toggle input { cursor: pointer; }
 
 /* ── Study Room ───────────────────────────── */
-.room-home { display: flex; flex-direction: column; gap: 12px; }
+.room-home { display: flex; flex-direction: column; gap: 16px; }
+.room-nick-row { display: flex; flex-direction: column; gap: 6px; }
+.room-field-label { font-size: 12px; font-weight: 600; color: var(--text-3); }
 .room-actions { display: flex; gap: 20px; align-items: flex-start; }
+@media (max-width: 480px) { .room-actions { flex-direction: column; } .room-divider { width: 100%; height: 1px; } }
 .room-create-block, .room-join-block { display: flex; flex-direction: column; gap: 8px; flex: 1; }
 .room-divider { width: 1px; background: var(--border); align-self: stretch; }
 .room-block-title { font-size: 13px; font-weight: 600; color: var(--text-3); }
@@ -870,10 +873,12 @@ body {
 .room-host-badge { font-size: 11px; background: var(--primary); color: #fff; border-radius: var(--r-pill); padding: 1px 8px; }
 .room-lobby-actions { display: flex; gap: 10px; }
 .room-wait { font-size: 13px; color: var(--text-4); padding: 8px 0; }
-.room-quiz-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.room-quiz-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
 .room-badge { font-size: 11px; font-weight: 700; background: var(--primary); color: #fff; border-radius: var(--r-pill); padding: 2px 10px; }
-.room-submitted { font-size: 13px; color: var(--text-3); }
+.room-submit-count { font-size: 12px; color: var(--text-4); background: var(--bg-subtle); border-radius: var(--r-pill); padding: 2px 10px; }
+.room-submitted { font-size: 12px; color: var(--green); font-weight: 600; }
 .room-finish-btn { margin-left: auto; }
+.room-block-desc { font-size: 12px; color: var(--text-4); margin-bottom: 8px; line-height: 1.4; }
 .room-result { display: flex; flex-direction: column; gap: 8px; }
 .room-result-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
 .leaderboard-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: var(--r-md); background: var(--bg-subtle); }
