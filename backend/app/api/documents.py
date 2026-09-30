@@ -4,6 +4,7 @@ import shutil
 import uuid
 
 from fastapi import APIRouter, Depends, File, Header, HTTPException, UploadFile
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..core.parser import extract_chunks_with_pages
@@ -125,6 +126,48 @@ def get_dashboard(x_user_id: str | None = Header(default=None), db: Session = De
     }
 
 
+class FolderRequest(BaseModel):
+    folder: str | None = None
+
+
+@router.patch("/{doc_id}/folder")
+def set_folder(doc_id: str, req: FolderRequest, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    doc = db.query(Document).filter(Document.id == doc_id, Document.user_id == x_user_id).first()
+    if not doc:
+        raise HTTPException(404)
+    doc.folder = req.folder or None
+    db.commit()
+    return {"ok": True}
+
+
+@router.get("/{doc_id}/history")
+def get_doc_history(doc_id: str, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    doc = db.query(Document).filter(Document.id == doc_id, Document.user_id == x_user_id).first()
+    if not doc:
+        raise HTTPException(404)
+    from datetime import datetime
+    now = datetime.utcnow()
+    quizzes = db.query(QuizHistory).filter(QuizHistory.doc_id == doc_id).order_by(QuizHistory.created_at.desc()).limit(20).all()
+    total_wrongs = db.query(WrongAnswer).filter(WrongAnswer.doc_id == doc_id, WrongAnswer.reviewed == False).count()
+    today_review = db.query(WrongAnswer).filter(
+        WrongAnswer.doc_id == doc_id, WrongAnswer.reviewed == False, WrongAnswer.next_review <= now
+    ).count()
+    return {
+        "doc_id": doc_id,
+        "filename": doc.filename,
+        "folder": doc.folder,
+        "has_summary": bool(doc.summary),
+        "chunks": doc.chunks,
+        "created_at": doc.created_at.isoformat(),
+        "total_wrongs": total_wrongs,
+        "today_review": today_review,
+        "quizzes": [
+            {"score": h.correct, "total": h.total, "date": h.created_at.isoformat()}
+            for h in quizzes
+        ],
+    }
+
+
 @router.get("/{doc_id}/summary")
 async def get_summary(doc_id: str, db: Session = Depends(get_db)):
     doc = db.query(Document).filter(Document.id == doc_id).first()
@@ -157,6 +200,6 @@ def list_documents(x_user_id: str | None = Header(default=None), db: Session = D
         .all()
     )
     return [
-        {"doc_id": r.id, "filename": r.filename, "chunks": r.chunks, "created_at": r.created_at.isoformat()}
+        {"doc_id": r.id, "filename": r.filename, "chunks": r.chunks, "folder": r.folder, "created_at": r.created_at.isoformat()}
         for r in rows
     ]

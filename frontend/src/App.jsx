@@ -104,6 +104,7 @@ export default function App() {
             onDeleteDoc={handleDeleteDoc}
             pastDocs={pastDocs}
             uploading={uploading}
+            onPastDocsChange={() => apiFetch("/documents/").then(setPastDocs).catch(() => {})}
           />
         ) : (
           <div className="upload-card upload-done">

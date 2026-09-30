@@ -936,6 +936,62 @@ body {
 }
 .dash-empty-upload:hover { border-color: var(--primary-muted); }
 
+/* ── Folder grouping ──────────────────────── */
+.dash-folders { display: flex; flex-direction: column; gap: 16px; }
+.dash-folder-group { display: flex; flex-direction: column; gap: 6px; }
+.dash-folder-name {
+  font-size: 12px; font-weight: 700; color: var(--text-3);
+  display: flex; align-items: center; gap: 6px; padding: 0 2px;
+}
+.dash-folder-icon { font-size: 14px; }
+.dash-folder-count {
+  margin-left: auto; font-size: 11px; font-weight: 600;
+  background: var(--bg-subtle); color: var(--text-3);
+  padding: 1px 7px; border-radius: var(--r-pill);
+}
+
+.past-doc-item--rich { flex-direction: column; align-items: stretch; gap: 0; }
+.past-doc-item--rich > .past-doc-main { flex: none; }
+.past-doc-actions {
+  display: flex; gap: 4px; padding: 4px 8px 4px 0;
+  justify-content: flex-end;
+}
+.doc-action-btn {
+  font-size: 11px; font-weight: 600; color: var(--text-3);
+  background: var(--bg-subtle); border: none; border-radius: var(--r-sm);
+  padding: 3px 9px; cursor: pointer; transition: background .15s;
+}
+.doc-action-btn:hover { background: var(--border); color: var(--text-1); }
+
+.folder-edit-row {
+  display: flex; gap: 6px; padding: 6px 8px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-subtle); border-radius: 0 0 var(--r-md) var(--r-md);
+}
+.folder-input { flex: 1; font-size: 13px; padding: 4px 10px; }
+
+/* ── Doc history panel ────────────────────── */
+.doc-history-panel {
+  border-top: 1px solid var(--border);
+  padding: 12px 14px; background: var(--bg-subtle);
+  border-radius: 0 0 var(--r-md) var(--r-md);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.doc-history-stats { display: flex; flex-wrap: wrap; gap: 6px; }
+.doc-hist-badge {
+  font-size: 11px; font-weight: 600; padding: 2px 9px;
+  border-radius: var(--r-pill); background: var(--border); color: var(--text-2);
+}
+.doc-hist-badge--green { background: var(--primary-light); color: var(--primary); }
+.doc-hist-badge--amber { background: var(--amber-bg); color: var(--amber); }
+.doc-history-empty { font-size: 13px; color: var(--text-4); }
+.doc-history-label { font-size: 11px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+.doc-history-quizzes { display: flex; flex-direction: column; gap: 6px; }
+.doc-hist-quiz-row { display: flex; align-items: center; gap: 8px; }
+.doc-hist-date { font-size: 11px; color: var(--text-4); white-space: nowrap; width: 72px; }
+.doc-hist-bar-wrap { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.doc-hist-bar { height: 100%; border-radius: 3px; transition: width .4s; }
+
 /* ── Print ────────────────────────────────── */
 @media print {
   .header, .tabs, .upload-card, .btn-primary, .btn-secondary, .sub-tabs { display: none !important; }

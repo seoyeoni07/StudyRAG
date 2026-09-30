@@ -12,6 +12,7 @@ class Document(Base):
     filename = Column(String(256), nullable=False)
     chunks = Column(Integer, default=0)
     summary = Column(Text, nullable=True)
+    folder = Column(String(64), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
