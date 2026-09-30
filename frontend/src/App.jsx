@@ -8,6 +8,7 @@ import WrongAnswerBook from "./components/WrongAnswerBook";
 import TutorSection from "./components/TutorSection";
 import SummarySection from "./components/SummarySection";
 import StudyRoomSection from "./components/StudyRoomSection";
+import DashboardHome from "./components/DashboardHome";
 import LoginPage from "./components/LoginPage";
 import { GradientBlurBg } from "./components/ui/gradient-blur-bg";
 import "./App.css";
@@ -95,44 +96,15 @@ export default function App() {
           </div>
         )}
 
-        {/* ── Upload zone ── */}
+        {/* ── Upload zone / Dashboard ── */}
         {!docId ? (
-          <div className="upload-card">
-            <label className="upload-empty">
-              <input type="file" accept=".pdf" hidden disabled={uploading}
-                onChange={(e) => { if (e.target.files?.[0]) handleFilesAccepted([e.target.files[0]]); }} />
-              <p className="upload-heading">
-                {uploading ? "분석 중…" : "강의자료 PDF 업로드"}
-              </p>
-              <p className="upload-sub">
-                {uploading
-                  ? "AI가 내용을 분석하고 있습니다. 잠시만 기다려주세요."
-                  : "파일을 클릭해서 선택하거나 이 영역에 드래그하세요."}
-              </p>
-              {!uploading && (
-                <span className="upload-btn">파일 선택</span>
-              )}
-            </label>
-
-            {pastDocs.length > 0 && (
-              <div className="past-docs">
-                <p className="past-docs-label">이전에 업로드한 자료</p>
-                <div className="past-docs-list">
-                  {pastDocs.map(d => (
-                    <div key={d.doc_id} className="past-doc-item">
-                      <button className="past-doc-main"
-                        onClick={() => { setDocId(d.doc_id); setFilename(d.filename); setTab("qa"); }}>
-                        <span className="past-doc-name" title={d.filename}>{d.filename}</span>
-                        <span className="past-doc-date">{new Date(d.created_at).toLocaleDateString("ko-KR")}</span>
-                      </button>
-                      <button className="past-doc-del" onClick={() => handleDeleteDoc(d.doc_id)}
-                        title="삭제">×</button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          <DashboardHome
+            onFileAccepted={handleFilesAccepted}
+            onSelectDoc={(id, name) => { setDocId(id); setFilename(name); setTab("qa"); }}
+            onDeleteDoc={handleDeleteDoc}
+            pastDocs={pastDocs}
+            uploading={uploading}
+          />
         ) : (
           <div className="upload-card upload-done">
             <span className="upload-success">✓ {filename}</span>

@@ -888,6 +888,54 @@ body {
 .leaderboard-nick { flex: 1; font-size: 14px; font-weight: 600; }
 .leaderboard-score { font-size: 14px; color: var(--text-3); }
 
+/* ── Dashboard ────────────────────────────── */
+.dashboard-wrap { display: flex; flex-direction: column; gap: 24px; padding: 8px 0; }
+
+.dash-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.dash-stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 18px 16px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  box-shadow: var(--shadow-sm);
+}
+.dash-stat-card.dash-stat--review { border-color: var(--green-border); background: var(--primary-light); }
+.dash-stat-value { font-size: 32px; font-weight: 800; color: var(--text-1); line-height: 1; }
+.dash-stat--review .dash-stat-value { color: var(--primary); }
+.dash-stat-label { font-size: 12px; color: var(--text-3); font-weight: 500; }
+
+.dash-section { display: flex; flex-direction: column; gap: 10px; }
+.dash-section-header { display: flex; align-items: center; justify-content: space-between; }
+.dash-section-title { font-size: 13px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: .06em; }
+.dash-upload-btn { font-size: 13px; padding: 6px 14px; }
+
+.dash-quiz-list { display: flex; flex-direction: column; gap: 6px; }
+.dash-quiz-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  cursor: pointer; transition: border-color .15s;
+}
+.dash-quiz-row:hover { border-color: var(--primary-muted); }
+.dash-quiz-name { flex: 1; font-size: 13px; font-weight: 500; color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-quiz-score { font-size: 13px; font-weight: 700; }
+.score--high { color: var(--green); }
+.score--mid  { color: var(--amber); }
+.score--low  { color: var(--red); }
+.dash-quiz-date { font-size: 12px; color: var(--text-4); white-space: nowrap; }
+
+.dash-empty-upload {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; padding: 40px 24px;
+  border: 2px dashed var(--border); border-radius: var(--r-lg);
+  cursor: pointer; text-align: center;
+  transition: border-color .15s;
+}
+.dash-empty-upload:hover { border-color: var(--primary-muted); }
+
 /* ── Print ────────────────────────────────── */
 @media print {
   .header, .tabs, .upload-card, .btn-primary, .btn-secondary, .sub-tabs { display: none !important; }

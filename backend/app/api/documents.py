@@ -86,6 +86,45 @@ def delete_document(
     return {"ok": True}
 
 
+@router.get("/dashboard")
+def get_dashboard(x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    if not x_user_id:
+        raise HTTPException(401)
+    from datetime import datetime
+    docs = db.query(Document).filter(Document.user_id == x_user_id).order_by(Document.created_at.desc()).all()
+    doc_ids = [d.id for d in docs]
+    doc_map = {d.id: d.filename for d in docs}
+    now = datetime.utcnow()
+    today_review = 0
+    total_wrongs = 0
+    if doc_ids:
+        today_review = db.query(WrongAnswer).filter(
+            WrongAnswer.doc_id.in_(doc_ids),
+            WrongAnswer.reviewed == False,
+            WrongAnswer.next_review <= now,
+        ).count()
+        total_wrongs = db.query(WrongAnswer).filter(
+            WrongAnswer.doc_id.in_(doc_ids),
+            WrongAnswer.reviewed == False,
+        ).count()
+    recent_quizzes = []
+    if doc_ids:
+        histories = db.query(QuizHistory).filter(
+            QuizHistory.doc_id.in_(doc_ids)
+        ).order_by(QuizHistory.created_at.desc()).limit(5).all()
+        recent_quizzes = [
+            {"doc_name": doc_map.get(h.doc_id, "알 수 없는 자료"), "doc_id": h.doc_id,
+             "score": h.correct, "total": h.total, "date": h.created_at.isoformat()}
+            for h in histories
+        ]
+    return {
+        "today_review": today_review,
+        "total_wrongs": total_wrongs,
+        "total_docs": len(docs),
+        "recent_quizzes": recent_quizzes,
+    }
+
+
 @router.get("/{doc_id}/summary")
 async def get_summary(doc_id: str, db: Session = Depends(get_db)):
     doc = db.query(Document).filter(Document.id == doc_id).first()
