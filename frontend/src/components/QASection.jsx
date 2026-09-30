@@ -32,12 +32,23 @@ function FeedbackRow({ docId, question }) {
 }
 
 export default function QASection({ docId }) {
-  const [threads, setThreads] = useState([]); // [{question, answer, sources}]
+  const [threads, setThreads] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [histLoading, setHistLoading] = useState(true);
   const [error, setError] = useState("");
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
+
+  // 대화 이력 로드
+  useEffect(() => {
+    setThreads([]);
+    setHistLoading(true);
+    apiFetch(`/qa/history?doc_id=${docId}`)
+      .then(data => setThreads(data.map(t => ({ ...t, fromHistory: true }))))
+      .catch(() => {})
+      .finally(() => setHistLoading(false));
+  }, [docId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -57,21 +68,24 @@ export default function QASection({ docId }) {
       setThreads(prev => [...prev, { question: q, answer: data.answer, sources: data.sources }]);
     } catch (err) {
       setError(err.message);
-      setInput(q); // restore so user can retry
+      setInput(q);
     } finally {
       setLoading(false);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }
 
-  function handleSubmit(e) {
-    e.preventDefault();
-    ask(input);
+  if (histLoading) {
+    return (
+      <div className="loading-wrap">
+        <div className="spinner" />
+        <span className="loading-text">대화 이력 불러오는 중…</span>
+      </div>
+    );
   }
 
   return (
     <div className="qa-wrap">
-      {/* Empty state */}
       {threads.length === 0 && !loading && (
         <div className="qa-empty">
           <p className="qa-empty-label">예시 질문</p>
@@ -83,16 +97,22 @@ export default function QASection({ docId }) {
         </div>
       )}
 
-      {/* Conversation threads */}
       <div className="qa-threads">
         {threads.map((t, i) => (
-          <div key={i} className="qa-thread">
-            {/* User bubble */}
+          <div key={i} className={`qa-thread ${t.fromHistory ? "qa-thread--history" : ""}`}>
+            {t.fromHistory && i === 0 && (
+              <div className="qa-history-label">이전 대화</div>
+            )}
+            {/* 날짜 구분선 (이력 → 새 대화 경계) */}
+            {!t.fromHistory && i > 0 && threads[i - 1]?.fromHistory && (
+              <div className="qa-history-divider">새 대화</div>
+            )}
             <div className="qa-bubble qa-bubble--user">
               <span>{t.question}</span>
+              {t.created_at && (
+                <span className="qa-bubble-date">{new Date(t.created_at).toLocaleDateString("ko-KR")}</span>
+              )}
             </div>
-
-            {/* Answer bubble */}
             <div className="qa-bubble qa-bubble--ai">
               <div className="answer-text">
                 <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
@@ -134,7 +154,7 @@ export default function QASection({ docId }) {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="tutor-form">
+      <form onSubmit={e => { e.preventDefault(); ask(input); }} className="tutor-form">
         <input
           ref={inputRef}
           className="input"

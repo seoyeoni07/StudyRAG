@@ -118,11 +118,22 @@ def get_dashboard(x_user_id: str | None = Header(default=None), db: Session = De
              "score": h.correct, "total": h.total, "date": h.created_at.isoformat()}
             for h in histories
         ]
+    today_docs = []
+    if doc_ids and today_review > 0:
+        for doc in docs:
+            cnt = db.query(WrongAnswer).filter(
+                WrongAnswer.doc_id == doc.id,
+                WrongAnswer.reviewed == False,
+                WrongAnswer.next_review <= now,
+            ).count()
+            if cnt:
+                today_docs.append({"doc_id": doc.id, "filename": doc.filename, "count": cnt})
     return {
         "today_review": today_review,
         "total_wrongs": total_wrongs,
         "total_docs": len(docs),
         "recent_quizzes": recent_quizzes,
+        "today_docs": today_docs,
     }
 
 

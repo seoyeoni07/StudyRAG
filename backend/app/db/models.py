@@ -49,6 +49,17 @@ class QuizHistory(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+class QAThread(Base):
+    __tablename__ = "qa_threads"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    doc_id = Column(String(36), nullable=False, index=True)
+    user_id = Column(String(128), nullable=True, index=True)
+    question = Column(Text, nullable=False)
+    answer = Column(Text, nullable=False)
+    sources_json = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class QAFeedback(Base):
     __tablename__ = "qa_feedback"
     id = Column(Integer, primary_key=True, autoincrement=True)

@@ -273,23 +273,37 @@ export default function StudyRoomSection({ docId, userId }) {
   }
 
   if (view === "result") {
-    const sorted = [...(room?.members || [])].sort((a, b) => {
-      if (b.score == null) return -1;
-      if (a.score == null) return 1;
-      return b.score - a.score;
-    });
+    const submitted = (room?.members || []).filter(m => m.submitted_at);
+    const notSubmitted = (room?.members || []).filter(m => !m.submitted_at);
+    const sorted = [...submitted].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    const submitRate = totalCount > 0 ? Math.round(submittedCount / totalCount * 100) : 0;
     return (
       <div className="room-result">
         <h3 className="room-result-title">최종 순위</h3>
+        <div className="room-result-meta">
+          <span>제출률 <strong>{submittedCount}/{totalCount}명 ({submitRate}%)</strong></span>
+        </div>
         {sorted.map((m, i) => (
           <div key={m.user_id} className={`leaderboard-row ${i === 0 ? "first" : ""}`}>
             <span className="leaderboard-rank">{i + 1}</span>
             <span className="leaderboard-nick">{m.nickname}</span>
             <span className="leaderboard-score">
-              {m.score != null ? `${m.score}/${m.total} (${Math.round(m.score/m.total*100)}%)` : "미제출"}
+              {m.score != null ? `${m.score}/${m.total} (${Math.round(m.score/m.total*100)}%)` : "—"}
             </span>
           </div>
         ))}
+        {notSubmitted.length > 0 && (
+          <div className="room-no-submit">
+            <p className="room-no-submit-label">미제출 ({notSubmitted.length}명)</p>
+            {notSubmitted.map(m => (
+              <div key={m.user_id} className="leaderboard-row leaderboard-row--absent">
+                <span className="leaderboard-rank">—</span>
+                <span className="leaderboard-nick">{m.nickname}</span>
+                <span className="leaderboard-score" style={{ color: "var(--red)" }}>미제출</span>
+              </div>
+            ))}
+          </div>
+        )}
         <button className="btn-secondary" style={{ marginTop: 20 }} onClick={leave}>홈으로</button>
       </div>
     );

@@ -9,6 +9,7 @@ export default function WrongAnswerBook({ docId }) {
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState("wrong");
   const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
   const [error, setError] = useState("");
   const [expandedSession, setExpandedSession] = useState(null);
   const [sessionDetail, setSessionDetail] = useState({});
@@ -35,9 +36,17 @@ export default function WrongAnswerBook({ docId }) {
 
   function filteredItems() {
     const today = new Date().toISOString().split("T")[0];
-    if (filter === "pending") return items.filter(it => !it.reviewed);
-    if (filter === "today") return items.filter(it => it.next_review && it.next_review.startsWith(today));
-    return items;
+    let result = items;
+    if (filter === "pending") result = result.filter(it => !it.reviewed);
+    else if (filter === "today") result = result.filter(it => it.next_review && it.next_review.startsWith(today));
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(it =>
+        it.question.toLowerCase().includes(q) ||
+        it.correct_answer.toLowerCase().includes(q)
+      );
+    }
+    return result;
   }
 
   async function toggleSession(session_id) {
@@ -85,12 +94,15 @@ export default function WrongAnswerBook({ docId }) {
           </button>
         </div>
         {view === "wrong" && items.length > 0 && (
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
             {FILTERS.map(([k, l]) => (
               <button key={k} className={filter === k ? "btn-primary" : "btn-secondary"}
                 style={{ padding: "4px 10px", fontSize: 13 }}
                 onClick={() => setFilter(k)}>{l}</button>
             ))}
+            <input className="input wrong-search" placeholder="키워드 검색…"
+              value={search} onChange={e => setSearch(e.target.value)}
+              style={{ fontSize: 13, padding: "4px 10px", width: 160 }} />
           </div>
         )}
       </div>

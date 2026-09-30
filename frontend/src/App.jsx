@@ -101,6 +101,7 @@ export default function App() {
           <DashboardHome
             onFileAccepted={handleFilesAccepted}
             onSelectDoc={(id, name) => { setDocId(id); setFilename(name); setTab("qa"); }}
+            onSelectDocTab={(id, name, tab) => { setDocId(id); setFilename(name); setTab(tab); }}
             onDeleteDoc={handleDeleteDoc}
             pastDocs={pastDocs}
             uploading={uploading}

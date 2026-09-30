@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { apiFetch } from "../api";
 
-export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc, pastDocs, uploading, onPastDocsChange }) {
+export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc, pastDocs, uploading, onPastDocsChange, onSelectDocTab }) {
   const [stats, setStats] = useState(null);
   const [history, setHistory] = useState(null);  // 선택한 문서의 이력
   const [editingFolder, setEditingFolder] = useState(null); // doc_id
@@ -64,6 +64,25 @@ export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc
           <span className="dash-stat-label">자료</span>
         </div>
       </div>
+
+      {/* 오늘 복습 */}
+      {stats?.today_docs?.length > 0 && (
+        <div className="dash-section dash-review-section">
+          <p className="dash-section-title">오늘 복습할 항목</p>
+          <div className="dash-quiz-list">
+            {stats.today_docs.map((d, i) => (
+              <div key={i} className="dash-quiz-row dash-review-row"
+                onClick={() => onSelectDocTab(d.doc_id, d.filename, "wrong")}
+                role="button" tabIndex={0}
+                onKeyDown={(e) => e.key === "Enter" && onSelectDocTab(d.doc_id, d.filename, "wrong")}>
+                <span className="dash-quiz-name" title={d.filename}>{d.filename}</span>
+                <span className="dash-review-count">{d.count}개 복습 대기</span>
+                <span className="dash-review-go">→ 지금 복습</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 최근 퀴즈 */}
       {stats?.recent_quizzes?.length > 0 && (
