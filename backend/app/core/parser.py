@@ -14,7 +14,7 @@ _OPENROUTER_VISION_MODELS = [
 _RETRIABLE_VISION = ("overload", "503", "temporarily", "unavailable", "404")
 
 
-def _image_to_b64_jpeg(image, max_px=1024, quality=75) -> str:
+def _image_to_b64_jpeg(image, max_px=768, quality=80) -> str:
     """PIL Image → JPEG base64 (크기/용량 최소화)"""
     import io, base64
     from PIL import Image
@@ -30,19 +30,28 @@ def _image_to_b64_jpeg(image, max_px=1024, quality=75) -> str:
 
 
 def _gemini_vision(b64: str, prompt: str) -> str:
-    """Google Gemini Vision (무료 tier: 분당 15회)"""
+    """Google Gemini Vision (무료 tier: 분당 15회, 30초 타임아웃)"""
     from ..core.config import settings
     if not settings.google_api_key:
         return ""
     try:
         from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.messages import HumanMessage
+        from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
         llm = ChatGoogleGenerativeAI(model="gemini-3.8-flash", google_api_key=settings.google_api_key)
         msg = HumanMessage(content=[
             {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}},
             {"type": "text", "text": prompt},
         ])
-        content = llm.invoke([msg]).content
+        with ThreadPoolExecutor(max_workers=1) as ex:
+            future = ex.submit(llm.invoke, [msg])
+            try:
+                result = future.result(timeout=30)
+            except FutureTimeout:
+                import logging
+                logging.getLogger(__name__).warning("Gemini vision timed out after 30s")
+                return ""
+        content = result.content
         if isinstance(content, list):
             return " ".join(
                 p if isinstance(p, str)
