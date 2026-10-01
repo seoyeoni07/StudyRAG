@@ -38,7 +38,12 @@ def upload_status(doc_id: str, db: Session = Depends(get_db)):
     doc = db.query(Document).filter(Document.id == doc_id).first()
     if not doc:
         raise HTTPException(404, "문서를 찾을 수 없습니다.")
-    return {"status": doc.status or "done", "error": doc.error, "chunks": doc.chunks}
+    status, error = doc.status or "done", doc.error
+    if status == "done" and not doc.chunks:
+        # 예전 버전에서 인식이 조용히 실패해 내용 0개로 남은 자료
+        status = "failed"
+        error = error or "이 자료에서 인식된 내용이 없어요."
+    return {"status": status, "error": error, "chunks": doc.chunks}
 
 
 def _file_kind(file: UploadFile) -> tuple[str, str, str]:
@@ -299,10 +304,15 @@ async def get_summary(doc_id: str, db: Session = Depends(get_db)):
         raise HTTPException(409, "이미지에서 글자를 인식하는 중이에요. 잠시 후 다시 시도해주세요.")
     if doc.status == "failed":
         raise HTTPException(409, "이미지 인식에 실패한 자료예요. 다시 시도한 뒤 요약할 수 있어요.")
+    if not doc.chunks:
+        raise HTTPException(409, "이 자료에서 인식된 내용이 없어 요약할 수 없어요. 다시 시도하거나 파일을 다시 올려주세요.")
     if doc.summary:
         import json
         try:
-            return json.loads(doc.summary)
+            cached = json.loads(doc.summary)
+            if cached.get("key_concepts"):
+                return cached
+            # 예전에 저장된 실패 결과("요약을 생성할 수 없습니다")는 버리고 다시 만든다
         except Exception:
             pass
     result = await asyncio.to_thread(summarize_document, doc_id)
