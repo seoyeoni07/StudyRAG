@@ -1072,6 +1072,14 @@ body {
 .room-no-submit-label { font-size: 12px; font-weight: 700; color: var(--red); margin-bottom: 6px; }
 .leaderboard-row--absent { opacity: .6; border: 1px dashed var(--red-border); }
 
+/* ── Server cold-start banner ─────────────── */
+.server-waking-banner {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--amber-bg); border: 1px solid var(--amber-border);
+  border-radius: var(--r-md); padding: 10px 14px;
+  font-size: 13px; color: var(--amber); margin-bottom: 8px;
+}
+
 /* ── Back btn + doc switcher ──────────────── */
 .back-btn {
   background: none; border: none; cursor: pointer;

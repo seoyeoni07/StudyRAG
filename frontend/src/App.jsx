@@ -31,17 +31,24 @@ export default function App() {
   const [error, setError] = useState("");
   const [pastDocs, setPastDocs] = useState([]);
   const [wrongCount, setWrongCount] = useState(0);
-  const [preJoined, setPreJoined] = useState(null); // {room_id, nickname}
+  const [preJoined, setPreJoined] = useState(null);
+  const [serverWaking, setServerWaking] = useState(false);
 
   useEffect(() => {
     return onAuthStateChanged(auth, (u) => {
       setUser(u ?? null);
       if (u) {
         setUserId(u.uid);
-        apiFetch("/documents/").then(setPastDocs).catch(() => {});
+        setServerWaking(false);
+        apiFetch("/documents/")
+          .then(data => { setPastDocs(data); setServerWaking(false); })
+          .catch(err => {
+            if (err.message === "__cold_start__") setServerWaking(true);
+          });
       } else {
         setUserId(null);
         setPastDocs([]);
+        setServerWaking(false);
       }
     });
   }, []);
@@ -110,6 +117,12 @@ export default function App() {
       </header>
 
       <div className="container">
+        {serverWaking && (
+          <div className="server-waking-banner">
+            <div className="spinner spinner-sm" />
+            <span>서버를 시작하는 중입니다. 최대 1분 소요돼요 — 자동으로 연결됩니다.</span>
+          </div>
+        )}
         {error && (
           <div className="error-banner">
             <span className="error-icon">⚠️</span>

@@ -4,18 +4,17 @@ let _uid = null;
 export function setUserId(uid) { _uid = uid; }
 
 // Render free-tier cold-start: server returns 503 without CORS headers,
-// which the browser surfaces as TypeError("Failed to fetch").
-// Retry up to 3 times with 4-second gaps before giving up.
-async function fetchWithRetry(url, options, signal, retries = 3, delay = 4000) {
+// which the browser sees as TypeError("Failed to fetch").
+// We retry for up to ~90 seconds (18 attempts × 5s) before giving up.
+async function fetchWithRetry(url, options, signal, maxAttempts = 18, delay = 5000) {
   for (let attempt = 0; ; attempt++) {
     try {
-      return await fetch(url, { ...options, signal });
+      const res = await fetch(url, { ...options, signal });
+      return res;
     } catch (err) {
-      // Only retry network-level failures (TypeError = CORS/503/no-connection).
-      // Don't retry abort or non-network errors.
-      if (err.name === "AbortError" || !(err instanceof TypeError) || attempt >= retries - 1) {
-        throw err;
-      }
+      if (err.name === "AbortError") throw err;
+      if (!(err instanceof TypeError)) throw err;
+      if (attempt >= maxAttempts - 1) throw err;
       await new Promise(r => setTimeout(r, delay));
     }
   }
@@ -33,10 +32,10 @@ export async function apiFetch(url, options = {}, timeoutMs = 120_000) {
     return data;
   } catch (err) {
     if (err.name === "AbortError") {
-      throw new Error("요청 시간이 초과됐습니다. PDF가 너무 크거나 서버가 응답하지 않습니다.");
+      throw new Error("요청 시간이 초과됐습니다.");
     }
     if (err instanceof TypeError) {
-      throw new Error("서버를 시작하는 중입니다. 잠시 후 다시 시도해주세요.");
+      throw new Error("__cold_start__");
     }
     throw err;
   } finally {
