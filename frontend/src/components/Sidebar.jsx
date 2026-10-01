@@ -77,7 +77,10 @@ export default function Sidebar({
               </button>
             ) : groups.map(g => {
               const data = groupData[g.id] || {};
-              const onlineCount = (online[g.id] || []).filter(o => o.user_id !== user.uid).length;
+              // 지금 접속 중인 인원 (나 포함) — 그룹 화면의 "접속 n/m"과 같은 기준
+              const onlineIds = new Set((online[g.id] || []).map(o => o.user_id));
+              onlineIds.add(user.uid);
+              const onlineCount = onlineIds.size;
               return (
                 <div key={g.id}>
                   <button className={`sb-item ${view.type === "group" && view.groupId === g.id ? "active" : ""}`}
@@ -85,7 +88,7 @@ export default function Sidebar({
                     <Caret open={isGroupOpen(g.id)} onClick={() => setExpanded(e => ({ ...e, [`g:${g.id}`]: !isGroupOpen(g.id) }))} />
                     <span className="sb-icon">👥</span>
                     <span className="sb-label">{g.name}</span>
-                    {onlineCount > 0 && <span className="sb-online" title={`나 말고 ${onlineCount}명 접속 중`}>+{onlineCount}</span>}
+                    {online[g.id] && <span className="sb-online" title={`지금 ${onlineCount}명 접속 중 (나 포함)`}>{onlineCount}명</span>}
                   </button>
                   {isGroupOpen(g.id) && (
                     <div className="sb-children">
