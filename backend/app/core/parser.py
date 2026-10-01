@@ -84,7 +84,8 @@ def _get_page_images(file_path: str):
 
 def _page_text(page, idx: int, ocr_images: list | None) -> str:
     text = page.extract_text() or ""
-    if len(text.strip()) < 50 and ocr_images and idx < len(ocr_images):
+    # 텍스트가 전혀 없을 때만 Vision LLM OCR (부분 텍스트도 활용)
+    if not text.strip() and ocr_images and idx < len(ocr_images):
         text = _ocr_page(ocr_images[idx])
     return text
 
@@ -140,11 +141,8 @@ def extract_text_from_image(image_data: bytes, content_type: str) -> str:
             text = _llm(model).invoke([msg]).content
             if text.strip():
                 return text
-            # 빈 응답 → 다음 모델 시도
             last_err = ValueError("empty response")
         except Exception as e:
-            if any(k in str(e).lower() for k in _RETRIABLE_VISION):
-                last_err = e
-                continue
-            raise
+            last_err = e
+            continue  # 어떤 에러든 다음 모델로
     raise ValueError("이미지 분석 서버가 일시적으로 과부하 상태입니다. 잠시 후 다시 시도해주세요.")
