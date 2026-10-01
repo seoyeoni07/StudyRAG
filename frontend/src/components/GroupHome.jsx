@@ -22,6 +22,7 @@ export function Avatar({ name = "?", online, size = 22 }) {
 export default function GroupHome({
   group, docs, notes, online, me, realtime,
   uploading, onUpload, onOpenDoc, onOpenNote, onNewNote, onDeleteDoc, onLeave,
+  quiz, onJoinQuiz,
 }) {
   const [copied, setCopied] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
@@ -74,6 +75,16 @@ export default function GroupHome({
           </div>
         )}
       </div>
+
+      {quiz && quiz.by !== me.uid && (
+        <div className="callout callout--quiz">
+          <span>🏆</span>
+          <span style={{ flex: 1 }}>
+            <strong>{quiz.by_name}</strong>님이 "{quiz.filename?.replace(/\.pdf$/i, "")}" 그룹 퀴즈 방을 열었어요 · 코드 <code className="group-code">{quiz.code}</code>
+          </span>
+          <button className="btn-primary" onClick={() => onJoinQuiz(quiz)}>참가하기</button>
+        </div>
+      )}
 
       {/* 공유 자료 */}
       <section className="dash-section">

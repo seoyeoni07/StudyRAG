@@ -6,12 +6,44 @@ import { withCollaboration } from "@blocknote/core/yjs";
 import { ko } from "@blocknote/core/locales";
 import "@blocknote/core/fonts/inter.css";
 import "@blocknote/mantine/style.css";
-import { apiFetch } from "../api";
+import { apiFetch, BASE } from "../api";
 import { supabase } from "../supabase";
 import { SupabaseYjsProvider, OfflineProvider, toB64 } from "../realtime/SupabaseYjsProvider";
 
 const COLORS = ["#e03e3e", "#d9730d", "#cb912f", "#0f7b6c", "#2383e2", "#6940a5", "#ad1a72"];
 const colorFor = (uid = "") => COLORS[[...uid].reduce((a, c) => a + c.charCodeAt(0), 0) % COLORS.length];
+
+const MAX_UPLOAD = 5 * 1024 * 1024;
+
+/** 큰 사진은 긴 변 1600px JPEG로 줄인다. GIF(움짤)와 작은 파일은 그대로 둔다. */
+async function shrinkImage(file) {
+  if (file.type === "image/gif" || file.size <= 1024 * 1024) return file;
+  try {
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bmp.width * scale);
+    canvas.height = Math.round(bmp.height * scale);
+    canvas.getContext("2d").drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise(r => canvas.toBlob(r, "image/jpeg", 0.85));
+    return blob && blob.size < file.size
+      ? new File([blob], file.name.replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" })
+      : file;
+  } catch {
+    return file;
+  }
+}
+
+/** BlockNote 이미지 블록·붙여넣기·드래그 업로드 → 백엔드에 저장하고 주소를 돌려준다. */
+async function uploadImage(file) {
+  if (!file.type.startsWith("image/")) throw new Error("이미지 파일만 올릴 수 있어요.");
+  const small = await shrinkImage(file);
+  if (small.size > MAX_UPLOAD) throw new Error("이미지는 5MB 이하만 올릴 수 있어요.");
+  const form = new FormData();
+  form.append("file", small);
+  const res = await apiFetch("/notes/images", { method: "POST", body: form });
+  return BASE + res.url;
+}
 
 /** 백엔드에서 스냅샷을 불러온 Y.Doc과 실시간 provider를 준비한다. */
 function useCollabDoc(noteId) {
@@ -56,6 +88,7 @@ function Editor({ noteId, doc, provider, user, onSaved }) {
 
   const editor = useCreateBlockNote(withCollaboration({
     dictionary: ko,
+    uploadFile: uploadImage,
     collaboration: {
       provider,
       fragment: doc.getXmlFragment("blocknote"),

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, logout } from "./firebase";
 import { apiFetch, setUserId } from "./api";
@@ -10,12 +10,14 @@ import SummarySection from "./components/SummarySection";
 import StudyRoomSection from "./components/StudyRoomSection";
 import DashboardHome from "./components/DashboardHome";
 import LoginPage from "./components/LoginPage";
-import Sidebar, { DOC_TABS } from "./components/Sidebar";
+import Sidebar, { tabsFor } from "./components/Sidebar";
 import NotePage from "./components/NotePage";
 import GroupHome, { GroupStart, timeAgo as groupTimeAgo } from "./components/GroupHome";
-import GroupNotePage from "./components/GroupNotePage";
 import { useGroupChannels } from "./realtime/useGroupChannels";
 import "./App.css";
+
+// 블록 에디터(BlockNote)는 무거워서 공동 노트를 열 때만 불러온다
+const GroupNotePage = lazy(() => import("./components/GroupNotePage"));
 
 function timeAgo(iso) {
   if (!iso) return "";
@@ -44,6 +46,7 @@ export default function App() {
   const [groups, setGroups] = useState([]);
   const [groupData, setGroupData] = useState({}); // { [groupId]: { detail, docs, notes } }
   const [groupUploading, setGroupUploading] = useState(null);
+  const [groupQuiz, setGroupQuiz] = useState({}); // { [groupId]: 열린 그룹 퀴즈 방 정보 }
 
   const loadGroup = useCallback(async (id) => {
     try {
@@ -67,6 +70,10 @@ export default function App() {
     if (ev.event === "doc-added") setToast(`${ev.by_name}님이 "${ev.filename}" 자료를 올렸어요`);
     else if (ev.event === "note-added") setToast(`${ev.by_name}님이 새 공동 노트를 만들었어요`);
     else if (ev.event === "member-joined") setToast(`${ev.by_name}님이 그룹에 참가했어요`);
+    else if (ev.event === "quiz-room") {
+      setGroupQuiz(q => ({ ...q, [groupId]: ev }));
+      setToast(`${ev.by_name}님이 "${ev.filename}" 그룹 퀴즈 방을 열었어요 (코드 ${ev.code})`);
+    }
   });
 
   useEffect(() => {
@@ -150,9 +157,20 @@ export default function App() {
     setView({ type: "doc", docId: id, filename: name, tab: targetTab });
   }
 
-  function handleJoinRoom(room_id, doc_id, nickname) {
-    setPreJoined({ room_id, nickname });
-    setView({ type: "doc", docId: doc_id, filename: "그룹 스터디 참여 중", tab: "room" });
+  // 그룹 홈의 "참가하기" — 방 코드 입력 없이 그룹 표시 이름으로 바로 들어간다
+  async function joinGroupQuiz(gid, info) {
+    const nickname = groupData[gid]?.detail?.members?.find(m => m.user_id === user.uid)?.display_name || displayName;
+    try {
+      const res = await apiFetch("/rooms/join", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: info.code, nickname }),
+      });
+      setPreJoined({ room_id: res.room_id, nickname, doc_id: res.doc_id });
+      setView({ type: "doc", docId: res.doc_id, filename: info.filename, groupId: gid, tab: "room" });
+    } catch (err) {
+      setGroupQuiz(q => { const n = { ...q }; delete n[gid]; return n; });
+      setError(err.message);
+    }
   }
 
   async function createNote({ title = "", content = "", doc_id = null } = {}, open = true) {
@@ -246,7 +264,9 @@ export default function App() {
   const currentDoc = docId ? (groupDoc || pastDocs.find(d => d.doc_id === docId) || { doc_id: docId, filename: view.filename }) : null;
   const groupNote = view.type === "gnote" ? group?.notes?.find(n => n.id === view.noteId) : null;
   const currentNote = view.type === "note" ? notes.find(n => n.id === view.noteId) : null;
-  const currentTab = view.type === "doc" ? DOC_TABS.find(([k]) => k === view.tab) : null;
+  const docTabs = tabsFor(!!groupId);
+  const currentTab = view.type === "doc" ? (docTabs.find(([k]) => k === view.tab) || docTabs[0]) : null;
+  const myGroupName = group?.detail?.members?.find(m => m.user_id === user.uid)?.display_name || displayName;
   const docNotes = docId ? notes.filter(n => n.doc_id === docId) : [];
   const greeting = (() => {
     const h = new Date().getHours();
@@ -325,7 +345,6 @@ export default function App() {
                 pastDocs={pastDocs}
                 uploading={uploading}
                 onPastDocsChange={() => apiFetch("/documents/").then(setPastDocs).catch(() => {})}
-                onJoinRoom={handleJoinRoom}
                 notesSlot={
                   <div className="dash-section">
                     <div className="dash-section-header">
@@ -369,10 +388,13 @@ export default function App() {
               onNewNote={() => createGroupNote(groupId)}
               onDeleteDoc={(d) => deleteGroupDoc(groupId, d)}
               onLeave={() => leaveGroup(groupId)}
+              quiz={groupQuiz[groupId]}
+              onJoinQuiz={(info) => joinGroupQuiz(groupId, info)}
             />
           ) : <div className="loading-wrap"><div className="spinner" /></div>)}
 
           {view.type === "gnote" && (
+            <Suspense fallback={<div className="loading-wrap"><div className="spinner" /></div>}>
             <GroupNotePage
               key={view.noteId}
               noteId={view.noteId}
@@ -381,6 +403,7 @@ export default function App() {
               onSaved={() => loadGroup(groupId)}
               onDeleted={() => { loadGroup(groupId); setView({ type: "group", groupId }); }}
             />
+            </Suspense>
           )}
 
           {view.type === "note" && (
@@ -418,9 +441,9 @@ export default function App() {
               </div>
 
               <div className="tabs" role="tablist" aria-label="학습 메뉴">
-                {DOC_TABS.map(([key, label, desc, icon]) => (
-                  <button key={key} className={`tab ${view.tab === key ? "active" : ""}`}
-                    role="tab" aria-selected={view.tab === key} aria-controls={`panel-${key}`}
+                {docTabs.map(([key, label, desc, icon]) => (
+                  <button key={key} className={`tab ${currentTab?.[0] === key ? "active" : ""}`}
+                    role="tab" aria-selected={currentTab?.[0] === key} aria-controls={`panel-${key}`}
                     id={`tab-${key}`} title={desc}
                     onClick={() => setView(v => ({ ...v, tab: key }))}>
                     <span className="tab-icon">{icon}</span>
@@ -443,11 +466,16 @@ export default function App() {
                   ["wrong",   <WrongAnswerBook key="wrong" docId={docId}
                                 onCountLoaded={setWrongCount}
                                 onGoToQuiz={() => setView(v => ({ ...v, tab: "quiz" }))} />],
-                  ["room",    <StudyRoomSection key="room" docId={docId} userId={user?.uid} preJoined={preJoined} />],
+                  ...(groupId ? [["room", <StudyRoomSection key="room" docId={docId} userId={user?.uid}
+                    preJoined={preJoined?.doc_id === docId ? preJoined : null}
+                    defaultNickname={myGroupName}
+                    onRoomCreated={({ room_id, code }) => notify(groupId, "quiz-room", {
+                      room_id, code, doc_id: docId, filename: currentDoc?.filename || "",
+                    })} />]] : []),
                 ].map(([key, el]) => (
                   <div key={key} className="tab-panel" role="tabpanel" id={`panel-${key}`}
                     aria-labelledby={`tab-${key}`}
-                    style={{ display: view.tab === key ? "" : "none" }}>
+                    style={{ display: currentTab?.[0] === key ? "" : "none" }}>
                     {el}
                   </div>
                 ))}

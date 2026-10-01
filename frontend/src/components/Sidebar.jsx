@@ -6,8 +6,11 @@ export const DOC_TABS = [
   ["tutor",   "AI 튜터",    "답 대신 이해할 때까지 가르쳐줍니다", "🧑‍🏫"],
   ["quiz",    "퀴즈",        "자동 문제 생성·채점", "✅"],
   ["wrong",   "오답노트",    "틀린 문제 복습", "📕"],
-  ["room",    "그룹 스터디", "친구와 함께 같은 문제 풀고 점수 비교", "👥"],
+  ["room",    "그룹 퀴즈",   "그룹 멤버와 같은 문제를 풀고 점수 비교", "🏆"],
 ];
+
+/** 개인 자료에는 그룹 퀴즈 탭이 없다. */
+export const tabsFor = (isGroupDoc) => DOC_TABS.filter(([k]) => isGroupDoc || k !== "room");
 
 function Caret({ open, onClick }) {
   return (
@@ -149,7 +152,7 @@ export default function Sidebar({
                   </button>
                   {isOpen(d.doc_id) && (
                     <div className="sb-children">
-                      {DOC_TABS.map(([key, label, , icon]) => (
+                      {tabsFor(false).map(([key, label, , icon]) => (
                         <button key={key} className={`sb-item sb-child ${active && view.tab === key ? "active" : ""}`}
                           onClick={() => go({ type: "doc", docId: d.doc_id, filename: d.filename, tab: key })}>
                           <span className="sb-icon">{icon}</span>

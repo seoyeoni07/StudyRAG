@@ -2,11 +2,11 @@ import base64
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, File, Header, HTTPException, Response, UploadFile
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from ..db.models import Note, StudyGroup, StudyGroupMember
+from ..db.models import Note, NoteImage, StudyGroup, StudyGroupMember
 from ..db.session import SessionLocal
 
 router = APIRouter(prefix="/notes", tags=["notes"])
@@ -108,6 +108,38 @@ def create_note(
     db.add(note)
     db.commit()
     return _to_dict(note)
+
+
+_IMAGE_TYPES = {"image/png", "image/jpeg", "image/gif", "image/webp"}
+_MAX_IMAGE_BYTES = 5 * 1024 * 1024
+
+
+@router.post("/images")
+async def upload_image(
+    file: UploadFile = File(...),
+    x_user_id: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    user_id = _require_user(x_user_id)
+    if file.content_type not in _IMAGE_TYPES:
+        raise HTTPException(400, "PNG, JPG, GIF, WEBP 이미지만 올릴 수 있습니다.")
+    data = await file.read(_MAX_IMAGE_BYTES + 1)
+    if len(data) > _MAX_IMAGE_BYTES:
+        raise HTTPException(413, "이미지는 5MB 이하만 올릴 수 있습니다.")
+    img = NoteImage(id=str(uuid.uuid4()), user_id=user_id, content_type=file.content_type, data=data)
+    db.add(img)
+    db.commit()
+    return {"id": img.id, "url": f"/notes/images/{img.id}"}
+
+
+@router.get("/images/{image_id}")
+def get_image(image_id: str, db: Session = Depends(get_db)):
+    # <img> 태그는 헤더를 못 보내므로 추측 불가능한 UUID 주소로만 보호한다
+    img = db.query(NoteImage).filter(NoteImage.id == image_id).first()
+    if not img:
+        raise HTTPException(404, "이미지를 찾을 수 없습니다.")
+    return Response(content=img.data, media_type=img.content_type,
+                    headers={"Cache-Control": "public, max-age=31536000, immutable"})
 
 
 @router.get("/{note_id}")

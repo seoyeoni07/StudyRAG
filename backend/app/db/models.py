@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Integer, LargeBinary, String, Text
 
 from .session import Base
 
@@ -144,3 +144,13 @@ class StudyGroupMember(Base):
     display_name = Column(String(64), nullable=False)
     role = Column(String(16), default="member")  # owner / member
     joined_at = Column(DateTime, default=datetime.utcnow)
+
+
+class NoteImage(Base):
+    """노트에 넣은 이미지. Render 디스크는 재배포 때 지워지므로 DB에 저장한다."""
+    __tablename__ = "note_images"
+    id = Column(String(36), primary_key=True)
+    user_id = Column(String(128), nullable=False, index=True)
+    content_type = Column(String(64), nullable=False)
+    data = Column(LargeBinary, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)

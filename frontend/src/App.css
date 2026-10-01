@@ -1067,3 +1067,5 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
   .collab-editor { margin: 0 -20px; }
   .collab-editor .bn-editor { padding-inline: 20px; }
 }
+.callout--quiz { background: var(--amber-bg); margin-top: 8px; }
+.callout--quiz strong { font-weight: 600; }

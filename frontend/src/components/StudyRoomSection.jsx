@@ -3,9 +3,9 @@ import { apiFetch } from "../api";
 
 const POLL_INTERVAL = 3000;
 
-export default function StudyRoomSection({ docId, userId, preJoined }) {
+export default function StudyRoomSection({ docId, userId, preJoined, defaultNickname = "", onRoomCreated }) {
   const [view, setView] = useState("home"); // home | lobby | quiz | result
-  const [nickname, setNickname] = useState(preJoined?.nickname || "");
+  const [nickname, setNickname] = useState(preJoined?.nickname || defaultNickname);
   const [joinCode, setJoinCode] = useState("");
   const [room, setRoom] = useState(null);
   const [error, setError] = useState("");
@@ -64,6 +64,7 @@ export default function StudyRoomSection({ docId, userId, preJoined }) {
       setRoom(data);
       setView("lobby");
       startPoll(room_id);
+      onRoomCreated?.({ room_id, code: data.code });
     } catch (err) { setError(err.message); }
   }
 
