@@ -8,8 +8,9 @@ _SPLITTER = RecursiveCharacterTextSplitter(
 )
 
 _OPENROUTER_VISION_MODELS = [
-    "meta-llama/llama-3.2-11b-vision-instruct:free",
-    "meta-llama/llama-3.2-90b-vision-instruct:free",
+    "qwen/qwen3.8-27b:free",
+    "google/gemma-4-31b-it:free",
+    "google/gemma-4-26b-a4b-it:free",
 ]
 _RETRIABLE_VISION = ("overload", "503", "temporarily", "unavailable", "404")
 
