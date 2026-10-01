@@ -9,6 +9,7 @@ _SPLITTER = RecursiveCharacterTextSplitter(
 
 _VISION_MODELS = [
     "meta-llama/llama-3.2-11b-vision-instruct:free",
+    "meta-llama/llama-3.2-90b-vision-instruct:free",
     "qwen/qwen2-vl-7b-instruct:free",
 ]
 _RETRIABLE_VISION = ("overload", "503", "temporarily", "unavailable", "404")
@@ -120,7 +121,11 @@ def extract_text_from_image(image_data: bytes, content_type: str) -> str:
     last_err = None
     for model in _VISION_MODELS:
         try:
-            return _llm(model).invoke([msg]).content
+            text = _llm(model).invoke([msg]).content
+            if text.strip():
+                return text
+            # 빈 응답 → 다음 모델 시도
+            last_err = ValueError("empty response")
         except Exception as e:
             if any(k in str(e).lower() for k in _RETRIABLE_VISION):
                 last_err = e

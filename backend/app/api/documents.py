@@ -66,10 +66,10 @@ def ingest_file(file: UploadFile, x_user_id: str | None, db: Session, group_id: 
         image_data = file.file.read()
         try:
             text = extract_text_from_image(image_data, ct or f"image/{ext}")
-        except ValueError as e:
-            raise HTTPException(503, str(e))
+        except Exception as e:
+            raise HTTPException(503, "이미지 분석 서버가 일시적으로 과부하 상태입니다. 잠시 후 다시 시도해주세요.")
         if not text.strip():
-            raise HTTPException(422, "이미지에서 텍스트를 추출할 수 없습니다.")
+            raise HTTPException(503, "이미지 분석 서버가 응답하지 않습니다. 잠시 후 다시 시도해주세요.")
         chunks = chunk_text(text) or [text]
         metas = [{"doc_id": doc_id, "chunk_idx": i, "page": 1} for i in range(len(chunks))]
 
