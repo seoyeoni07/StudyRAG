@@ -49,6 +49,8 @@ export default function App() {
   const [groupData, setGroupData] = useState({}); // { [groupId]: { detail, docs, notes } }
   const [groupUploading, setGroupUploading] = useState(null);
   const [groupQuiz, setGroupQuiz] = useState({}); // { [groupId]: 열린 그룹 퀴즈 방 정보 }
+  const [notifications, setNotifications] = useState([]);
+  const [notifOpen, setNotifOpen] = useState(false);
 
   const loadGroup = useCallback(async (id) => {
     try {
@@ -67,15 +69,20 @@ export default function App() {
     } catch { /* 무시 */ }
   }, [loadGroup]);
 
+  const pushNotif = (text, groupId) =>
+    setNotifications(prev => [{ id: Date.now(), text, groupId, time: new Date().toISOString(), unread: true }, ...prev].slice(0, 50));
+
   const { online, notify, setViewing, enabled: realtime } = useGroupChannels(groups, user, (groupId, ev) => {
     loadGroup(groupId);
-    if (ev.event === "doc-added") setToast(`${ev.by_name}님이 "${ev.filename}" 자료를 올렸어요`);
-    else if (ev.event === "note-added") setToast(`${ev.by_name}님이 새 공동 노트를 만들었어요`);
-    else if (ev.event === "member-joined") setToast(`${ev.by_name}님이 그룹에 참가했어요`);
+    let msg = "";
+    if (ev.event === "doc-added")     msg = `${ev.by_name}님이 "${ev.filename}" 자료를 올렸어요`;
+    else if (ev.event === "note-added")   msg = `${ev.by_name}님이 새 공동 노트를 만들었어요`;
+    else if (ev.event === "member-joined") msg = `${ev.by_name}님이 그룹에 참가했어요`;
     else if (ev.event === "quiz-room") {
       setGroupQuiz(q => ({ ...q, [groupId]: ev }));
-      setToast(`${ev.by_name}님이 "${ev.filename}" 그룹 퀴즈 방을 열었어요 (코드 ${ev.code})`);
+      msg = `${ev.by_name}님이 그룹 퀴즈 방을 열었어요 (코드 ${ev.code})`;
     }
+    if (msg) { setToast(msg); pushNotif(msg, groupId); }
   });
 
   useEffect(() => {
@@ -319,6 +326,44 @@ export default function App() {
               </span>
             ))}
           </nav>
+          <div className="topbar-right">
+            <div className="notif-wrap">
+              <button className="notif-bell" aria-label="알림"
+                onClick={() => {
+                  setNotifOpen(o => !o);
+                  setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
+                }}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+                {notifications.some(n => n.unread) && (
+                  <span className="notif-dot">{notifications.filter(n => n.unread).length}</span>
+                )}
+              </button>
+              {notifOpen && (
+                <>
+                  <div className="notif-backdrop" onClick={() => setNotifOpen(false)} />
+                  <div className="notif-panel">
+                    <div className="notif-panel-head">
+                      <span>알림</span>
+                      {notifications.length > 0 && (
+                        <button className="btn-ghost notif-clear" onClick={() => setNotifications([])}>모두 지우기</button>
+                      )}
+                    </div>
+                    {notifications.length === 0 ? (
+                      <p className="notif-empty">새 알림이 없어요</p>
+                    ) : notifications.map(n => (
+                      <div key={n.id} className={`notif-item ${n.unread ? "notif-item--unread" : ""}`}
+                        onClick={() => { if (n.groupId) { setView({ type: "group", groupId: n.groupId }); setNotifOpen(false); } }}>
+                        <span className="notif-text">{n.text}</span>
+                        <span className="notif-time">{timeAgo(n.time)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="page">

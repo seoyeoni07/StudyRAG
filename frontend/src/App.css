@@ -176,14 +176,59 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 .topbar-menu {
   display: none; border: none; background: transparent; cursor: pointer;
   width: 28px; height: 28px; border-radius: var(--r-md); color: var(--text-3);
-  align-items: center; justify-content: center;
+  align-items: center; justify-content: center; flex-shrink: 0;
 }
 .topbar-menu:hover { background: var(--hover); }
-.breadcrumb { display: flex; align-items: center; min-width: 0; font-size: 14px; color: var(--text-2); }
+.breadcrumb { display: flex; align-items: center; min-width: 0; flex: 1; font-size: 14px; color: var(--text-2); }
 .crumb { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .crumb-sep { color: var(--text-4); margin: 0 6px; }
 .crumb-icon { font-size: 14px; }
-.crumb-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
+.crumb-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+
+/* ── Topbar right / notifications ─────────── */
+.topbar-right { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.notif-wrap { position: relative; }
+.notif-bell {
+  position: relative; width: 32px; height: 32px; border-radius: var(--r-md);
+  border: none; background: transparent; cursor: pointer; color: var(--text-3);
+  display: flex; align-items: center; justify-content: center;
+}
+.notif-bell:hover { background: var(--hover); color: var(--text-1); }
+.notif-dot {
+  position: absolute; top: 3px; right: 3px;
+  min-width: 15px; height: 15px; padding: 0 3px;
+  background: var(--red); color: white;
+  font-size: 9px; font-weight: 700; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+.notif-backdrop { position: fixed; inset: 0; z-index: 90; }
+.notif-panel {
+  position: absolute; right: 0; top: calc(100% + 6px);
+  width: 300px; max-height: 360px; overflow-y: auto;
+  background: var(--bg-card); border: 1px solid var(--border-strong);
+  border-radius: var(--r-lg); box-shadow: var(--shadow-md); z-index: 100;
+}
+.notif-panel-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px 8px; font-size: 13px; font-weight: 600; color: var(--text-2);
+  border-bottom: 1px solid var(--border); position: sticky; top: 0;
+  background: var(--bg-card);
+}
+.notif-clear { font-size: 11px; padding: 2px 6px; }
+.notif-item {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 10px 14px; cursor: default; border-bottom: 1px solid var(--border);
+}
+.notif-item:last-child { border-bottom: none; }
+.notif-item[onclick], .notif-item[onClick] { cursor: pointer; }
+.notif-item--unread { background: var(--primary-light); }
+.notif-item:hover { background: var(--hover); }
+.notif-text { font-size: 13px; color: var(--text-1); line-height: 1.5; }
+.notif-time { font-size: 11px; color: var(--text-4); }
+.notif-empty { padding: 24px 14px; font-size: 13px; color: var(--text-3); text-align: center; }
+@media (max-width: 900px) {
+  .notif-panel { width: min(300px, calc(100vw - 24px)); right: -8px; }
+}
 
 .page {
   width: 100%;
@@ -211,6 +256,26 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
   .page { padding: 32px 20px 96px; }
   .page-icon { font-size: 48px; }
   .page-title { font-size: 30px; }
+}
+
+@media (max-width: 480px) {
+  .page { padding: 20px 14px 80px; }
+  .page-title { font-size: 24px; }
+  .page-icon { font-size: 36px; margin-bottom: 8px; }
+  /* 대시보드 통계 2열 */
+  .dash-stats { grid-template-columns: repeat(2, 1fr); }
+  /* 퀴즈 row에서 날짜 숨김 (너무 작은 화면) */
+  .dash-quiz-date { display: none; }
+  /* 자료 행 액션 버튼 항상 표시 */
+  .past-doc-actions { opacity: 1; }
+  /* 탭 아이콘만 표시 (탭 텍스트 overflow 처리는 이미 있음) */
+  .tab { padding: 6px 10px; font-size: 12px; }
+  /* 통계 요약 카드 value 크기 축소 */
+  .stats-card-value { font-size: 22px; }
+  /* 설정 form 버튼 full width */
+  .settings-form .btn-primary { width: 100%; }
+  /* breadcrumb 글자 줄임 */
+  .crumb-label { max-width: 120px; }
 }
 
 /* ── Callouts / banners ───────────────────── */
