@@ -122,13 +122,17 @@ def chunk_text(text: str, chunk_size: int = 800, overlap: int = 150) -> list[str
 
 def extract_text_from_image(image_data: bytes, content_type: str) -> str:
     """Vision LLM으로 이미지에서 텍스트/내용 추출"""
-    import base64
+    import io
+    from PIL import Image
     from langchain_core.messages import HumanMessage
     from .rag import _llm
 
-    b64 = base64.b64encode(image_data).decode()
+    # 원본 이미지를 리사이즈 + JPEG 변환 (페이로드 최소화)
+    img = Image.open(io.BytesIO(image_data))
+    b64 = _image_to_b64_jpeg(img)
+
     msg = HumanMessage(content=[
-        {"type": "image_url", "image_url": {"url": f"data:{content_type};base64,{b64}"}},
+        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}},
         {"type": "text", "text": (
             "이 이미지의 모든 텍스트와 내용을 빠짐없이 추출하고 정리해주세요. "
             "표, 수식, 도표도 텍스트로 변환하세요. "
