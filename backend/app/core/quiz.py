@@ -1,7 +1,7 @@
 import json
 import random
 
-from .rag import _llm, get_vectorstore
+from .rag import _llm, _FALLBACK_MODELS, _PRIMARY_MODEL, get_vectorstore
 
 _GENERATE_PROMPT = """\
 당신은 대학 강의자료 기반 퀴즈 출제 전문가입니다.
@@ -67,10 +67,31 @@ def generate_quiz(doc_id: str, n: int = 5, focus_difficulty: str | None = None) 
     if focus_difficulty:
         focus_note = f"\n\n⚠️ 학생이 '{focus_difficulty}' 난이도에서 오답률이 높습니다. '{focus_difficulty}' 문제를 전체의 50% 이상 포함하세요."
 
-    response = _llm().invoke(_GENERATE_PROMPT.format(n=n, context=context) + focus_note)
-    return json.loads(response.content)["questions"]
+    prompt = _GENERATE_PROMPT.format(n=n, context=context) + focus_note
+    last_err = None
+    for model in [_PRIMARY_MODEL] + _FALLBACK_MODELS:
+        try:
+            response = _llm(model).invoke(prompt)
+            return json.loads(response.content)["questions"]
+        except Exception as e:
+            msg = str(e).lower()
+            if any(k in msg for k in ("overload", "503", "temporarily", "provider_overloaded")):
+                last_err = e
+                continue
+            raise
+    raise ValueError(f"AI 서버가 일시적으로 과부하 상태입니다. 잠시 후 다시 시도해주세요. ({last_err})")
 
 
 def grade_short_answer(question: str, correct: str, user: str) -> dict:
-    response = _llm().invoke(_GRADE_PROMPT.format(question=question, correct=correct, user=user))
-    return json.loads(response.content)
+    last_err = None
+    for model in [_PRIMARY_MODEL] + _FALLBACK_MODELS:
+        try:
+            response = _llm(model).invoke(_GRADE_PROMPT.format(question=question, correct=correct, user=user))
+            return json.loads(response.content)
+        except Exception as e:
+            msg = str(e).lower()
+            if any(k in msg for k in ("overload", "503", "temporarily", "provider_overloaded")):
+                last_err = e
+                continue
+            raise
+    raise ValueError(f"채점 서버가 과부하 상태입니다. ({last_err})")

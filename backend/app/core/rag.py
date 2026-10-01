@@ -11,9 +11,16 @@ from langchain_openai import ChatOpenAI
 from .config import settings
 
 
-def _llm() -> ChatOpenAI:
+_PRIMARY_MODEL = "nvidia/nemotron-3-ultra-550b-a55b:free"
+_FALLBACK_MODELS = [
+    "qwen/qwen3-30b-a3b:free",
+    "meta-llama/llama-3.1-8b-instruct:free",
+]
+
+
+def _llm(model: str = _PRIMARY_MODEL) -> ChatOpenAI:
     return ChatOpenAI(
-        model="nvidia/nemotron-3-ultra-550b-a55b:free",
+        model=model,
         openai_api_key=settings.openrouter_api_key,
         openai_api_base="https://openrouter.ai/api/v1",
     )
