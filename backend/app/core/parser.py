@@ -10,7 +10,6 @@ _SPLITTER = RecursiveCharacterTextSplitter(
 _VISION_MODELS = [
     "meta-llama/llama-3.2-11b-vision-instruct:free",
     "meta-llama/llama-3.2-90b-vision-instruct:free",
-    "qwen/qwen2-vl-7b-instruct:free",
 ]
 _RETRIABLE_VISION = ("overload", "503", "temporarily", "unavailable", "404")
 
@@ -36,8 +35,8 @@ def _ocr_page_vision(image) -> str:
     from .rag import _llm
     b64 = _image_to_b64_jpeg(image)
     msg = HumanMessage(content=[
-        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}},
-        {"type": "text", "text": "이 페이지의 모든 텍스트를 빠짐없이 추출해주세요."},
+        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}", "detail": "high"}},
+        {"type": "text", "text": "Extract ALL text from this image exactly as written. Include every word, number, and label visible."},
     ])
     for model in _VISION_MODELS:
         try:
@@ -132,11 +131,11 @@ def extract_text_from_image(image_data: bytes, content_type: str) -> str:
     b64 = _image_to_b64_jpeg(img)
 
     msg = HumanMessage(content=[
-        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}},
+        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}", "detail": "high"}},
         {"type": "text", "text": (
-            "이 이미지의 모든 텍스트와 내용을 빠짐없이 추출하고 정리해주세요. "
-            "표, 수식, 도표도 텍스트로 변환하세요. "
-            "텍스트가 없으면 이미지 내용을 자세히 설명해주세요."
+            "Extract ALL text from this image exactly as written. "
+            "Include every word, number, label, and caption visible. "
+            "If there is no text, describe the image content in detail."
         )},
     ])
     import logging
