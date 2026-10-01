@@ -45,20 +45,33 @@ export default function LoginPage() {
 
   return (
     <div className="login-root">
+      <div className="login-left">
+        <div className="login-left-brand">
+          <div className="login-logo">SR</div>
+          <span className="login-brand-name">StudyRAG</span>
+        </div>
+        <p className="login-left-tagline">강의자료를<br />더 깊이, 더 빠르게.</p>
+        <div className="login-left-features">
+          <div className="lf-row">
+            <span className="lf-label">Q&A</span>
+            <span className="lf-desc">궁금한 부분을 문서에서 바로 찾아드려요</span>
+          </div>
+          <div className="lf-row">
+            <span className="lf-label">AI 튜터</span>
+            <span className="lf-desc">답 대신 이해할 때까지 함께 풀어드려요</span>
+          </div>
+          <div className="lf-row">
+            <span className="lf-label">퀴즈</span>
+            <span className="lf-desc">자동 생성 문제와 간격 반복 오답 복습</span>
+          </div>
+        </div>
+      </div>
+
       <div className="login-right">
         <div className="login-card">
-          <div className="login-brand">
-            <div className="login-logo">SR</div>
-            <span className="login-brand-name">StudyRAG</span>
-          </div>
-
-          <h1 className="login-card-title">강의자료를 AI로 학습하기</h1>
-          <p className="login-card-sub">PDF를 올리면 질문에 답하고, 퀴즈를 만들고, 오답을 정리해 드려요.</p>
-
-          <div className="login-features">
-            <div className="lf-item"><span className="lf-dot" />강의 내용 Q&amp;A</div>
-            <div className="lf-item"><span className="lf-dot" />소크라테스식 AI 튜터</div>
-            <div className="lf-item"><span className="lf-dot" />자동 퀴즈 생성 &amp; 오답노트</div>
+          <div className="login-card-heading">
+            <h1 className="login-card-title">로그인</h1>
+            <p className="login-card-sub">StudyRAG를 시작하세요.</p>
           </div>
 
           {/* 탭 */}
