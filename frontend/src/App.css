@@ -190,10 +190,10 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 .notif-wrap { position: relative; }
 .notif-bell {
   position: relative; width: 32px; height: 32px; border-radius: var(--r-md);
-  border: none; background: transparent; cursor: pointer; color: var(--text-3);
+  border: none; background: transparent; cursor: pointer; color: var(--text-1);
   display: flex; align-items: center; justify-content: center;
 }
-.notif-bell:hover { background: var(--hover); color: var(--text-1); }
+.notif-bell:hover { background: var(--hover); }
 .notif-dot {
   position: absolute; top: 3px; right: 3px;
   min-width: 15px; height: 15px; padding: 0 3px;
