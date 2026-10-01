@@ -85,7 +85,7 @@ export default function Sidebar({
                     <Caret open={isGroupOpen(g.id)} onClick={() => setExpanded(e => ({ ...e, [`g:${g.id}`]: !isGroupOpen(g.id) }))} />
                     <span className="sb-icon">👥</span>
                     <span className="sb-label">{g.name}</span>
-                    {onlineCount > 0 && <span className="sb-online" title={`${onlineCount}명 접속 중`}>{onlineCount}</span>}
+                    {onlineCount > 0 && <span className="sb-online" title={`나 말고 ${onlineCount}명 접속 중`}>+{onlineCount}</span>}
                   </button>
                   {isGroupOpen(g.id) && (
                     <div className="sb-children">

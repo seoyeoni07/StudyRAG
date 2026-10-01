@@ -1218,3 +1218,5 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
   font-size: 11px; color: var(--red); background: var(--red-bg);
   border-radius: var(--r-sm); padding: 0 6px; margin-left: 4px;
 }
+.group-online-count { color: var(--green); font-size: 12px; }
+.note-prop-key:has(.group-online-count) { width: auto; min-width: 120px; }

@@ -7,63 +7,94 @@ import { supabase } from "../supabase";
  *  - broadcast: 자료 업로드·노트 생성 같은 그룹 이벤트
  * 를 주고받는다.
  *
- * 반환: { online: { [groupId]: [{ user_id, name, viewing }] }, notify(groupId, event, payload), setViewing(groupId, viewing) }
+ * 그룹 목록이 바뀌어도 기존 채널은 그대로 두고 추가·삭제된 그룹만 연결/해제한다
+ * (전체를 끊었다 다시 붙이면 다른 멤버 화면에서 접속자가 깜빡이고, 그 사이 알림을 놓친다).
+ *
+ * nameFor(groupId): 그 그룹에서 쓰는 내 표시 이름 — 멤버 목록과 같은 이름으로 보이게 한다.
+ * 반환: { online: { [groupId]: [{ user_id, name, viewing }] }, notify, setViewing, enabled }
  */
-export function useGroupChannels(groups, user, onEvent) {
+export function useGroupChannels(groups, user, onEvent, nameFor) {
   const [online, setOnline] = useState({});
-  const channels = useRef({});
-  const viewingRef = useRef({});
+  const channels = useRef({});      // groupId → RealtimeChannel
+  const viewingRef = useRef({});    // groupId → 보고 있는 페이지
   const onEventRef = useRef(onEvent);
-  onEventRef.current = onEvent;
+  const nameForRef = useRef(nameFor);
+  useEffect(() => { onEventRef.current = onEvent; nameForRef.current = nameFor; });
 
+  const uid = user?.uid;
+  const fallbackName = user?.displayName || user?.email?.split("@")[0] || "멤버";
   const groupKey = groups.map(g => g.id).sort().join(",");
-  const name = user?.displayName || user?.email?.split("@")[0] || "멤버";
 
+  const myName = useCallback(
+    (groupId) => nameForRef.current?.(groupId) || fallbackName,
+    [fallbackName],
+  );
+
+  const lastSent = useRef({});      // groupId → 마지막으로 보낸 presence (같으면 다시 안 보냄)
+  const track = useCallback((groupId, force = false) => {
+    const ch = channels.current[groupId];
+    if (!ch) return;
+    const state = { user_id: uid, name: myName(groupId), viewing: viewingRef.current[groupId] || null };
+    const key = JSON.stringify(state);
+    if (!force && lastSent.current[groupId] === key) return;
+    lastSent.current[groupId] = key;
+    ch.track(state);
+  }, [uid, myName]);
+
+  // 그룹 추가·삭제분만 연결/해제
   useEffect(() => {
-    if (!supabase || !user) return;
-    const ids = groupKey ? groupKey.split(",") : [];
-    const opened = {};
+    if (!supabase || !uid) return;
+    const wanted = new Set(groupKey ? groupKey.split(",") : []);
 
-    for (const id of ids) {
+    for (const [id, ch] of Object.entries(channels.current)) {
+      if (!wanted.has(id)) {
+        supabase.removeChannel(ch);
+        delete channels.current[id];
+        delete lastSent.current[id];
+        setOnline(o => { const n = { ...o }; delete n[id]; return n; });
+      }
+    }
+    for (const id of wanted) {
+      if (channels.current[id]) continue;
       const ch = supabase.channel(`group:${id}`, {
-        config: { presence: { key: user.uid }, broadcast: { self: false } },
+        config: { presence: { key: uid }, broadcast: { self: false } },
       });
       ch.on("presence", { event: "sync" }, () => {
-        const state = ch.presenceState();
-        const list = Object.values(state).map(metas => metas[metas.length - 1]);
+        if (channels.current[id] !== ch) return; // 이미 해제된 채널의 늦은 이벤트
+        const list = Object.values(ch.presenceState()).map(metas => metas[metas.length - 1]);
         setOnline(o => ({ ...o, [id]: list }));
       })
         .on("broadcast", { event: "group-event" }, ({ payload }) => {
           onEventRef.current?.(id, payload);
         })
-        .subscribe(status => {
-          if (status === "SUBSCRIBED") {
-            ch.track({ user_id: user.uid, name, viewing: viewingRef.current[id] || null });
-          }
-        });
-      opened[id] = ch;
+        .subscribe(status => { if (status === "SUBSCRIBED") track(id, true); });
+      channels.current[id] = ch;
     }
-    channels.current = opened;
+  }, [groupKey, uid, track]);
 
-    return () => {
-      Object.values(opened).forEach(ch => ch.unsubscribe());
-      channels.current = {};
-      setOnline({});
-    };
-  }, [groupKey, user, name]);
+  // 로그아웃·언마운트 시 전부 해제
+  useEffect(() => () => {
+    Object.values(channels.current).forEach(ch => supabase?.removeChannel(ch));
+    channels.current = {};
+    lastSent.current = {};
+    setOnline({});
+  }, [uid]);
 
   const notify = useCallback((groupId, event, payload = {}) => {
     channels.current[groupId]?.send({
       type: "broadcast", event: "group-event",
-      payload: { event, by: user?.uid, by_name: name, ...payload },
+      payload: { event, by: uid, by_name: myName(groupId), ...payload },
     });
-  }, [user, name]);
+  }, [uid, myName]);
 
   const setViewing = useCallback((groupId, viewing) => {
     if (!groupId || viewingRef.current[groupId] === viewing) return;
     viewingRef.current[groupId] = viewing;
-    channels.current[groupId]?.track({ user_id: user?.uid, name, viewing });
-  }, [user, name]);
+    track(groupId);
+  }, [track]);
 
-  return { online, notify, setViewing, enabled: !!supabase };
+  /** 그룹 표시 이름이 정해진(멤버 목록을 불러온) 뒤 presence 이름을 갱신한다. */
+  const refreshName = useCallback((groupId) => track(groupId), [track]);
+
+  return { online, notify, setViewing, refreshName, enabled: !!supabase };
 }

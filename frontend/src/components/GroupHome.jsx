@@ -53,7 +53,9 @@ export default function GroupHome({
           <button className="note-prop-link" onClick={copyCode}>{copied ? "복사됨" : "복사"}</button>
         </div>
         <div className="note-prop">
-          <span className="note-prop-key">멤버</span>
+          <span className="note-prop-key">
+            멤버{realtime && <span className="group-online-count"> · 접속 {group.members.filter(m => onlineIds.has(m.user_id) || m.user_id === me.uid).length}/{group.members.length}</span>}
+          </span>
           <div className="group-members">
             {group.members.map(m => {
               const isOnline = onlineIds.has(m.user_id) || m.user_id === me.uid;

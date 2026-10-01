@@ -69,12 +69,24 @@ export default function App() {
     } catch { /* 무시 */ }
   }, [loadGroup]);
 
-  const pushNotif = (text, groupId) =>
-    setNotifications(prev => [{ id: Date.now(), text, groupId, time: new Date().toISOString(), unread: true }, ...prev].slice(0, 50));
+  // target: 알림을 눌렀을 때 열 화면 (자료·노트·그룹 홈)
+  const pushNotif = (text, groupId, target) =>
+    setNotifications(prev => [{
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      text, groupId, target, time: new Date().toISOString(), unread: true,
+    }, ...prev].slice(0, 50));
 
-  const { online, notify, setViewing, enabled: realtime } = useGroupChannels(groups, user, (groupId, ev) => {
+  const myGroupNameFor = (gid) =>
+    groupData[gid]?.detail?.members?.find(m => m.user_id === user?.uid)?.display_name;
+
+  const { online, notify, setViewing, refreshName, enabled: realtime } = useGroupChannels(groups, user, (groupId, ev) => {
     loadGroup(groupId);
+    // 같은 계정의 다른 탭·기기에서 한 일은 알리지 않는다 (broadcast self:false는 같은 연결만 제외)
+    if (ev.by && ev.by === user?.uid) return;
     let msg = "";
+    let target = { type: "group", groupId };
+    if (ev.event === "doc-added" && ev.doc_id) target = { type: "doc", docId: ev.doc_id, filename: ev.filename, groupId, tab: "summary" };
+    if (ev.event === "note-added" && ev.note_id) target = { type: "gnote", groupId, noteId: ev.note_id };
     if (ev.event === "doc-added")     msg = `${ev.by_name}님이 "${ev.filename}" 자료를 올렸어요`;
     else if (ev.event === "note-added")   msg = `${ev.by_name}님이 새 공동 노트를 만들었어요`;
     else if (ev.event === "member-joined") msg = `${ev.by_name}님이 그룹에 참가했어요`;
@@ -82,8 +94,19 @@ export default function App() {
       setGroupQuiz(q => ({ ...q, [groupId]: ev }));
       msg = `${ev.by_name}님이 그룹 퀴즈 방을 열었어요 (코드 ${ev.code})`;
     }
-    if (msg) { setToast(msg); pushNotif(msg, groupId); }
-  });
+    if (msg) { setToast(msg); pushNotif(msg, groupId, target); }
+  }, myGroupNameFor);
+
+  // 그룹 멤버 목록을 불러오면 presence 이름을 그룹 표시 이름으로 맞춘다 (같은 이름이면 다시 안 보냄)
+  useEffect(() => {
+    groups.forEach(g => refreshName(g.id));
+  }, [groupData, groups, refreshName]);
+
+  // 알림창: 열 때가 아니라 닫을 때 읽음 처리 — 열자마자 지우면 어떤 게 새 알림인지 안 보인다
+  const closeNotif = () => {
+    setNotifOpen(false);
+    setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
+  };
 
   useEffect(() => {
     return onAuthStateChanged(auth, (u) => {
@@ -363,10 +386,7 @@ export default function App() {
           <div className="topbar-right">
             <div className="notif-wrap">
               <button className="notif-bell" aria-label="알림"
-                onClick={() => {
-                  setNotifOpen(o => !o);
-                  setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
-                }}>
+                onClick={() => (notifOpen ? closeNotif() : setNotifOpen(true))}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                 </svg>
@@ -376,7 +396,7 @@ export default function App() {
               </button>
               {notifOpen && (
                 <>
-                  <div className="notif-backdrop" onClick={() => setNotifOpen(false)} />
+                  <div className="notif-backdrop" onClick={closeNotif} />
                   <div className="notif-panel">
                     <div className="notif-panel-head">
                       <span>알림</span>
@@ -388,7 +408,16 @@ export default function App() {
                       <p className="notif-empty">새 알림이 없어요</p>
                     ) : notifications.map(n => (
                       <div key={n.id} className={`notif-item ${n.unread ? "notif-item--unread" : ""}`}
-                        onClick={() => { if (n.groupId) { setView({ type: "group", groupId: n.groupId }); setNotifOpen(false); } }}>
+                        onClick={() => {
+                          const t = n.target || (n.groupId && { type: "group", groupId: n.groupId });
+                          // 그새 그룹에서 나갔거나 삭제된 자료면 그룹 홈으로
+                          const gd = t && groupData[t.groupId];
+                          const exists = !t || !gd ? !!gd
+                            : t.type === "doc" ? gd.docs?.some(d => d.doc_id === t.docId)
+                            : t.type === "gnote" ? gd.notes?.some(x => x.id === t.noteId) : true;
+                          if (t && gd) setView(exists ? t : { type: "group", groupId: t.groupId });
+                          closeNotif();
+                        }}>
                         <span className="notif-text">{n.text}</span>
                         <span className="notif-time">{timeAgo(n.time)}</span>
                       </div>
