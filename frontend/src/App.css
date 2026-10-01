@@ -1113,4 +1113,27 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
   .stats-summary { grid-template-columns: repeat(2, 1fr); }
   .stats-hbar-row { grid-template-columns: 100px 1fr 64px; }
 }
+
+/* ── Settings ─────────────────────────────── */
+.settings-wrap { display: flex; flex-direction: column; gap: 28px; max-width: 520px; }
+.settings-section { border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
+.settings-section-title { font-size: 14px; font-weight: 600; color: var(--text-2); margin-bottom: 16px; }
+
+.settings-avatar { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+.settings-avatar-img  { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
+.settings-avatar-init { width: 48px; height: 48px; border-radius: 50%; background: var(--primary-light);
+  color: var(--primary); font-size: 20px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.settings-email    { font-size: 14px; color: var(--text-1); font-weight: 500; }
+.settings-provider { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+
+.settings-form { display: flex; flex-direction: column; gap: 8px; }
+.settings-label { font-size: 12px; color: var(--text-3); }
+
+.settings-msg { font-size: 13px; margin-top: 8px; }
+.settings-msg--ok  { color: var(--green); }
+.settings-msg--err { color: var(--red); }
+
+.settings-verified   { font-size: 13px; color: var(--green); }
+.settings-unverified { font-size: 13px; color: var(--amber); margin-bottom: 10px; }
+.settings-provider-note { font-size: 13px; color: var(--text-3); line-height: 1.6; }
 .callout--quiz strong { font-weight: 600; }

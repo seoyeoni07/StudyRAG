@@ -10,6 +10,7 @@ import SummarySection from "./components/SummarySection";
 import StudyRoomSection from "./components/StudyRoomSection";
 import DashboardHome from "./components/DashboardHome";
 import StatsSection from "./components/StatsSection";
+import SettingsPage from "./components/SettingsPage";
 import LoginPage from "./components/LoginPage";
 import Sidebar, { tabsFor } from "./components/Sidebar";
 import NotePage from "./components/NotePage";
@@ -278,6 +279,7 @@ export default function App() {
   const groupCrumb = group ? [["👥", group.detail.name]] : [];
   const crumbs = view.type === "home" ? [["🏠", "홈"]]
     : view.type === "stats" ? [["📊", "학습 통계"]]
+    : view.type === "settings" ? [["⚙️", "설정"]]
     : view.type === "group-start" ? [["👥", "그룹 스터디"]]
     : view.type === "group" ? groupCrumb
     : view.type === "gnote" ? [...groupCrumb, [groupNote?.icon || "📄", groupNote?.title || "제목 없음"]]
@@ -379,6 +381,17 @@ export default function App() {
               <div className="page-icon">📊</div>
               <h1 className="page-title">학습 통계</h1>
               <StatsSection />
+            </>
+          )}
+
+          {view.type === "settings" && (
+            <>
+              <div className="page-icon">⚙️</div>
+              <h1 className="page-title">설정</h1>
+              <SettingsPage
+                user={user}
+                onUserRefresh={() => setUser({ ...auth.currentUser })}
+              />
             </>
           )}
 
