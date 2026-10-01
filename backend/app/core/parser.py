@@ -44,8 +44,12 @@ def _gemini_vision(b64: str, prompt: str) -> str:
         ])
         content = llm.invoke([msg]).content
         if isinstance(content, list):
-            return " ".join(p if isinstance(p, str) else p.get("text", "") for p in content)
-        return content or ""
+            return " ".join(
+                p if isinstance(p, str)
+                else (p.get("text", "") if isinstance(p, dict) else str(p))
+                for p in content
+            )
+        return str(content) if content else ""
     except Exception as e:
         import logging
         logging.getLogger(__name__).warning("Gemini vision failed: %s", e)
