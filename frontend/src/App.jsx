@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, logout } from "./firebase";
-import { apiFetch, setUserId } from "./api";
+import { apiFetch, setUserId, ColdStartError } from "./api";
 import QASection from "./components/QASection";
 import QuizSection from "./components/QuizSection";
 import WrongAnswerBook from "./components/WrongAnswerBook";
@@ -43,7 +43,7 @@ export default function App() {
         apiFetch("/documents/")
           .then(data => { setPastDocs(data); setServerWaking(false); })
           .catch(err => {
-            if (err.message === "__cold_start__") setServerWaking(true);
+            if (err.isColdStart) setServerWaking(true);
           });
       } else {
         setUserId(null);
@@ -79,8 +79,12 @@ export default function App() {
       setDocId(data.doc_id);
       setFilename(data.filename);
       setTab("summary");
+      setServerWaking(false);
       setPastDocs(prev => [{ doc_id: data.doc_id, filename: data.filename, created_at: new Date().toISOString() }, ...prev]);
-    } catch (err) { setError(err.message); }
+    } catch (err) {
+      if (err.isColdStart) setServerWaking(true);
+      else setError(err.message);
+    }
     finally { setUploading(false); }
   }
 
