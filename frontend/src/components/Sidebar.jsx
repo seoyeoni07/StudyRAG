@@ -53,6 +53,9 @@ export default function Sidebar({
           <button className={`sb-item ${view.type === "home" ? "active" : ""}`} onClick={() => go({ type: "home" })}>
             <span className="sb-icon">🏠</span><span className="sb-label">홈</span>
           </button>
+          <button className={`sb-item ${view.type === "stats" ? "active" : ""}`} onClick={() => go({ type: "stats" })}>
+            <span className="sb-icon">📊</span><span className="sb-label">학습 통계</span>
+          </button>
           <label className="sb-item">
             <input type="file" accept=".pdf" hidden disabled={uploading}
               onChange={e => { if (e.target.files?.[0]) { onUpload([e.target.files[0]]); e.target.value = ""; onClose?.(); } }} />

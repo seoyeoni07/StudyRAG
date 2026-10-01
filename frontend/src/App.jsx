@@ -9,6 +9,7 @@ import TutorSection from "./components/TutorSection";
 import SummarySection from "./components/SummarySection";
 import StudyRoomSection from "./components/StudyRoomSection";
 import DashboardHome from "./components/DashboardHome";
+import StatsSection from "./components/StatsSection";
 import LoginPage from "./components/LoginPage";
 import Sidebar, { tabsFor } from "./components/Sidebar";
 import NotePage from "./components/NotePage";
@@ -276,6 +277,7 @@ export default function App() {
   // breadcrumb
   const groupCrumb = group ? [["👥", group.detail.name]] : [];
   const crumbs = view.type === "home" ? [["🏠", "홈"]]
+    : view.type === "stats" ? [["📊", "학습 통계"]]
     : view.type === "group-start" ? [["👥", "그룹 스터디"]]
     : view.type === "group" ? groupCrumb
     : view.type === "gnote" ? [...groupCrumb, [groupNote?.icon || "📄", groupNote?.title || "제목 없음"]]
@@ -369,6 +371,14 @@ export default function App() {
                   </div>
                 }
               />
+            </>
+          )}
+
+          {view.type === "stats" && (
+            <>
+              <div className="page-icon">📊</div>
+              <h1 className="page-title">학습 통계</h1>
+              <StatsSection />
             </>
           )}
 

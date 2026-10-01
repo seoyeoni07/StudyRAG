@@ -247,3 +247,97 @@ def get_history(doc_id: str, db: Session = Depends(get_db)):
         }
         for r in rows
     ]
+
+
+@router.get("/user-stats")
+def get_user_stats(x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    """사용자 전체 학습 통계 — 모든 자료에 걸친 집계"""
+    from collections import Counter
+    from ..db.models import Document
+
+    docs = db.query(Document).filter(Document.user_id == x_user_id).all()
+    doc_ids = [d.id for d in docs]
+    doc_name = {d.id: d.filename.replace(".pdf", "").replace(".PDF", "") for d in docs}
+
+    if not doc_ids:
+        return {
+            "total_sessions": 0, "avg_score_pct": 0, "total_wrongs": 0, "total_docs": 0,
+            "recent_sessions": [], "doc_stats": [], "difficulty_stats": {},
+            "weak_concepts": [],
+        }
+
+    all_history = (
+        db.query(QuizHistory)
+        .filter(QuizHistory.doc_id.in_(doc_ids))
+        .order_by(QuizHistory.created_at)
+        .all()
+    )
+    all_wrongs = db.query(WrongAnswer).filter(WrongAnswer.doc_id.in_(doc_ids)).all()
+
+    # 전체 요약
+    total_q = sum(h.total for h in all_history)
+    total_c = sum(h.correct for h in all_history)
+    avg_pct = round(total_c / total_q * 100) if total_q else 0
+
+    # 최근 20회 (시간순)
+    recent = all_history[-20:]
+    recent_sessions = [
+        {
+            "date": h.created_at.isoformat(),
+            "score_pct": round(h.correct / h.total * 100) if h.total else 0,
+            "correct": h.correct,
+            "total": h.total,
+            "doc_name": doc_name.get(h.doc_id, "?"),
+        }
+        for h in recent
+    ]
+
+    # 자료별 평균
+    by_doc: dict[str, dict] = {}
+    for h in all_history:
+        s = by_doc.setdefault(h.doc_id, {"total": 0, "correct": 0, "sessions": 0})
+        s["total"] += h.total; s["correct"] += h.correct; s["sessions"] += 1
+    doc_stats = [
+        {
+            "doc_id": did,
+            "name": doc_name.get(did, "?"),
+            "avg_pct": round(s["correct"] / s["total"] * 100) if s["total"] else 0,
+            "sessions": s["sessions"],
+        }
+        for did, s in by_doc.items()
+    ]
+
+    # 난이도별 오답률 (모든 자료 합산)
+    sessions = db.query(QuizSession).filter(QuizSession.doc_id.in_(doc_ids)).all()
+    wrong_q = {w.question for w in all_wrongs}
+    d_wrong: dict[str, int] = {"기본": 0, "응용": 0, "심화": 0}
+    d_total: dict[str, int] = {"기본": 0, "응용": 0, "심화": 0}
+    for s in sessions:
+        try:
+            for q in json.loads(s.questions_json):
+                d = q.get("difficulty", "기본")
+                if d in d_total:
+                    d_total[d] += 1
+                    if q["question"] in wrong_q:
+                        d_wrong[d] += 1
+        except Exception:
+            pass
+    difficulty_stats = {d: {"wrong": d_wrong[d], "total": d_total[d]} for d in d_total}
+
+    # 취약 개념: 오답 빈도 TOP 10
+    counts = Counter(w.question for w in all_wrongs)
+    weak_concepts = [
+        {"question": q[:80], "count": c}
+        for q, c in counts.most_common(10)
+    ]
+
+    return {
+        "total_sessions": len(all_history),
+        "avg_score_pct": avg_pct,
+        "total_wrongs": len(all_wrongs),
+        "total_docs": len(docs),
+        "recent_sessions": recent_sessions,
+        "doc_stats": doc_stats,
+        "difficulty_stats": difficulty_stats,
+        "weak_concepts": weak_concepts,
+    }
