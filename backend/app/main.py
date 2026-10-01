@@ -10,6 +10,7 @@ from .api.quiz import router as quiz_router
 from .api.tutor import router as tutor_router
 from .api.rooms import router as rooms_router
 from .api.notes import router as notes_router
+from .api.groups import router as groups_router
 from .db.models import Base  # noqa: F401
 from .db.session import engine
 
@@ -31,6 +32,10 @@ async def startup():
         "ALTER TABLE wrong_answers ADD COLUMN IF NOT EXISTS next_review TIMESTAMP",
         "ALTER TABLE wrong_answers ADD COLUMN IF NOT EXISTS review_count INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE documents ADD COLUMN IF NOT EXISTS folder VARCHAR(64)",
+        "ALTER TABLE documents ADD COLUMN IF NOT EXISTS group_id VARCHAR(36)",
+        "ALTER TABLE notes ADD COLUMN IF NOT EXISTS group_id VARCHAR(36)",
+        "ALTER TABLE notes ADD COLUMN IF NOT EXISTS ydoc TEXT",
+        "ALTER TABLE notes ADD COLUMN IF NOT EXISTS last_edited_by VARCHAR(128)",
         """CREATE TABLE IF NOT EXISTS tutor_threads (
             id SERIAL PRIMARY KEY,
             doc_id VARCHAR(36) NOT NULL,
@@ -51,13 +56,16 @@ async def startup():
     ]
     try:
         from sqlalchemy import text
-        with engine.connect() as conn:
-            for sql in _migrations:
+        for sql in _migrations:
+            # 문장마다 별도 트랜잭션 — Postgres는 한 문장이 실패하면 같은 트랜잭션의 나머지도 실패함
+            # SQLite는 ADD COLUMN IF NOT EXISTS를 지원하지 않아 IF NOT EXISTS 없이 한 번 더 시도
+            for candidate in (sql, sql.replace("ADD COLUMN IF NOT EXISTS", "ADD COLUMN")):
                 try:
-                    conn.execute(text(sql))
+                    with engine.begin() as conn:
+                        conn.execute(text(candidate))
+                    break
                 except Exception:
                     pass  # 이미 존재하면 무시
-            conn.commit()
         print("[DB] migrations applied", flush=True)
     except Exception as e:
         print(f"[DB] migration error: {e}", flush=True)
@@ -91,6 +99,7 @@ app.include_router(quiz_router)
 app.include_router(tutor_router)
 app.include_router(rooms_router)
 app.include_router(notes_router)
+app.include_router(groups_router)
 
 
 @app.get("/health")

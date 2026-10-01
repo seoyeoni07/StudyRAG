@@ -15,3 +15,4 @@ python-dotenv>=1.0
 sqlalchemy>=2.0
 pytesseract>=0.3
 pdf2image>=1.16
+pycrdt>=0.12

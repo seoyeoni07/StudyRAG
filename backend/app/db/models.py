@@ -13,6 +13,7 @@ class Document(Base):
     chunks = Column(Integer, default=0)
     summary = Column(Text, nullable=True)
     folder = Column(String(64), nullable=True)
+    group_id = Column(String(36), nullable=True, index=True)   # 그룹 공유 자료면 그룹 id
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
@@ -119,5 +120,27 @@ class Note(Base):
     title = Column(String(256), nullable=False, default="")
     icon = Column(String(16), nullable=True)
     content = Column(Text, nullable=False, default="")
+    group_id = Column(String(36), nullable=True, index=True)   # 그룹 공동 노트면 그룹 id
+    ydoc = Column(Text, nullable=True)                         # 공동 노트의 Yjs 상태 (base64)
+    last_edited_by = Column(String(128), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
+
+
+class StudyGroup(Base):
+    __tablename__ = "study_groups"
+    id = Column(String(36), primary_key=True)
+    name = Column(String(64), nullable=False)
+    invite_code = Column(String(8), unique=True, index=True, nullable=False)
+    owner_id = Column(String(128), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class StudyGroupMember(Base):
+    __tablename__ = "study_group_members"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    group_id = Column(String(36), nullable=False, index=True)
+    user_id = Column(String(128), nullable=False, index=True)
+    display_name = Column(String(64), nullable=False)
+    role = Column(String(16), default="member")  # owner / member
+    joined_at = Column(DateTime, default=datetime.utcnow)

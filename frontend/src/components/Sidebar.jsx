@@ -21,10 +21,14 @@ function Caret({ open, onClick }) {
 export default function Sidebar({
   user, view, onNavigate, pastDocs, notes, wrongCount,
   onNewNote, onUpload, uploading, onLogout, open, onClose,
+  groups = [], groupData = {}, online = {}, onNewGroupNote,
 }) {
   const [expanded, setExpanded] = useState({});
   const [docsOpen, setDocsOpen] = useState(true);
   const [notesOpen, setNotesOpen] = useState(true);
+  const [groupsOpen, setGroupsOpen] = useState(true);
+  const inGroup = (id) => view.groupId === id;
+  const isGroupOpen = (id) => expanded[`g:${id}`] ?? inGroup(id);
   const name = user.displayName || user.email?.split("@")[0] || "나";
 
   const isOpen = (id) => expanded[id] ?? (view.type === "doc" && view.docId === id);
@@ -52,10 +56,61 @@ export default function Sidebar({
             <span className="sb-icon">⬆️</span><span className="sb-label">{uploading ? "분석 중…" : "PDF 업로드"}</span>
           </label>
 
+          {/* ── 그룹 스터디 ── */}
+          <div className="sb-section">
+            <div className="sb-section-head">
+              <button className="sb-section-title" onClick={() => setGroupsOpen(o => !o)}>그룹 스터디</button>
+              <button className="sb-add" title="그룹 만들기·참가" onClick={() => go({ type: "group-start" })}>+</button>
+            </div>
+            {groupsOpen && (groups.length === 0 ? (
+              <button className={`sb-item sb-muted ${view.type === "group-start" ? "active" : ""}`} onClick={() => go({ type: "group-start" })}>
+                <span className="sb-icon">＋</span><span className="sb-label">그룹 만들기·참가</span>
+              </button>
+            ) : groups.map(g => {
+              const data = groupData[g.id] || {};
+              const onlineCount = (online[g.id] || []).filter(o => o.user_id !== user.uid).length;
+              return (
+                <div key={g.id}>
+                  <button className={`sb-item ${view.type === "group" && view.groupId === g.id ? "active" : ""}`}
+                    onClick={() => go({ type: "group", groupId: g.id })}>
+                    <Caret open={isGroupOpen(g.id)} onClick={() => setExpanded(e => ({ ...e, [`g:${g.id}`]: !isGroupOpen(g.id) }))} />
+                    <span className="sb-icon">👥</span>
+                    <span className="sb-label">{g.name}</span>
+                    {onlineCount > 0 && <span className="sb-online" title={`${onlineCount}명 접속 중`}>{onlineCount}</span>}
+                  </button>
+                  {isGroupOpen(g.id) && (
+                    <div className="sb-children">
+                      {(data.docs || []).map(d => {
+                        const active = view.type === "doc" && view.docId === d.doc_id;
+                        return (
+                          <button key={d.doc_id} className={`sb-item sb-child ${active ? "active" : ""}`} title={`${d.filename} · ${d.uploader_name}`}
+                            onClick={() => go({ type: "doc", docId: d.doc_id, filename: d.filename, groupId: g.id, tab: active ? view.tab : "summary" })}>
+                            <span className="sb-icon">📄</span>
+                            <span className="sb-label">{d.filename.replace(/\.pdf$/i, "")}</span>
+                          </button>
+                        );
+                      })}
+                      {(data.notes || []).map(n => (
+                        <button key={n.id} className={`sb-item sb-child ${view.type === "gnote" && view.noteId === n.id ? "active" : ""}`}
+                          onClick={() => go({ type: "gnote", groupId: g.id, noteId: n.id })}>
+                          <span className="sb-icon">{n.icon || "📄"}</span>
+                          <span className="sb-label">{n.title || "제목 없음"}</span>
+                        </button>
+                      ))}
+                      <button className="sb-item sb-child sb-muted" onClick={() => { onNewGroupNote?.(g.id); onClose?.(); }}>
+                        <span className="sb-icon">＋</span><span className="sb-label">공동 노트 추가</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            }))}
+          </div>
+
           {/* ── 노트 ── */}
           <div className="sb-section">
             <div className="sb-section-head">
-              <button className="sb-section-title" onClick={() => setNotesOpen(o => !o)}>내 노트</button>
+              <button className="sb-section-title" onClick={() => setNotesOpen(o => !o)}>내 노트 (개인)</button>
               <button className="sb-add" title="새 노트" onClick={() => { onNewNote(); onClose?.(); }}>+</button>
             </div>
             {notesOpen && (

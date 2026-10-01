@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, logout } from "./firebase";
 import { apiFetch, setUserId } from "./api";
@@ -12,6 +12,9 @@ import DashboardHome from "./components/DashboardHome";
 import LoginPage from "./components/LoginPage";
 import Sidebar, { DOC_TABS } from "./components/Sidebar";
 import NotePage from "./components/NotePage";
+import GroupHome, { GroupStart, timeAgo as groupTimeAgo } from "./components/GroupHome";
+import GroupNotePage from "./components/GroupNotePage";
+import { useGroupChannels } from "./realtime/useGroupChannels";
 import "./App.css";
 
 function timeAgo(iso) {
@@ -26,7 +29,8 @@ function timeAgo(iso) {
 
 export default function App() {
   const [user, setUser] = useState(undefined);
-  // view: { type: "home" } | { type: "doc", docId, filename, tab } | { type: "note", noteId }
+  // view: { type: "home" } | { type: "doc", docId, filename, tab, groupId? } | { type: "note", noteId }
+  //     | { type: "group-start" } | { type: "group", groupId } | { type: "gnote", groupId, noteId }
   const [view, setView] = useState({ type: "home" });
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
@@ -37,6 +41,33 @@ export default function App() {
   const [serverWaking, setServerWaking] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [toast, setToast] = useState("");
+  const [groups, setGroups] = useState([]);
+  const [groupData, setGroupData] = useState({}); // { [groupId]: { detail, docs, notes } }
+  const [groupUploading, setGroupUploading] = useState(null);
+
+  const loadGroup = useCallback(async (id) => {
+    try {
+      const [detail, docs, gnotes] = await Promise.all([
+        apiFetch(`/groups/${id}`), apiFetch(`/groups/${id}/documents`), apiFetch(`/groups/${id}/notes`),
+      ]);
+      setGroupData(d => ({ ...d, [id]: { detail, docs, notes: gnotes } }));
+    } catch { /* 권한이 없어졌거나 서버 기동 중 */ }
+  }, []);
+
+  const loadGroups = useCallback(async () => {
+    try {
+      const list = await apiFetch("/groups/");
+      setGroups(list);
+      list.forEach(g => loadGroup(g.id));
+    } catch { /* 무시 */ }
+  }, [loadGroup]);
+
+  const { online, notify, setViewing, enabled: realtime } = useGroupChannels(groups, user, (groupId, ev) => {
+    loadGroup(groupId);
+    if (ev.event === "doc-added") setToast(`${ev.by_name}님이 "${ev.filename}" 자료를 올렸어요`);
+    else if (ev.event === "note-added") setToast(`${ev.by_name}님이 새 공동 노트를 만들었어요`);
+    else if (ev.event === "member-joined") setToast(`${ev.by_name}님이 그룹에 참가했어요`);
+  });
 
   useEffect(() => {
     return onAuthStateChanged(auth, (u) => {
@@ -50,17 +81,29 @@ export default function App() {
             if (err.isColdStart) setServerWaking(true);
           });
         apiFetch("/notes/").then(setNotes).catch(() => {});
+        loadGroups();
       } else {
         setUserId(null);
         setPastDocs([]);
         setNotes([]);
+        setGroups([]);
+        setGroupData({});
         setView({ type: "home" });
         setServerWaking(false);
       }
     });
-  }, []);
+  }, [loadGroups]);
 
   const docId = view.type === "doc" ? view.docId : null;
+  const groupId = view.groupId || null;
+
+  // 그룹 멤버들에게 내가 지금 보고 있는 페이지를 알린다 (presence)
+  useEffect(() => {
+    const viewing = view.type === "group" ? "home"
+      : view.type === "gnote" ? `note:${view.noteId}`
+      : view.type === "doc" && view.groupId ? `doc:${view.docId}` : null;
+    groups.forEach(g => setViewing(g.id, g.id === groupId ? viewing : null));
+  }, [view, groups, groupId, setViewing]);
 
   useEffect(() => {
     setWrongCount(0);
@@ -125,13 +168,83 @@ export default function App() {
     } catch (err) { setError(err.message); }
   }
 
+  async function createGroup(name, displayName) {
+    const g = await apiFetch("/groups/", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, display_name: displayName }),
+    });
+    setGroups(prev => [...prev, g]);
+    await loadGroup(g.id);
+    setView({ type: "group", groupId: g.id });
+  }
+
+  async function joinGroup(code, displayName) {
+    const g = await apiFetch("/groups/join", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code, display_name: displayName }),
+    });
+    setGroups(prev => prev.some(x => x.id === g.id) ? prev : [...prev, g]);
+    await loadGroup(g.id);
+    setView({ type: "group", groupId: g.id });
+    // 새 그룹 채널 구독이 붙은 뒤에 알리도록 약간 늦춘다
+    setTimeout(() => notify(g.id, "member-joined"), 1500);
+  }
+
+  async function leaveGroup(id) {
+    try {
+      await apiFetch(`/groups/${id}/members/me`, { method: "DELETE" });
+      setGroups(prev => prev.filter(g => g.id !== id));
+      setGroupData(d => { const n = { ...d }; delete n[id]; return n; });
+      setView({ type: "home" });
+    } catch (err) { setError(err.message); }
+  }
+
+  async function uploadToGroup(id, file) {
+    setGroupUploading(id);
+    setError("");
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const d = await apiFetch(`/groups/${id}/documents`, { method: "POST", body: form });
+      await loadGroup(id);
+      notify(id, "doc-added", { filename: d.filename, doc_id: d.doc_id });
+      setToast(`"${d.filename}" 자료를 그룹에 공유했어요`);
+    } catch (err) {
+      if (err.isColdStart) setServerWaking(true);
+      else setError(err.message);
+    } finally { setGroupUploading(null); }
+  }
+
+  async function deleteGroupDoc(id, d) {
+    try {
+      await apiFetch(`/documents/${d.doc_id}`, { method: "DELETE" });
+      await loadGroup(id);
+      notify(id, "doc-removed", { filename: d.filename });
+    } catch (err) { setError(err.message); }
+  }
+
+  async function createGroupNote(id) {
+    try {
+      const n = await apiFetch(`/groups/${id}/notes`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "" }),
+      });
+      setGroupData(d => ({ ...d, [id]: { ...d[id], notes: [n, ...(d[id]?.notes || [])] } }));
+      notify(id, "note-added", { note_id: n.id });
+      setView({ type: "gnote", groupId: id, noteId: n.id });
+    } catch (err) { setError(err.message); }
+  }
+
   async function saveToNote(title, content) {
     const n = await createNote({ title, content, doc_id: docId }, false);
     if (n) setToast(`"${title.slice(0, 24)}" 노트로 저장했어요`);
   }
 
   const displayName = user.displayName || user.email?.split("@")[0] || "";
-  const currentDoc = docId ? (pastDocs.find(d => d.doc_id === docId) || { doc_id: docId, filename: view.filename }) : null;
+  const group = groupId ? groupData[groupId] : null;
+  const groupDoc = docId && groupId ? group?.docs?.find(d => d.doc_id === docId) : null;
+  const currentDoc = docId ? (groupDoc || pastDocs.find(d => d.doc_id === docId) || { doc_id: docId, filename: view.filename }) : null;
+  const groupNote = view.type === "gnote" ? group?.notes?.find(n => n.id === view.noteId) : null;
   const currentNote = view.type === "note" ? notes.find(n => n.id === view.noteId) : null;
   const currentTab = view.type === "doc" ? DOC_TABS.find(([k]) => k === view.tab) : null;
   const docNotes = docId ? notes.filter(n => n.doc_id === docId) : [];
@@ -141,8 +254,12 @@ export default function App() {
   })();
 
   // breadcrumb
+  const groupCrumb = group ? [["👥", group.detail.name]] : [];
   const crumbs = view.type === "home" ? [["🏠", "홈"]]
-    : view.type === "doc" ? [["📄", currentDoc?.filename?.replace(/\.pdf$/i, "")], [currentTab?.[3], currentTab?.[1]]]
+    : view.type === "group-start" ? [["👥", "그룹 스터디"]]
+    : view.type === "group" ? groupCrumb
+    : view.type === "gnote" ? [...groupCrumb, [groupNote?.icon || "📄", groupNote?.title || "제목 없음"]]
+    : view.type === "doc" ? [...(groupId ? groupCrumb : []), ["📄", currentDoc?.filename?.replace(/\.pdf$/i, "")], [currentTab?.[3], currentTab?.[1]]]
     : (() => {
         const linked = currentNote?.doc_id && pastDocs.find(d => d.doc_id === currentNote.doc_id);
         return [
@@ -160,6 +277,8 @@ export default function App() {
         onUpload={handleFilesAccepted} uploading={uploading}
         onLogout={logout}
         open={sidebarOpen} onClose={() => setSidebarOpen(false)}
+        groups={groups} groupData={groupData} online={online}
+        onNewGroupNote={createGroupNote}
       />
 
       <div className="main">
@@ -234,6 +353,36 @@ export default function App() {
             </>
           )}
 
+          {view.type === "group-start" && (
+            <GroupStart me={user} onCreate={createGroup} onJoin={joinGroup} />
+          )}
+
+          {view.type === "group" && (group ? (
+            <GroupHome
+              key={groupId}
+              group={group.detail} docs={group.docs} notes={group.notes}
+              online={online[groupId]} me={user} realtime={realtime}
+              uploading={groupUploading === groupId}
+              onUpload={(file) => uploadToGroup(groupId, file)}
+              onOpenDoc={(d) => setView({ type: "doc", docId: d.doc_id, filename: d.filename, groupId, tab: "summary" })}
+              onOpenNote={(n) => setView({ type: "gnote", groupId, noteId: n.id })}
+              onNewNote={() => createGroupNote(groupId)}
+              onDeleteDoc={(d) => deleteGroupDoc(groupId, d)}
+              onLeave={() => leaveGroup(groupId)}
+            />
+          ) : <div className="loading-wrap"><div className="spinner" /></div>)}
+
+          {view.type === "gnote" && (
+            <GroupNotePage
+              key={view.noteId}
+              noteId={view.noteId}
+              user={user}
+              group={group?.detail}
+              onSaved={() => loadGroup(groupId)}
+              onDeleted={() => { loadGroup(groupId); setView({ type: "group", groupId }); }}
+            />
+          )}
+
           {view.type === "note" && (
             <NotePage
               key={view.noteId}
@@ -252,6 +401,11 @@ export default function App() {
                 {currentDoc?.filename?.replace(/\.pdf$/i, "")}
               </h1>
 
+              {groupDoc && (
+                <p className="doc-uploader">
+                  👥 {group.detail.name} · <strong>{groupDoc.uploader_name}</strong>님이 {groupTimeAgo(groupDoc.created_at)} 올림
+                </p>
+              )}
               <div className="doc-meta-row">
                 {docNotes.map(n => (
                   <button key={n.id} className="doc-note-chip" onClick={() => setView({ type: "note", noteId: n.id })}>
@@ -275,7 +429,10 @@ export default function App() {
                   </button>
                 ))}
               </div>
-              <p className="tab-desc" aria-live="polite">{currentTab?.[2]}</p>
+              <p className="tab-desc" aria-live="polite">
+                {currentTab?.[2]}
+                {groupId && (view.tab === "qa" || view.tab === "tutor") && " · 그룹 자료지만 대화 기록은 나만 볼 수 있어요"}
+              </p>
 
               <div key={docId}>
                 {[

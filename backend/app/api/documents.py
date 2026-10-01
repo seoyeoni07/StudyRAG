@@ -33,6 +33,11 @@ async def upload_document(
     x_user_id: str | None = Header(default=None),
     db: Session = Depends(get_db),
 ):
+    return ingest_pdf(file, x_user_id, db)
+
+
+def ingest_pdf(file: UploadFile, x_user_id: str | None, db: Session, group_id: str | None = None) -> dict:
+    """PDF를 저장·청크·임베딩하고 Document 행을 만든다. 개인 업로드와 그룹 업로드가 함께 쓴다."""
     if not (file.filename or "").endswith(".pdf"):
         raise HTTPException(400, "PDF 파일만 업로드 가능합니다.")
 
@@ -55,7 +60,7 @@ async def upload_document(
     )
 
     if x_user_id:
-        db.add(Document(id=doc_id, user_id=x_user_id, filename=file.filename, chunks=len(chunks)))
+        db.add(Document(id=doc_id, user_id=x_user_id, filename=file.filename, chunks=len(chunks), group_id=group_id))
         db.commit()
 
     return {"doc_id": doc_id, "filename": file.filename, "chunks": len(chunks)}
@@ -71,7 +76,10 @@ def delete_document(
     if not doc:
         raise HTTPException(404, "문서를 찾을 수 없습니다.")
     if x_user_id and doc.user_id != x_user_id:
-        raise HTTPException(403, "권한이 없습니다.")
+        from ..db.models import StudyGroup
+        group = db.query(StudyGroup).filter(StudyGroup.id == doc.group_id).first() if doc.group_id else None
+        if not group or group.owner_id != x_user_id:
+            raise HTTPException(403, "권한이 없습니다.")
 
     try:
         from ..core.rag import get_vectorstore
@@ -92,7 +100,7 @@ def get_dashboard(x_user_id: str | None = Header(default=None), db: Session = De
     if not x_user_id:
         raise HTTPException(401)
     from datetime import datetime
-    docs = db.query(Document).filter(Document.user_id == x_user_id).order_by(Document.created_at.desc()).all()
+    docs = db.query(Document).filter(Document.user_id == x_user_id, Document.group_id.is_(None)).order_by(Document.created_at.desc()).all()
     doc_ids = [d.id for d in docs]
     doc_map = {d.id: d.filename for d in docs}
     now = datetime.utcnow()
@@ -206,7 +214,7 @@ def list_documents(x_user_id: str | None = Header(default=None), db: Session = D
         return []
     rows = (
         db.query(Document)
-        .filter(Document.user_id == x_user_id)
+        .filter(Document.user_id == x_user_id, Document.group_id.is_(None))
         .order_by(Document.created_at.desc())
         .all()
     )
