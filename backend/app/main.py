@@ -9,6 +9,7 @@ from .api.qa import router as qa_router
 from .api.quiz import router as quiz_router
 from .api.tutor import router as tutor_router
 from .api.rooms import router as rooms_router
+from .api.notes import router as notes_router
 from .db.models import Base  # noqa: F401
 from .db.session import engine
 
@@ -89,6 +90,7 @@ app.include_router(qa_router)
 app.include_router(quiz_router)
 app.include_router(tutor_router)
 app.include_router(rooms_router)
+app.include_router(notes_router)
 
 
 @app.get("/health")

@@ -41,6 +41,7 @@ export default defineConfig({
       '/quiz': 'http://localhost:8000',
       '/tutor': 'http://localhost:8000',
       '/rooms': 'http://localhost:8000',
+      '/notes': 'http://localhost:8000',
     },
   },
 })

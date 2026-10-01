@@ -109,3 +109,15 @@ class StudyRoomMember(Base):
     total = Column(Integer, nullable=True)
     submitted_at = Column(DateTime, nullable=True)
     joined_at = Column(DateTime, default=datetime.utcnow)
+
+
+class Note(Base):
+    __tablename__ = "notes"
+    id = Column(String(36), primary_key=True)
+    user_id = Column(String(128), nullable=False, index=True)
+    doc_id = Column(String(36), nullable=True, index=True)
+    title = Column(String(256), nullable=False, default="")
+    icon = Column(String(16), nullable=True)
+    content = Column(Text, nullable=False, default="")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)

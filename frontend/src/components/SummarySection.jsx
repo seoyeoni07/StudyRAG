@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { apiFetch } from "../api";
 
-export default function SummarySection({ docId }) {
+export default function SummarySection({ docId, onSaveNote }) {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -85,9 +85,21 @@ export default function SummarySection({ docId }) {
         </div>
       )}
 
-      <button className="btn-secondary" style={{ marginTop: 16 }} onClick={() => setSummary(null)}>
-        다시 생성
-      </button>
+      <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+        {onSaveNote && (
+          <button className="btn-secondary" onClick={() => onSaveNote("강의 요약", [
+            "## 강의 개요", summary.overview || "",
+            "", "## 핵심 개념", ...(summary.key_concepts || []).map((c, i) => `${i + 1}. ${c}`),
+            "", "## 키워드", (summary.keywords || []).map(k => `\`${k}\``).join(" "),
+            ...(summary.study_tip ? ["", `> 💡 ${summary.study_tip}`] : []),
+          ].join("\n"))}>
+            노트로 저장
+          </button>
+        )}
+        <button className="btn-secondary" onClick={() => setSummary(null)}>
+          다시 생성
+        </button>
+      </div>
     </div>
   );
 }

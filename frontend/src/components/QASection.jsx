@@ -11,7 +11,7 @@ const EXAMPLES = [
   "가장 자주 출제되는 내용은 무엇인가요?",
 ];
 
-function FeedbackRow({ docId, question }) {
+function FeedbackRow({ docId, question, onSave }) {
   const [sent, setSent] = useState(null);
   async function send(helpful) {
     setSent(helpful);
@@ -21,17 +21,23 @@ function FeedbackRow({ docId, question }) {
       body: JSON.stringify({ doc_id: docId, question, helpful }),
     }).catch(() => {});
   }
-  if (sent !== null) return <span className="feedback-thanks">피드백 감사합니다</span>;
   return (
     <span className="feedback-row">
-      <span className="feedback-label">도움이 됐나요?</span>
-      <button className="feedback-btn" onClick={() => send(true)}>👍</button>
-      <button className="feedback-btn" onClick={() => send(false)}>👎</button>
+      {sent !== null ? (
+        <span className="feedback-thanks">피드백 감사합니다</span>
+      ) : (
+        <>
+          <span className="feedback-label">도움이 됐나요?</span>
+          <button className="feedback-btn" onClick={() => send(true)}>👍</button>
+          <button className="feedback-btn" onClick={() => send(false)}>👎</button>
+        </>
+      )}
+      {onSave && <button className="feedback-save" onClick={onSave}>노트로 저장</button>}
     </span>
   );
 }
 
-export default function QASection({ docId }) {
+export default function QASection({ docId, onSaveNote }) {
   const [threads, setThreads] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -134,7 +140,8 @@ export default function QASection({ docId }) {
                   })}
                 </details>
               )}
-              <FeedbackRow docId={docId} question={t.question} />
+              <FeedbackRow docId={docId} question={t.question}
+                onSave={onSaveNote && (() => onSaveNote(t.question, t.answer))} />
             </div>
           </div>
         ))}

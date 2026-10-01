@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { apiFetch } from "../api";
 
-export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc, pastDocs, uploading, onPastDocsChange, onSelectDocTab, onJoinRoom }) {
+export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc, pastDocs, uploading, onPastDocsChange, onSelectDocTab, onJoinRoom, notesSlot }) {
   const [stats, setStats] = useState(null);
   const [history, setHistory] = useState(null);
   const [editingFolder, setEditingFolder] = useState(null);
@@ -75,7 +75,7 @@ export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc
           <span className="dash-stat-label">오늘 복습</span>
         </div>
         <div className="dash-stat-card dash-stat--wrong">
-          <span className="dash-stat-icon">✗</span>
+          <span className="dash-stat-icon">📕</span>
           <span className="dash-stat-value">{stats?.total_wrongs ?? "—"}</span>
           <span className="dash-stat-label">전체 오답</span>
         </div>
@@ -104,6 +104,8 @@ export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc
           </div>
         </div>
       )}
+
+      {notesSlot}
 
       {/* 최근 퀴즈 */}
       {stats?.recent_quizzes?.length > 0 && (
