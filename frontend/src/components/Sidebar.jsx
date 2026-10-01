@@ -60,7 +60,7 @@ export default function Sidebar({
             <span className="sb-icon">⚙️</span><span className="sb-label">설정</span>
           </button>
           <label className="sb-item">
-            <input type="file" accept=".pdf" hidden disabled={uploading}
+            <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.gif" hidden disabled={uploading}
               onChange={e => { if (e.target.files?.[0]) { onUpload([e.target.files[0]]); e.target.value = ""; onClose?.(); } }} />
             <span className="sb-icon">⬆️</span><span className="sb-label">{uploading ? "분석 중…" : "PDF 업로드"}</span>
           </label>

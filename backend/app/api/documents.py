@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from ..core.parser import extract_chunks_with_pages
+from ..core.parser import chunk_text, extract_chunks_with_pages, extract_text_from_image
 from ..core.rag import add_chunks
 from ..core.summarizer import summarize_document
 from ..db.models import Document, QuizHistory, QuizSession, WrongAnswer
@@ -27,43 +27,63 @@ def get_db():
         db.close()
 
 
+_IMAGE_EXTS = {"jpg", "jpeg", "png", "webp", "gif"}
+
+
 @router.post("/upload")
 async def upload_document(
     file: UploadFile = File(...),
     x_user_id: str | None = Header(default=None),
     db: Session = Depends(get_db),
 ):
-    return ingest_pdf(file, x_user_id, db)
+    return ingest_file(file, x_user_id, db)
 
 
-def ingest_pdf(file: UploadFile, x_user_id: str | None, db: Session, group_id: str | None = None) -> dict:
-    """PDF를 저장·청크·임베딩하고 Document 행을 만든다. 개인 업로드와 그룹 업로드가 함께 쓴다."""
-    if not (file.filename or "").endswith(".pdf"):
-        raise HTTPException(400, "PDF 파일만 업로드 가능합니다.")
+def ingest_file(file: UploadFile, x_user_id: str | None, db: Session, group_id: str | None = None) -> dict:
+    """PDF 또는 이미지를 청크·임베딩하고 Document 행을 만든다."""
+    fname = file.filename or "untitled"
+    ext = fname.rsplit(".", 1)[-1].lower() if "." in fname else ""
+    ct = file.content_type or ""
+    is_image = ct.startswith("image/") or ext in _IMAGE_EXTS
+    is_pdf = ct == "application/pdf" or ext == "pdf"
+
+    if not (is_pdf or is_image):
+        raise HTTPException(400, "PDF 또는 이미지(JPG, PNG, WEBP) 파일만 업로드 가능합니다.")
 
     doc_id = str(uuid.uuid4())
-    save_path = f"{UPLOAD_DIR}/{doc_id}.pdf"
 
-    with open(save_path, "wb") as f:
-        shutil.copyfileobj(file.file, f)
+    if is_pdf:
+        save_path = f"{UPLOAD_DIR}/{doc_id}.pdf"
+        with open(save_path, "wb") as f:
+            shutil.copyfileobj(file.file, f)
+        chunks_with_pages = extract_chunks_with_pages(save_path)
+        if not chunks_with_pages:
+            os.remove(save_path)
+            raise HTTPException(422, "텍스트를 추출할 수 없습니다.")
+        chunks = [c for c, _ in chunks_with_pages]
+        metas = [{"doc_id": doc_id, "chunk_idx": i, "page": p} for i, (_, p) in enumerate(chunks_with_pages)]
+    else:
+        image_data = file.file.read()
+        try:
+            text = extract_text_from_image(image_data, ct or f"image/{ext}")
+        except ValueError as e:
+            raise HTTPException(503, str(e))
+        if not text.strip():
+            raise HTTPException(422, "이미지에서 텍스트를 추출할 수 없습니다.")
+        chunks = chunk_text(text) or [text]
+        metas = [{"doc_id": doc_id, "chunk_idx": i, "page": 1} for i in range(len(chunks))]
 
-    chunks_with_pages = extract_chunks_with_pages(save_path)
-    if not chunks_with_pages:
-        os.remove(save_path)
-        raise HTTPException(422, "텍스트를 추출할 수 없습니다.")
-
-    chunks = [c for c, _ in chunks_with_pages]
-    add_chunks(
-        doc_id,
-        chunks,
-        [{"doc_id": doc_id, "chunk_idx": i, "page": p} for i, (_, p) in enumerate(chunks_with_pages)],
-    )
+    add_chunks(doc_id, chunks, metas)
 
     if x_user_id:
-        db.add(Document(id=doc_id, user_id=x_user_id, filename=file.filename, chunks=len(chunks), group_id=group_id))
+        db.add(Document(id=doc_id, user_id=x_user_id, filename=fname, chunks=len(chunks), group_id=group_id))
         db.commit()
 
-    return {"doc_id": doc_id, "filename": file.filename, "chunks": len(chunks)}
+    return {"doc_id": doc_id, "filename": fname, "chunks": len(chunks)}
+
+
+# 하위 호환 alias
+ingest_pdf = ingest_file
 
 
 @router.delete("/{doc_id}")

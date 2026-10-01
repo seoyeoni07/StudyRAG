@@ -91,7 +91,7 @@ export default function GroupHome({
         <div className="dash-section-header">
           <p className="dash-section-title">공유 자료</p>
           <label className="btn-ghost" style={{ cursor: uploading ? "default" : "pointer" }}>
-            <input type="file" accept=".pdf" hidden disabled={uploading}
+            <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.gif" hidden disabled={uploading}
               onChange={e => { if (e.target.files?.[0]) { onUpload(e.target.files[0]); e.target.value = ""; } }} />
             {uploading ? "분석 중…" : "+ 자료 올리기"}
           </label>

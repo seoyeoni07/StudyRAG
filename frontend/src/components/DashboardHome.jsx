@@ -133,14 +133,14 @@ export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc
         <div className="dash-section-header">
           <p className="dash-section-title">내 자료</p>
           <label className="btn-primary dash-upload-btn">
-            <input type="file" accept=".pdf" hidden disabled={uploading} onChange={handleFile} />
+            <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.gif" hidden disabled={uploading} onChange={handleFile} />
             {uploading ? "분석 중…" : "+ 자료 추가"}
           </label>
         </div>
 
         {pastDocs.length === 0 ? (
           <label className="dash-empty-upload">
-            <input type="file" accept=".pdf" hidden disabled={uploading} onChange={handleFile} />
+            <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.gif" hidden disabled={uploading} onChange={handleFile} />
             <p className="upload-heading">{uploading ? "분석 중…" : "강의자료 PDF 업로드"}</p>
             <p className="upload-sub">파일을 클릭해서 선택하거나 이 영역에 드래그하세요.</p>
             {!uploading && <span className="upload-btn">파일 선택</span>}
