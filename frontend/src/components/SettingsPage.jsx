@@ -1,12 +1,13 @@
-import { useState } from "react";
-import { auth, updateUserProfile, changePassword, sendVerificationEmail } from "../firebase";
+import { useState, useRef } from "react";
+import { auth, updateUserProfile, changePassword } from "../firebase";
+import { apiFetch, BASE } from "../api";
 
 const FIREBASE_ERRORS = {
   "auth/wrong-password":        "현재 비밀번호가 틀렸어요.",
+  "auth/invalid-credential":    "현재 비밀번호가 틀렸어요.",
   "auth/weak-password":         "비밀번호는 6자 이상이어야 해요.",
   "auth/too-many-requests":     "요청이 너무 많아요. 잠시 후 다시 시도해주세요.",
   "auth/requires-recent-login": "보안을 위해 다시 로그인 후 시도해주세요.",
-  "auth/email-already-in-use":  "이미 사용 중인 이메일이에요.",
 };
 const fmtErr = (e) => FIREBASE_ERRORS[e?.code] || e?.message || "오류가 발생했어요.";
 
@@ -32,6 +33,9 @@ export default function SettingsPage({ user, onUserRefresh }) {
   const [name, setName] = useState(user.displayName || "");
   const [nameSaving, setNameSaving] = useState(false);
   const [nameMsg, setNameMsg] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const fileRef = useRef();
 
   // 비밀번호
   const [curPw, setCurPw] = useState("");
@@ -40,9 +44,29 @@ export default function SettingsPage({ user, onUserRefresh }) {
   const [pwSaving, setPwSaving] = useState(false);
   const [pwMsg, setPwMsg] = useState(null);
 
-  // 이메일 인증
-  const [verifySent, setVerifySent] = useState(false);
-  const [verifyMsg, setVerifyMsg] = useState(null);
+  async function handleAvatarChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // 미리보기
+    const reader = new FileReader();
+    reader.onload = (ev) => setAvatarPreview(ev.target.result);
+    reader.readAsDataURL(file);
+    // 업로드
+    setAvatarUploading(true);
+    setNameMsg(null);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const { url } = await apiFetch("/notes/images", { method: "POST", body: form });
+      const photoURL = (BASE || "") + url;
+      await updateUserProfile(auth.currentUser.displayName || name, photoURL);
+      onUserRefresh?.();
+      setNameMsg({ ok: true, text: "프로필 사진이 변경됐어요." });
+    } catch (err) {
+      setNameMsg({ ok: false, text: fmtErr(err) });
+      setAvatarPreview(null);
+    } finally { setAvatarUploading(false); }
+  }
 
   async function saveName(e) {
     e.preventDefault();
@@ -71,33 +95,36 @@ export default function SettingsPage({ user, onUserRefresh }) {
     } finally { setPwSaving(false); }
   }
 
-  async function sendVerify() {
-    setVerifyMsg(null);
-    try {
-      await sendVerificationEmail();
-      setVerifySent(true);
-      setVerifyMsg({ ok: true, text: "인증 메일을 보냈어요. 받은 편지함을 확인해주세요." });
-    } catch (err) {
-      setVerifyMsg({ ok: false, text: fmtErr(err) });
-    }
-  }
+  const avatarSrc = avatarPreview || user.photoURL;
 
   return (
     <div className="settings-wrap">
 
       {/* 프로필 */}
       <Section title="프로필">
-        <div className="settings-avatar">
-          {user.photoURL
-            ? <img src={user.photoURL} alt="프로필" className="settings-avatar-img" referrerPolicy="no-referrer" />
-            : <span className="settings-avatar-init">{(user.displayName || user.email || "?")[0].toUpperCase()}</span>
-          }
+        {/* 프로필 사진 */}
+        <div className="settings-avatar-edit">
+          <div className="settings-avatar-wrap" onClick={() => fileRef.current?.click()}
+            title="클릭해서 사진 변경" role="button" aria-label="프로필 사진 변경">
+            {avatarSrc
+              ? <img src={avatarSrc} alt="프로필" className="settings-avatar-img" referrerPolicy="no-referrer" />
+              : <span className="settings-avatar-init">{(user.displayName || user.email || "?")[0].toUpperCase()}</span>
+            }
+            <span className="settings-avatar-overlay">
+              {avatarUploading ? <span className="spinner spinner-sm" /> : "✎"}
+            </span>
+          </div>
+          <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif"
+            hidden onChange={handleAvatarChange} />
           <div>
             <p className="settings-email">{user.email}</p>
             <p className="settings-provider">{isGoogleUser ? "Google 계정" : "이메일 계정"}</p>
+            <p className="settings-avatar-hint">프로필 사진을 클릭해서 변경</p>
           </div>
         </div>
-        <form className="settings-form" onSubmit={saveName}>
+
+        {/* 표시 이름 */}
+        <form className="settings-form" onSubmit={saveName} style={{ marginTop: 16 }}>
           <label className="settings-label">표시 이름</label>
           <input className="input" value={name} onChange={e => setName(e.target.value)}
             placeholder="표시될 이름" maxLength={40} />
@@ -107,23 +134,6 @@ export default function SettingsPage({ user, onUserRefresh }) {
         </form>
         <StatusMsg ok={nameMsg?.ok} msg={nameMsg?.text} />
       </Section>
-
-      {/* 이메일 인증 */}
-      {isEmailUser && (
-        <Section title="이메일 인증">
-          {user.emailVerified ? (
-            <p className="settings-verified">이메일이 인증됐어요.</p>
-          ) : (
-            <>
-              <p className="settings-unverified">아직 이메일 인증이 완료되지 않았어요.</p>
-              <button className="btn-secondary" onClick={sendVerify} disabled={verifySent}>
-                {verifySent ? "메일 발송됨" : "인증 메일 보내기"}
-              </button>
-              <StatusMsg ok={verifyMsg?.ok} msg={verifyMsg?.text} />
-            </>
-          )}
-        </Section>
-      )}
 
       {/* 비밀번호 변경 */}
       {isEmailUser && (

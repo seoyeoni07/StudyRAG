@@ -33,8 +33,10 @@ export async function signUpWithEmail(email, password, displayName) {
   return cred;
 }
 
-export async function updateUserProfile(displayName) {
-  await updateProfile(auth.currentUser, { displayName: displayName.trim() });
+export async function updateUserProfile(displayName, photoURL) {
+  const updates = { displayName: displayName.trim() };
+  if (photoURL !== undefined) updates.photoURL = photoURL;
+  await updateProfile(auth.currentUser, updates);
 }
 
 export async function changePassword(currentPassword, newPassword) {

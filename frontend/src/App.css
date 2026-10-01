@@ -1119,10 +1119,21 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 .settings-section { border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
 .settings-section-title { font-size: 14px; font-weight: 600; color: var(--text-2); margin-bottom: 16px; }
 
-.settings-avatar { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
-.settings-avatar-img  { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
-.settings-avatar-init { width: 48px; height: 48px; border-radius: 50%; background: var(--primary-light);
-  color: var(--primary); font-size: 20px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.settings-avatar-edit { display: flex; align-items: center; gap: 14px; }
+.settings-avatar-wrap {
+  position: relative; cursor: pointer; border-radius: 50%; flex-shrink: 0;
+  width: 64px; height: 64px;
+}
+.settings-avatar-wrap:hover .settings-avatar-overlay { opacity: 1; }
+.settings-avatar-img  { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; display: block; }
+.settings-avatar-init { width: 64px; height: 64px; border-radius: 50%; background: var(--primary-light);
+  color: var(--primary); font-size: 24px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.settings-avatar-overlay {
+  position: absolute; inset: 0; border-radius: 50%; background: rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 18px; opacity: 0; transition: opacity .15s;
+}
+.settings-avatar-hint { font-size: 11px; color: var(--text-4); margin-top: 4px; }
 .settings-email    { font-size: 14px; color: var(--text-1); font-weight: 500; }
 .settings-provider { font-size: 12px; color: var(--text-3); margin-top: 2px; }
 
