@@ -3,6 +3,12 @@ import random
 
 from .rag import _llm, _FALLBACK_MODELS, _PRIMARY_MODEL, get_vectorstore
 
+_RETRIABLE = ("overload", "503", "temporarily", "provider_overloaded", "unavailable for free", "404")
+
+
+def _is_retriable(e: Exception) -> bool:
+    return any(k in str(e).lower() for k in _RETRIABLE)
+
 _GENERATE_PROMPT = """\
 당신은 대학 강의자료 기반 퀴즈 출제 전문가입니다.
 아래 강의자료를 바탕으로 {n}개의 퀴즈를 출제하세요.
@@ -74,12 +80,11 @@ def generate_quiz(doc_id: str, n: int = 5, focus_difficulty: str | None = None) 
             response = _llm(model).invoke(prompt)
             return json.loads(response.content)["questions"]
         except Exception as e:
-            msg = str(e).lower()
-            if any(k in msg for k in ("overload", "503", "temporarily", "provider_overloaded")):
+            if _is_retriable(e):
                 last_err = e
                 continue
             raise
-    raise ValueError(f"AI 서버가 일시적으로 과부하 상태입니다. 잠시 후 다시 시도해주세요. ({last_err})")
+    raise ValueError(f"AI 서버가 일시적으로 과부하 상태입니다. 잠시 후 다시 시도해주세요.")
 
 
 def grade_short_answer(question: str, correct: str, user: str) -> dict:
@@ -89,9 +94,8 @@ def grade_short_answer(question: str, correct: str, user: str) -> dict:
             response = _llm(model).invoke(_GRADE_PROMPT.format(question=question, correct=correct, user=user))
             return json.loads(response.content)
         except Exception as e:
-            msg = str(e).lower()
-            if any(k in msg for k in ("overload", "503", "temporarily", "provider_overloaded")):
+            if _is_retriable(e):
                 last_err = e
                 continue
             raise
-    raise ValueError(f"채점 서버가 과부하 상태입니다. ({last_err})")
+    raise ValueError("채점 서버가 과부하 상태입니다.")
