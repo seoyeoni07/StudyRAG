@@ -15,10 +15,18 @@ _VISION_MODELS = [
 _RETRIABLE_VISION = ("overload", "503", "temporarily", "unavailable", "404")
 
 
-def _image_to_b64_png(image) -> str:
+def _image_to_b64_jpeg(image, max_px=1024, quality=75) -> str:
+    """PIL Image → JPEG base64 (크기/용량 최소화)"""
     import io, base64
+    from PIL import Image
+    w, h = image.size
+    if max(w, h) > max_px:
+        ratio = max_px / max(w, h)
+        image = image.resize((int(w * ratio), int(h * ratio)), Image.LANCZOS)
+    if image.mode != "RGB":
+        image = image.convert("RGB")
     buf = io.BytesIO()
-    image.save(buf, format="PNG")
+    image.save(buf, format="JPEG", quality=quality)
     return base64.b64encode(buf.getvalue()).decode()
 
 
@@ -26,14 +34,16 @@ def _ocr_page_vision(image) -> str:
     """PIL Image → Vision LLM 텍스트 추출"""
     from langchain_core.messages import HumanMessage
     from .rag import _llm
-    b64 = _image_to_b64_png(image)
+    b64 = _image_to_b64_jpeg(image)
     msg = HumanMessage(content=[
-        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}},
+        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}},
         {"type": "text", "text": "이 페이지의 모든 텍스트를 빠짐없이 추출해주세요."},
     ])
     for model in _VISION_MODELS:
         try:
-            return _llm(model).invoke([msg]).content
+            text = _llm(model).invoke([msg]).content
+            if text.strip():
+                return text
         except Exception:
             continue
     return ""
@@ -54,7 +64,7 @@ def _get_page_images(file_path: str):
     """PDF 페이지 이미지 목록 반환. pdf2image → PyMuPDF 순서로 시도."""
     try:
         from pdf2image import convert_from_path
-        return convert_from_path(file_path)
+        return convert_from_path(file_path, dpi=100)
     except Exception:
         pass
     try:
@@ -64,7 +74,7 @@ def _get_page_images(file_path: str):
         doc = fitz.open(file_path)
         images = []
         for page in doc:
-            pix = page.get_pixmap(dpi=150)
+            pix = page.get_pixmap(dpi=100)
             images.append(Image.open(io.BytesIO(pix.tobytes("png"))))
         doc.close()
         return images
@@ -80,16 +90,22 @@ def _page_text(page, idx: int, ocr_images: list | None) -> str:
 
 
 def extract_chunks_with_pages(file_path: str) -> list[tuple[str, int]]:
+    import logging
+    log = logging.getLogger(__name__)
+
     ocr_images = _get_page_images(file_path)
+    log.info("PDF OCR images available: %s", ocr_images is not None and len(ocr_images))
 
     result: list[tuple[str, int]] = []
     with pdfplumber.open(file_path) as pdf:
         for idx, page in enumerate(pdf.pages):
             text = _page_text(page, idx, ocr_images)
+            log.info("Page %d text len: %d", idx + 1, len(text.strip()))
             if not text.strip():
                 continue
             for chunk in _SPLITTER.split_text(text):
                 result.append((chunk, idx + 1))
+    log.info("Total chunks: %d", len(result))
     return result
 
 
