@@ -94,7 +94,7 @@ export default function Sidebar({
                         return (
                           <button key={d.doc_id} className={`sb-item sb-child ${active ? "active" : ""}`} title={`${d.filename} · ${d.uploader_name}`}
                             onClick={() => go({ type: "doc", docId: d.doc_id, filename: d.filename, groupId: g.id, tab: active ? view.tab : "summary" })}>
-                            <span className="sb-icon">📄</span>
+                            <span className="sb-icon">{(d.status === "processing" ? "⏳" : d.status === "failed" ? "⚠️" : "📄")}</span>
                             <span className="sb-label">{d.filename.replace(/\.pdf$/i, "")}</span>
                           </button>
                         );
@@ -153,7 +153,7 @@ export default function Sidebar({
                     onClick={() => go({ type: "doc", docId: d.doc_id, filename: d.filename, tab: active ? view.tab : "summary" })}
                     title={d.filename}>
                     <Caret open={isOpen(d.doc_id)} onClick={() => toggle(d.doc_id)} />
-                    <span className="sb-icon">📄</span>
+                    <span className="sb-icon">{(d.status === "processing" ? "⏳" : d.status === "failed" ? "⚠️" : "📄")}</span>
                     <span className="sb-label">{d.filename.replace(/\.pdf$/i, "")}</span>
                   </button>
                   {isOpen(d.doc_id) && (

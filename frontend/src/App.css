@@ -1213,3 +1213,8 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 .settings-unverified { font-size: 13px; color: var(--amber); margin-bottom: 10px; }
 .settings-provider-note { font-size: 13px; color: var(--text-3); line-height: 1.6; }
 .callout--quiz strong { font-weight: 600; }
+.group-failed {
+  display: inline-flex; align-items: center; flex-shrink: 0;
+  font-size: 11px; color: var(--red); background: var(--red-bg);
+  border-radius: var(--r-sm); padding: 0 6px; margin-left: 4px;
+}

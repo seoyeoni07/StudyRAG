@@ -14,7 +14,18 @@ class Document(Base):
     summary = Column(Text, nullable=True)
     folder = Column(String(64), nullable=True)
     group_id = Column(String(36), nullable=True, index=True)   # 그룹 공유 자료면 그룹 id
+    # 이미지 자료는 글자 인식을 백그라운드로 돌린다: processing → done | failed
+    status = Column(String(16), nullable=False, default="done", server_default="done")
+    error = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class DocumentFile(Base):
+    """이미지 자료 원본. 인식 실패 시 다시 시도할 수 있도록 DB에 보관한다 (Render 디스크는 재배포 때 지워짐)."""
+    __tablename__ = "document_files"
+    doc_id = Column(String(36), primary_key=True)
+    content_type = Column(String(64), nullable=False)
+    data = Column(LargeBinary, nullable=False)
 
 
 class QuizSession(Base):

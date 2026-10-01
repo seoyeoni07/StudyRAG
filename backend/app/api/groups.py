@@ -3,13 +3,13 @@ import string
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, File, Header, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Header, HTTPException, UploadFile
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..db.models import Document, Note, StudyGroup, StudyGroupMember
 from ..db.session import SessionLocal
-from .documents import ingest_pdf
+from .documents import ingest_upload
 
 router = APIRouter(prefix="/groups", tags=["groups"])
 
@@ -173,6 +173,7 @@ def list_group_documents(group_id: str, x_user_id: str | None = Header(default=N
         {
             "doc_id": r.id, "filename": r.filename, "chunks": r.chunks,
             "uploaded_by": r.user_id, "uploader_name": names.get(r.user_id, "나간 멤버"),
+            "status": r.status or "done",
             "created_at": _iso(r.created_at),
         }
         for r in rows
@@ -180,15 +181,18 @@ def list_group_documents(group_id: str, x_user_id: str | None = Header(default=N
 
 
 @router.post("/{group_id}/documents")
-def upload_group_document(
+async def upload_group_document(
     group_id: str,
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     x_user_id: str | None = Header(default=None),
     db: Session = Depends(get_db),
 ):
     user_id = _require_user(x_user_id)
     me = require_member(db, group_id, user_id)
-    result = ingest_pdf(file, user_id, db, group_id=group_id)
+    data = await file.read()
+    import asyncio
+    result = await asyncio.to_thread(ingest_upload, file, data, user_id, db, background_tasks, group_id)
     return {**result, "uploaded_by": user_id, "uploader_name": me.display_name,
             "created_at": datetime.utcnow().isoformat()}
 

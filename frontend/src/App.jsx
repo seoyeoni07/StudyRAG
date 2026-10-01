@@ -113,6 +113,33 @@ export default function App() {
   const docId = view.type === "doc" ? view.docId : null;
   const groupId = view.groupId || null;
 
+  // 이미지 자료는 글자 인식이 끝나야 요약·Q&A를 쓸 수 있다 — 상태를 확인하고 처리 중이면 3초마다 다시 본다
+  const [docStatus, setDocStatus] = useState(null); // { docId, status, error }
+  const docStatusValue = docStatus?.docId === docId ? docStatus.status : null;
+  useEffect(() => {
+    if (!docId) return;
+    let alive = true;
+    let timer;
+    const check = async () => {
+      try {
+        const s = await apiFetch(`/documents/upload-status/${docId}`);
+        if (!alive) return;
+        setDocStatus({ docId, status: s.status, error: s.error });
+        if (s.status === "processing") timer = setTimeout(check, 3000);
+        else {
+          const patchStatus = d => d.doc_id === docId ? { ...d, status: s.status } : d;
+          setPastDocs(prev => prev.map(patchStatus));
+          setGroupData(g => Object.fromEntries(Object.entries(g).map(([k, v]) =>
+            [k, v?.docs ? { ...v, docs: v.docs.map(patchStatus) } : v])));
+        }
+      } catch {
+        if (alive) timer = setTimeout(check, 5000);
+      }
+    };
+    check();
+    return () => { alive = false; clearTimeout(timer); };
+  }, [docId, docStatusValue === "processing"]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // 그룹 멤버들에게 내가 지금 보고 있는 페이지를 알린다 (presence)
   useEffect(() => {
     const viewing = view.type === "group" ? "home"
@@ -151,15 +178,9 @@ export default function App() {
       form.append("file", files[0]);
       const data = await apiFetch("/documents/upload", { method: "POST", body: form });
       setServerWaking(false);
-      setPastDocs(prev => [{ doc_id: data.doc_id, filename: data.filename, created_at: new Date().toISOString() }, ...prev]);
+      setPastDocs(prev => [{ doc_id: data.doc_id, filename: data.filename, status: data.status, created_at: new Date().toISOString() }, ...prev]);
       setPreJoined(null);
       setView({ type: "doc", docId: data.doc_id, filename: data.filename, tab: "summary" });
-
-      // 이미지: 백그라운드 OCR 완료까지 폴링
-      if (data.status === "processing") {
-        const pollDone = await _pollUploadStatus(data.doc_id);
-        if (!pollDone) setError("이미지 분석에 실패했습니다. 다시 시도해 주세요.");
-      }
     } catch (err) {
       if (err.isColdStart) setServerWaking(true);
       else setError(err.message);
@@ -167,18 +188,11 @@ export default function App() {
     finally { setUploading(false); }
   }
 
-  async function _pollUploadStatus(docId, maxWaitMs = 120000) {
-    const interval = 3000;
-    const deadline = Date.now() + maxWaitMs;
-    while (Date.now() < deadline) {
-      await new Promise(r => setTimeout(r, interval));
-      try {
-        const s = await apiFetch(`/documents/upload-status/${docId}`);
-        if (s.status === "done") return true;
-        if (s.status === "failed") return false;
-      } catch { /* 일시적 네트워크 오류는 무시 */ }
-    }
-    return false;
+  async function retryRecognition() {
+    try {
+      await apiFetch(`/documents/${docId}/reprocess`, { method: "POST" });
+      setDocStatus({ docId, status: "processing", error: null });
+    } catch (err) { setError(err.message); }
   }
 
   function selectDoc(id, name, targetTab = "summary") {
@@ -545,7 +559,24 @@ export default function App() {
                 {groupId && (view.tab === "qa" || view.tab === "tutor") && " · 그룹 자료지만 대화 기록은 나만 볼 수 있어요"}
               </p>
 
-              <div key={docId}>
+              {docStatusValue === "processing" && (
+                <div className="callout">
+                  <div className="spinner spinner-sm" />
+                  <span>이미지에서 글자를 인식하는 중이에요. 무료 AI가 붐비면 1~2분 걸릴 수 있어요. 끝나면 자동으로 열려요.</span>
+                </div>
+              )}
+              {docStatusValue === "failed" && (
+                <div className="error-banner">
+                  <span className="error-icon">⚠️</span>
+                  <span style={{ flex: 1 }}>
+                    이미지 인식에 실패했어요. 무료 AI 모델이 잠시 붐비는 경우가 많아요 — 잠시 후 다시 시도해주세요.
+                    {docStatus?.error && <><br /><small style={{ opacity: .75 }}>{docStatus.error}</small></>}
+                  </span>
+                  <button className="btn-primary" onClick={retryRecognition}>다시 시도</button>
+                </div>
+              )}
+
+              {(docStatusValue === "done" || docStatusValue === null) && <div key={docId}>
                 {[
                   ["summary", <SummarySection key="summary" docId={docId} onSaveNote={saveToNote} />],
                   ["qa",      <QASection key="qa" docId={docId} onSaveNote={saveToNote} />],
@@ -567,7 +598,7 @@ export default function App() {
                     {el}
                   </div>
                 ))}
-              </div>
+              </div>}
             </>
           )}
         </div>

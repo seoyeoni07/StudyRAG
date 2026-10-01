@@ -108,8 +108,10 @@ export default function GroupHome({
               return (
                 <div key={d.doc_id} className="group-row" role="row">
                   <button className="group-cell-main" onClick={() => onOpenDoc(d)} title={d.filename}>
-                    <span className="sb-icon">📄</span>
+                    <span className="sb-icon">{(d.status === "processing" ? "⏳" : d.status === "failed" ? "⚠️" : "📄")}</span>
                     <span className="group-cell-title">{d.filename.replace(/\.pdf$/i, "")}</span>
+                    {d.status === "processing" && <span className="group-watching">인식 중</span>}
+                    {d.status === "failed" && <span className="group-failed">인식 실패</span>}
                     {watching.length > 0 && <span className="group-watching">{watching.map(w => w.name).join(", ")} 보는 중</span>}
                   </button>
                   <span className="group-cell-person"><Avatar name={d.uploader_name} size={18} />{d.uploader_name}</span>

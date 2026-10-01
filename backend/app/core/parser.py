@@ -66,6 +66,26 @@ def _gemini_vision(b64: str, prompt: str) -> str:
         return ""
 
 
+def _invoke_vision(model: str, msg) -> str:
+    """무료 모델은 공용 한도라 429(잠시 막힘)가 잦다 — 몇 초 쉬고 최대 2번 더 시도한다."""
+    import time
+    from .rag import _llm
+    delays = [0, 4, 10]
+    for i, delay in enumerate(delays):
+        if delay:
+            time.sleep(delay)
+        try:
+            content = _llm(model).invoke([msg]).content
+            if isinstance(content, list):
+                content = " ".join(p.get("text", "") if isinstance(p, dict) else str(p) for p in content)
+            return content or ""
+        except Exception as e:
+            rate_limited = "429" in str(e) or "rate" in str(e).lower()
+            if not rate_limited or i == len(delays) - 1:
+                raise
+    return ""
+
+
 def _ocr_page_vision(image) -> str:
     """PIL Image → Vision LLM 텍스트 추출 (Gemini → OpenRouter 순)"""
     from langchain_core.messages import HumanMessage
@@ -86,7 +106,7 @@ def _ocr_page_vision(image) -> str:
     ])
     for model in _OPENROUTER_VISION_MODELS:
         try:
-            text = _llm(model).invoke([msg]).content
+            text = _invoke_vision(model, msg)
             if text.strip():
                 return text
             log.warning("Vision LLM %s returned empty", model)
@@ -195,7 +215,7 @@ def extract_text_from_image(image_data: bytes, content_type: str) -> str:
     last_err = None
     for model in _OPENROUTER_VISION_MODELS:
         try:
-            text = _llm(model).invoke([msg]).content
+            text = _invoke_vision(model, msg)
             if text.strip():
                 return text
             log.warning("Vision LLM %s returned empty", model)
