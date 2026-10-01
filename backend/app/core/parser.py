@@ -42,7 +42,10 @@ def _gemini_vision(b64: str, prompt: str) -> str:
             {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}},
             {"type": "text", "text": prompt},
         ])
-        return llm.invoke([msg]).content or ""
+        content = llm.invoke([msg]).content
+        if isinstance(content, list):
+            return " ".join(p if isinstance(p, str) else p.get("text", "") for p in content)
+        return content or ""
     except Exception as e:
         import logging
         logging.getLogger(__name__).warning("Gemini vision failed: %s", e)
