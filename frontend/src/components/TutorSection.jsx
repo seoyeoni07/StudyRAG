@@ -15,10 +15,20 @@ export default function TutorSection({ docId }) {
   const [history, setHistory] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [histLoading, setHistLoading] = useState(true);
   const [error, setError] = useState("");
   const [summary, setSummary] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const bottomRef = useRef(null);
+
+  useEffect(() => {
+    setHistory([]);
+    setHistLoading(true);
+    apiFetch(`/tutor/history?doc_id=${docId}`)
+      .then(data => setHistory(data))
+      .catch(() => {})
+      .finally(() => setHistLoading(false));
+  }, [docId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -67,6 +77,15 @@ export default function TutorSection({ docId }) {
     } finally {
       setSummaryLoading(false);
     }
+  }
+
+  if (histLoading) {
+    return (
+      <div className="loading-wrap">
+        <div className="spinner" />
+        <span className="loading-text">대화 이력 불러오는 중…</span>
+      </div>
+    );
   }
 
   return (

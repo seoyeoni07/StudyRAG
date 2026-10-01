@@ -49,6 +49,16 @@ class QuizHistory(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+class TutorThread(Base):
+    __tablename__ = "tutor_threads"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    doc_id = Column(String(36), nullable=False, index=True)
+    user_id = Column(String(128), nullable=True, index=True)
+    role = Column(String(16), nullable=False)
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class QAThread(Base):
     __tablename__ = "qa_threads"
     id = Column(Integer, primary_key=True, autoincrement=True)

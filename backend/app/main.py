@@ -30,6 +30,14 @@ async def startup():
         "ALTER TABLE wrong_answers ADD COLUMN IF NOT EXISTS next_review TIMESTAMP",
         "ALTER TABLE wrong_answers ADD COLUMN IF NOT EXISTS review_count INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE documents ADD COLUMN IF NOT EXISTS folder VARCHAR(64)",
+        """CREATE TABLE IF NOT EXISTS tutor_threads (
+            id SERIAL PRIMARY KEY,
+            doc_id VARCHAR(36) NOT NULL,
+            user_id VARCHAR(128),
+            role VARCHAR(16) NOT NULL,
+            content TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT NOW()
+        )""",
         """CREATE TABLE IF NOT EXISTS qa_threads (
             id SERIAL PRIMARY KEY,
             doc_id VARCHAR(36) NOT NULL,

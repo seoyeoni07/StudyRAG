@@ -9,6 +9,7 @@ export default function SummarySection({ docId }) {
   useEffect(() => {
     setSummary(null);
     setError("");
+    load();
   }, [docId]);
 
   async function load() {

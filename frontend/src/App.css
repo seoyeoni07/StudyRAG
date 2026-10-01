@@ -200,7 +200,11 @@ body {
   margin-bottom: 12px;
   border-bottom: 1px solid var(--border);
   padding-bottom: 0;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
 }
+.tabs::-webkit-scrollbar { display: none; }
 .tab {
   padding: 8px 16px;
   border: none;
@@ -1018,6 +1022,37 @@ body {
 .room-no-submit { margin-top: 12px; }
 .room-no-submit-label { font-size: 12px; font-weight: 700; color: var(--red); margin-bottom: 6px; }
 .leaderboard-row--absent { opacity: .6; border: 1px dashed var(--red-border); }
+
+/* ── Back btn + doc switcher ──────────────── */
+.back-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 13px; color: var(--primary); font-weight: 600;
+  padding: 0 8px 0 0; white-space: nowrap;
+  font-family: inherit;
+}
+.back-btn:hover { text-decoration: underline; }
+.doc-switcher {
+  max-width: 240px; font-size: 13px; padding: 4px 8px;
+  border: 1px solid var(--border); border-radius: var(--r-sm);
+  background: var(--bg-card); color: var(--text-1);
+  font-family: inherit; cursor: pointer;
+}
+
+/* ── Quiz n-button group ──────────────────── */
+.n-btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ── Room code copy button ────────────────── */
+.room-code-copy {
+  background: var(--bg-subtle); border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: 3px 10px;
+  font-size: 12px; cursor: pointer; font-family: inherit;
+  color: var(--text-2);
+}
+.room-code-copy:hover { background: var(--border); }
+
+/* ── Dashboard group study join ───────────── */
+.dash-room-join { border: 1px dashed var(--border); border-radius: var(--r-lg); }
+.dash-room-join-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
 /* ── Print ────────────────────────────────── */
 @media print {

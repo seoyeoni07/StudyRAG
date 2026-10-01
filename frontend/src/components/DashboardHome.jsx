@@ -1,12 +1,30 @@
 import { useState, useEffect, useRef } from "react";
 import { apiFetch } from "../api";
 
-export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc, pastDocs, uploading, onPastDocsChange, onSelectDocTab }) {
+export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc, pastDocs, uploading, onPastDocsChange, onSelectDocTab, onJoinRoom }) {
   const [stats, setStats] = useState(null);
-  const [history, setHistory] = useState(null);  // 선택한 문서의 이력
-  const [editingFolder, setEditingFolder] = useState(null); // doc_id
+  const [history, setHistory] = useState(null);
+  const [editingFolder, setEditingFolder] = useState(null);
   const [folderInput, setFolderInput] = useState("");
+  const [joinNick, setJoinNick] = useState("");
+  const [joinCode, setJoinCode] = useState("");
+  const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState("");
   const folderRef = useRef(null);
+
+  async function handleJoinRoom() {
+    if (!joinNick.trim() || joinCode.length < 4) return;
+    setJoining(true); setJoinError("");
+    try {
+      const res = await apiFetch("/rooms/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: joinCode.trim().toUpperCase(), nickname: joinNick }),
+      });
+      onJoinRoom?.(res.room_id, res.doc_id, joinNick);
+    } catch (err) { setJoinError(err.message); }
+    finally { setJoining(false); }
+  }
 
   useEffect(() => {
     apiFetch("/documents/dashboard").then(setStats).catch(() => {});
@@ -91,9 +109,9 @@ export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc
           <div className="dash-quiz-list">
             {stats.recent_quizzes.map((q, i) => (
               <div key={i} className="dash-quiz-row"
-                onClick={() => onSelectDoc(q.doc_id, q.doc_name)}
+                onClick={() => onSelectDocTab(q.doc_id, q.doc_name, "quiz")}
                 role="button" tabIndex={0}
-                onKeyDown={(e) => e.key === "Enter" && onSelectDoc(q.doc_id, q.doc_name)}>
+                onKeyDown={(e) => e.key === "Enter" && onSelectDocTab(q.doc_id, q.doc_name, "quiz")}>
                 <span className="dash-quiz-name" title={q.doc_name}>{q.doc_name}</span>
                 <span className={`dash-quiz-score ${pct(q.score, q.total) >= 80 ? "score--high" : pct(q.score, q.total) >= 50 ? "score--mid" : "score--low"}`}>
                   {q.score}/{q.total} ({pct(q.score, q.total)}%)
@@ -198,6 +216,27 @@ export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc
           </div>
         )}
       </div>
+
+      {/* 그룹 스터디 참가 (PDF 없이) */}
+      {onJoinRoom && (
+        <div className="dash-section dash-room-join">
+          <p className="dash-section-title">그룹 스터디 참가</p>
+          <p style={{ fontSize: 13, color: "var(--text-3)", marginBottom: 10 }}>
+            친구에게 받은 코드로 바로 참가할 수 있어요.
+          </p>
+          {joinError && <p style={{ fontSize: 13, color: "var(--red)", marginBottom: 8 }}>{joinError}</p>}
+          <div className="dash-room-join-row">
+            <input className="input" placeholder="닉네임" value={joinNick}
+              onChange={e => setJoinNick(e.target.value)} style={{ width: 120 }} />
+            <input className="input" placeholder="방 코드" value={joinCode} maxLength={6}
+              onChange={e => setJoinCode(e.target.value.toUpperCase())} style={{ width: 120 }} />
+            <button className="btn-primary" onClick={handleJoinRoom}
+              disabled={joining || !joinNick.trim() || joinCode.length < 4}>
+              {joining ? "참가 중…" : "참가하기"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

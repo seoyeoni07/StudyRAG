@@ -3,9 +3,9 @@ import { apiFetch } from "../api";
 
 const POLL_INTERVAL = 3000;
 
-export default function StudyRoomSection({ docId, userId }) {
+export default function StudyRoomSection({ docId, userId, preJoined }) {
   const [view, setView] = useState("home"); // home | lobby | quiz | result
-  const [nickname, setNickname] = useState("");
+  const [nickname, setNickname] = useState(preJoined?.nickname || "");
   const [joinCode, setJoinCode] = useState("");
   const [room, setRoom] = useState(null);
   const [error, setError] = useState("");
@@ -16,8 +16,17 @@ export default function StudyRoomSection({ docId, userId }) {
   const pollRef = useRef(null);
   const viewRef = useRef(view);
 
-  // viewRef를 항상 최신 view로 유지 (클로저 스테일 방지)
   useEffect(() => { viewRef.current = view; }, [view]);
+
+  // 대시보드에서 이미 참가한 경우 자동 진입
+  useEffect(() => {
+    if (!preJoined) return;
+    apiFetch(`/rooms/${preJoined.room_id}`).then(data => {
+      setRoom(data);
+      setView(data.status === "active" ? "quiz" : "lobby");
+      startPoll(preJoined.room_id);
+    }).catch(() => {});
+  }, [preJoined]);
 
   const stopPoll = useCallback(() => {
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
@@ -169,6 +178,9 @@ export default function StudyRoomSection({ docId, userId }) {
         <div className="room-code-display">
           <span className="room-code-label">방 코드</span>
           <span className="room-code">{room?.code}</span>
+          <button className="room-code-copy" onClick={() => {
+            navigator.clipboard.writeText(room?.code || "");
+          }} title="코드 복사">복사</button>
           <span className="room-code-hint">친구에게 이 코드를 알려주세요</span>
         </div>
 

@@ -3,7 +3,7 @@ import { apiFetch } from "../api";
 
 const FILTERS = [["all", "전체"], ["pending", "미복습"], ["today", "오늘 복습"]];
 
-export default function WrongAnswerBook({ docId }) {
+export default function WrongAnswerBook({ docId, onCountLoaded, onGoToQuiz }) {
   const [items, setItems] = useState([]);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,7 +20,7 @@ export default function WrongAnswerBook({ docId }) {
       apiFetch(`/quiz/wrong-answers?doc_id=${docId}`),
       apiFetch(`/quiz/history?doc_id=${docId}`),
     ])
-      .then(([w, h]) => { setItems(w); setHistory(h); })
+      .then(([w, h]) => { setItems(w); setHistory(h); onCountLoaded?.(w.length); })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [docId]);
@@ -111,6 +111,14 @@ export default function WrongAnswerBook({ docId }) {
         <div className="error-banner">
           <span className="error-icon">⚠️</span>
           <span>{error}</span>
+        </div>
+      )}
+
+      {view === "wrong" && onGoToQuiz && items.length > 0 && (
+        <div style={{ textAlign: "right", marginBottom: 4 }}>
+          <button className="btn-secondary" style={{ fontSize: 12, padding: "3px 12px" }} onClick={onGoToQuiz}>
+            퀴즈 다시 풀기 →
+          </button>
         </div>
       )}
 

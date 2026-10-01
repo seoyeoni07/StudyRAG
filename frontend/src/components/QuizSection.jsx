@@ -9,7 +9,7 @@ const LOADING_STEPS = [
   "마무리 중...",
 ];
 
-export default function QuizSection({ docId }) {
+export default function QuizSection({ docId, onGoToWrong }) {
   const [n, setN] = useState(5);
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
@@ -130,11 +130,12 @@ export default function QuizSection({ docId }) {
         <ErrorBox msg={error} />
         <div className="generate-form">
           <span className="generate-label">문제 수</span>
-          <input
-            type="number" min={1} max={10} value={n}
-            onChange={(e) => setN(Math.max(1, Math.min(10, parseInt(e.target.value) || 5)))}
-            className="input number-input"
-          />
+          <div className="n-btn-group">
+            {[3, 5, 7, 10].map(v => (
+              <button key={v} className={n === v ? "btn-primary" : "btn-secondary"}
+                style={{ padding: "4px 14px" }} onClick={() => setN(v)}>{v}문제</button>
+            ))}
+          </div>
           <button className="btn-primary" onClick={handleGenerate}>퀴즈 생성</button>
         </div>
         <label className="adaptive-toggle">
@@ -191,6 +192,10 @@ export default function QuizSection({ docId }) {
         {wrongCount > 0 && (
           <div className="wrong-saved">
             📝 오답 {wrongCount}개가 오답노트에 저장되었습니다.
+            {onGoToWrong && (
+              <button className="btn-secondary" style={{ marginLeft: 12, fontSize: 13, padding: "3px 12px" }}
+                onClick={onGoToWrong}>오답노트 보기 →</button>
+            )}
           </div>
         )}
 
