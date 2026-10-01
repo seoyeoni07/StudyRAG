@@ -139,14 +139,18 @@ def extract_text_from_image(image_data: bytes, content_type: str) -> str:
             "텍스트가 없으면 이미지 내용을 자세히 설명해주세요."
         )},
     ])
+    import logging
+    log = logging.getLogger(__name__)
     last_err = None
     for model in _VISION_MODELS:
         try:
             text = _llm(model).invoke([msg]).content
             if text.strip():
                 return text
+            log.warning("Vision LLM %s returned empty", model)
             last_err = ValueError("empty response")
         except Exception as e:
+            log.warning("Vision LLM %s failed: %s: %s", model, type(e).__name__, e)
             last_err = e
-            continue  # 어떤 에러든 다음 모델로
-    raise ValueError("이미지 분석 서버가 일시적으로 과부하 상태입니다. 잠시 후 다시 시도해주세요.")
+            continue
+    raise ValueError(f"모든 Vision 모델 실패. 마지막 에러: {last_err}")

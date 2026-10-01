@@ -67,7 +67,9 @@ def ingest_file(file: UploadFile, x_user_id: str | None, db: Session, group_id: 
         try:
             text = extract_text_from_image(image_data, ct or f"image/{ext}")
         except Exception as e:
-            raise HTTPException(503, "이미지 분석 서버가 일시적으로 과부하 상태입니다. 잠시 후 다시 시도해주세요.")
+            import logging
+            logging.getLogger(__name__).error("Image extraction error: %s: %s", type(e).__name__, e)
+            raise HTTPException(503, f"이미지 분석 실패 ({type(e).__name__}): {e}")
         if not text.strip():
             raise HTTPException(503, "이미지 분석 서버가 응답하지 않습니다. 잠시 후 다시 시도해주세요.")
         chunks = chunk_text(text) or [text]
