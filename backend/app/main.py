@@ -27,6 +27,7 @@ async def startup():
 
     # 기존 테이블에 새 컬럼 추가 (IF NOT EXISTS — 멱등성 보장)
     _migrations = [
+        "CREATE EXTENSION IF NOT EXISTS vector",  # 벡터 검색용 — 요청마다 만들지 않고 시작할 때 한 번
         "ALTER TABLE documents ADD COLUMN IF NOT EXISTS summary TEXT",
         "ALTER TABLE wrong_answers ADD COLUMN IF NOT EXISTS reviewed BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE wrong_answers ADD COLUMN IF NOT EXISTS next_review TIMESTAMP",

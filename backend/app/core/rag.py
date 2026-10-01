@@ -39,21 +39,19 @@ def _get_embedding() -> FastEmbedEmbeddings:
     return FastEmbedEmbeddings(model_name="BAAI/bge-small-en-v1.5")
 
 
-def _pg_conn() -> str:
-    url = settings.db_connection_string.strip()
-    if url.startswith("postgresql://"):
-        return url.replace("postgresql://", "postgresql+psycopg2://", 1)
-    if url.startswith("postgres://"):
-        return url.replace("postgres://", "postgresql+psycopg2://", 1)
-    return url
 
 
 def get_vectorstore(collection_name: str) -> PGVector:
+    # 연결 문자열을 넘기면 PGVector가 호출할 때마다 새 엔진(연결 풀)을 만들어 연결이 계속 쌓인다
+    # → Supabase "max clients reached". 앱의 공용 엔진을 같이 쓴다.
+    # vector 확장은 서버 시작 때 한 번만 만든다(main.py).
+    from ..db.session import engine
     return PGVector(
         embeddings=_get_embedding(),
         collection_name=collection_name,
-        connection=_pg_conn(),
+        connection=engine,
         use_jsonb=True,
+        create_extension=False,
     )
 
 
