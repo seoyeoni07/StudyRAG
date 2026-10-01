@@ -7,13 +7,68 @@ _SPLITTER = RecursiveCharacterTextSplitter(
     separators=["\n\n", "\n", ".", " ", ""],
 )
 
+_VISION_MODELS = [
+    "meta-llama/llama-3.2-11b-vision-instruct:free",
+    "qwen/qwen2-vl-7b-instruct:free",
+]
+_RETRIABLE_VISION = ("overload", "503", "temporarily", "unavailable", "404")
 
-def _ocr_page(image):
+
+def _image_to_b64_png(image) -> str:
+    import io, base64
+    buf = io.BytesIO()
+    image.save(buf, format="PNG")
+    return base64.b64encode(buf.getvalue()).decode()
+
+
+def _ocr_page_vision(image) -> str:
+    """PIL Image → Vision LLM 텍스트 추출"""
+    from langchain_core.messages import HumanMessage
+    from .rag import _llm
+    b64 = _image_to_b64_png(image)
+    msg = HumanMessage(content=[
+        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}},
+        {"type": "text", "text": "이 페이지의 모든 텍스트를 빠짐없이 추출해주세요."},
+    ])
+    for model in _VISION_MODELS:
+        try:
+            return _llm(model).invoke([msg]).content
+        except Exception:
+            continue
+    return ""
+
+
+def _ocr_page(image) -> str:
     try:
         import pytesseract
-        return pytesseract.image_to_string(image, lang="kor+eng")
+        text = pytesseract.image_to_string(image, lang="kor+eng")
+        if text.strip():
+            return text
     except Exception:
-        return ""
+        pass
+    return _ocr_page_vision(image)
+
+
+def _get_page_images(file_path: str):
+    """PDF 페이지 이미지 목록 반환. pdf2image → PyMuPDF 순서로 시도."""
+    try:
+        from pdf2image import convert_from_path
+        return convert_from_path(file_path)
+    except Exception:
+        pass
+    try:
+        import fitz  # PyMuPDF
+        import io
+        from PIL import Image
+        doc = fitz.open(file_path)
+        images = []
+        for page in doc:
+            pix = page.get_pixmap(dpi=150)
+            images.append(Image.open(io.BytesIO(pix.tobytes("png"))))
+        doc.close()
+        return images
+    except Exception:
+        return None
 
 
 def _page_text(page, idx: int, ocr_images: list | None) -> str:
@@ -24,12 +79,7 @@ def _page_text(page, idx: int, ocr_images: list | None) -> str:
 
 
 def extract_chunks_with_pages(file_path: str) -> list[tuple[str, int]]:
-    ocr_images = None
-    try:
-        from pdf2image import convert_from_path
-        ocr_images = convert_from_path(file_path)
-    except Exception:
-        pass
+    ocr_images = _get_page_images(file_path)
 
     result: list[tuple[str, int]] = []
     with pdfplumber.open(file_path) as pdf:
@@ -50,13 +100,6 @@ def extract_text(file_path: str) -> str:
 
 def chunk_text(text: str, chunk_size: int = 800, overlap: int = 150) -> list[str]:
     return _SPLITTER.split_text(text)
-
-
-_VISION_MODELS = [
-    "meta-llama/llama-3.2-11b-vision-instruct:free",
-    "qwen/qwen2-vl-7b-instruct:free",
-]
-_RETRIABLE_VISION = ("overload", "503", "temporarily", "unavailable", "404", "free")
 
 
 def extract_text_from_image(image_data: bytes, content_type: str) -> str:
@@ -83,4 +126,4 @@ def extract_text_from_image(image_data: bytes, content_type: str) -> str:
                 last_err = e
                 continue
             raise
-    raise ValueError(f"이미지 분석 서버가 일시적으로 과부하 상태입니다. 잠시 후 다시 시도해주세요.")
+    raise ValueError("이미지 분석 서버가 일시적으로 과부하 상태입니다. 잠시 후 다시 시도해주세요.")
