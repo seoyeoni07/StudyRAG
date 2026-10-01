@@ -762,6 +762,29 @@ body {
 .login-google-btn:disabled { opacity: .5; cursor: not-allowed; }
 .login-terms { font-size: 12px; color: var(--text-4); text-align: center; line-height: 1.6; }
 
+/* ── Login tabs (google / email) ──────────── */
+.login-tabs {
+  display: flex; border: 1px solid var(--border); border-radius: var(--r-md);
+  overflow: hidden; margin: 4px 0;
+}
+.login-tab {
+  flex: 1; padding: 9px 0; font-size: 13px; font-weight: 600;
+  background: none; border: none; cursor: pointer; font-family: inherit;
+  color: var(--text-3); transition: background .15s, color .15s;
+}
+.login-tab.active { background: var(--primary); color: #fff; }
+.login-tab:not(.active):hover { background: var(--bg-subtle); color: var(--text-1); }
+
+.login-email-form {
+  display: flex; flex-direction: column; gap: 10px;
+}
+.login-submit-btn { width: 100%; padding: 11px; font-size: 14px; }
+.login-mode-toggle { font-size: 13px; color: var(--text-3); text-align: center; }
+.login-mode-btn {
+  background: none; border: none; color: var(--primary); font-weight: 600;
+  cursor: pointer; font-size: 13px; font-family: inherit; text-decoration: underline;
+}
+
 /* ── Tab description line ────────────────── */
 .tab-desc {
   font-size: 12px;
@@ -893,25 +916,37 @@ body {
 .leaderboard-score { font-size: 14px; color: var(--text-3); }
 
 /* ── Dashboard ────────────────────────────── */
-.dashboard-wrap { display: flex; flex-direction: column; gap: 24px; padding: 8px 0; }
+.dashboard-wrap { display: flex; flex-direction: column; gap: 28px; padding: 8px 0; }
 
 .dash-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .dash-stat-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
-  padding: 18px 16px;
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 20px 16px 16px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
   box-shadow: var(--shadow-sm);
+  transition: transform .15s, box-shadow .15s;
 }
-.dash-stat-card.dash-stat--review { border-color: var(--green-border); background: var(--primary-light); }
-.dash-stat-value { font-size: 32px; font-weight: 800; color: var(--text-1); line-height: 1; }
+.dash-stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.dash-stat-icon { font-size: 22px; line-height: 1; }
+.dash-stat-card.dash-stat--review { border-color: var(--green-border); background: linear-gradient(135deg, #edf7f3, #d4efea); }
+.dash-stat-card.dash-stat--wrong  { border-color: var(--red-border);   background: linear-gradient(135deg, #fff5f5, #ffe4e4); }
+.dash-stat-card.dash-stat--docs   { border-color: var(--border);       background: linear-gradient(135deg, #f8f9ff, #eef0ff); }
+.dash-stat-value { font-size: 34px; font-weight: 800; color: var(--text-1); line-height: 1; }
 .dash-stat--review .dash-stat-value { color: var(--primary); }
+.dash-stat--wrong  .dash-stat-value { color: var(--red); }
+.dash-stat--docs   .dash-stat-value { color: #4f46e5; }
 .dash-stat-label { font-size: 12px; color: var(--text-3); font-weight: 500; }
 
 .dash-section { display: flex; flex-direction: column; gap: 10px; }
 .dash-section-header { display: flex; align-items: center; justify-content: space-between; }
-.dash-section-title { font-size: 13px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: .06em; }
+.dash-section-title {
+  font-size: 13px; font-weight: 700; color: var(--text-2);
+  text-transform: uppercase; letter-spacing: .06em;
+  display: flex; align-items: center; gap: 6px;
+}
+.dash-section-title::before { content: ""; display: inline-block; width: 3px; height: 14px; border-radius: 2px; background: var(--primary); }
 .dash-upload-btn { font-size: 13px; padding: 6px 14px; }
 
 .dash-quiz-list { display: flex; flex-direction: column; gap: 6px; }

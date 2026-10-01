@@ -70,14 +70,17 @@ export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc
       {/* 통계 카드 */}
       <div className="dash-stats">
         <div className="dash-stat-card dash-stat--review">
+          <span className="dash-stat-icon">📅</span>
           <span className="dash-stat-value">{stats?.today_review ?? "—"}</span>
           <span className="dash-stat-label">오늘 복습</span>
         </div>
-        <div className="dash-stat-card">
+        <div className="dash-stat-card dash-stat--wrong">
+          <span className="dash-stat-icon">✗</span>
           <span className="dash-stat-value">{stats?.total_wrongs ?? "—"}</span>
           <span className="dash-stat-label">전체 오답</span>
         </div>
-        <div className="dash-stat-card">
+        <div className="dash-stat-card dash-stat--docs">
+          <span className="dash-stat-icon">📄</span>
           <span className="dash-stat-value">{stats?.total_docs ?? "—"}</span>
           <span className="dash-stat-label">자료</span>
         </div>
