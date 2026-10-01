@@ -16,4 +16,5 @@ sqlalchemy>=2.0
 pytesseract>=0.3
 pdf2image>=1.16
 pymupdf>=1.24
+langchain-google-genai>=2.0
 pycrdt>=0.12

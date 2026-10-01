@@ -7,7 +7,7 @@ _SPLITTER = RecursiveCharacterTextSplitter(
     separators=["\n\n", "\n", ".", " ", ""],
 )
 
-_VISION_MODELS = [
+_OPENROUTER_VISION_MODELS = [
     "meta-llama/llama-3.2-11b-vision-instruct:free",
     "meta-llama/llama-3.2-90b-vision-instruct:free",
 ]
@@ -29,22 +29,52 @@ def _image_to_b64_jpeg(image, max_px=1024, quality=75) -> str:
     return base64.b64encode(buf.getvalue()).decode()
 
 
+def _gemini_vision(b64: str, prompt: str) -> str:
+    """Google Gemini Vision (무료 tier: 분당 15회)"""
+    from ..core.config import settings
+    if not settings.google_api_key:
+        return ""
+    try:
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        from langchain_core.messages import HumanMessage
+        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=settings.google_api_key)
+        msg = HumanMessage(content=[
+            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}},
+            {"type": "text", "text": prompt},
+        ])
+        return llm.invoke([msg]).content or ""
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning("Gemini vision failed: %s", e)
+        return ""
+
+
 def _ocr_page_vision(image) -> str:
-    """PIL Image → Vision LLM 텍스트 추출"""
+    """PIL Image → Vision LLM 텍스트 추출 (Gemini → OpenRouter 순)"""
     from langchain_core.messages import HumanMessage
     from .rag import _llm
+    import logging
+    log = logging.getLogger(__name__)
+
     b64 = _image_to_b64_jpeg(image)
+    prompt = "Extract ALL text from this image exactly as written. Include every word, number, and label visible."
+
+    text = _gemini_vision(b64, prompt)
+    if text.strip():
+        return text
+
     msg = HumanMessage(content=[
         {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}", "detail": "high"}},
-        {"type": "text", "text": "Extract ALL text from this image exactly as written. Include every word, number, and label visible."},
+        {"type": "text", "text": prompt},
     ])
-    for model in _VISION_MODELS:
+    for model in _OPENROUTER_VISION_MODELS:
         try:
             text = _llm(model).invoke([msg]).content
             if text.strip():
                 return text
-        except Exception:
-            continue
+            log.warning("Vision LLM %s returned empty", model)
+        except Exception as e:
+            log.warning("Vision LLM %s failed: %s: %s", model, type(e).__name__, e)
     return ""
 
 
@@ -120,28 +150,33 @@ def chunk_text(text: str, chunk_size: int = 800, overlap: int = 150) -> list[str
 
 
 def extract_text_from_image(image_data: bytes, content_type: str) -> str:
-    """Vision LLM으로 이미지에서 텍스트/내용 추출"""
-    import io
+    """Vision LLM으로 이미지에서 텍스트/내용 추출 (Gemini → OpenRouter 순)"""
+    import io, logging
     from PIL import Image
     from langchain_core.messages import HumanMessage
     from .rag import _llm
+    log = logging.getLogger(__name__)
 
-    # 원본 이미지를 리사이즈 + JPEG 변환 (페이로드 최소화)
     img = Image.open(io.BytesIO(image_data))
     b64 = _image_to_b64_jpeg(img)
+    prompt = (
+        "Extract ALL text from this image exactly as written. "
+        "Include every word, number, label, and caption visible. "
+        "If there is no text, describe the image content in detail."
+    )
 
+    # 1순위: Gemini
+    text = _gemini_vision(b64, prompt)
+    if text.strip():
+        return text
+
+    # 2순위: OpenRouter llama
     msg = HumanMessage(content=[
         {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}", "detail": "high"}},
-        {"type": "text", "text": (
-            "Extract ALL text from this image exactly as written. "
-            "Include every word, number, label, and caption visible. "
-            "If there is no text, describe the image content in detail."
-        )},
+        {"type": "text", "text": prompt},
     ])
-    import logging
-    log = logging.getLogger(__name__)
     last_err = None
-    for model in _VISION_MODELS:
+    for model in _OPENROUTER_VISION_MODELS:
         try:
             text = _llm(model).invoke([msg]).content
             if text.strip():
@@ -151,5 +186,4 @@ def extract_text_from_image(image_data: bytes, content_type: str) -> str:
         except Exception as e:
             log.warning("Vision LLM %s failed: %s: %s", model, type(e).__name__, e)
             last_err = e
-            continue
     raise ValueError(f"모든 Vision 모델 실패. 마지막 에러: {last_err}")
