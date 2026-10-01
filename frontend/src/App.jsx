@@ -154,11 +154,31 @@ export default function App() {
       setPastDocs(prev => [{ doc_id: data.doc_id, filename: data.filename, created_at: new Date().toISOString() }, ...prev]);
       setPreJoined(null);
       setView({ type: "doc", docId: data.doc_id, filename: data.filename, tab: "summary" });
+
+      // 이미지: 백그라운드 OCR 완료까지 폴링
+      if (data.status === "processing") {
+        const pollDone = await _pollUploadStatus(data.doc_id);
+        if (!pollDone) setError("이미지 분석에 실패했습니다. 다시 시도해 주세요.");
+      }
     } catch (err) {
       if (err.isColdStart) setServerWaking(true);
       else setError(err.message);
     }
     finally { setUploading(false); }
+  }
+
+  async function _pollUploadStatus(docId, maxWaitMs = 120000) {
+    const interval = 3000;
+    const deadline = Date.now() + maxWaitMs;
+    while (Date.now() < deadline) {
+      await new Promise(r => setTimeout(r, interval));
+      try {
+        const s = await apiFetch(`/documents/upload-status/${docId}`);
+        if (s.status === "done") return true;
+        if (s.status === "failed") return false;
+      } catch { /* 일시적 네트워크 오류는 무시 */ }
+    }
+    return false;
   }
 
   function selectDoc(id, name, targetTab = "summary") {
