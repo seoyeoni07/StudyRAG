@@ -569,6 +569,12 @@ export default function App() {
                 <button className="doc-note-chip doc-note-chip--add" onClick={() => createNote({ doc_id: docId })}>
                   + 노트 추가
                 </button>
+                <a className="doc-note-chip"
+                  href={`${import.meta.env.VITE_API_BASE_URL ?? ""}/documents/${docId}/file`}
+                  download={currentDoc?.filename}
+                  target="_blank" rel="noreferrer">
+                  ⬇ 원본 다운로드
+                </a>
               </div>
 
               <div className="tabs" role="tablist" aria-label="학습 메뉴">

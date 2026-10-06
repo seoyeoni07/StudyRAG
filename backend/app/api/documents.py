@@ -6,6 +6,7 @@ import threading
 import uuid
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Header, HTTPException, UploadFile
+from fastapi.responses import Response, FileResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -141,6 +142,32 @@ def _bg_image_ocr(doc_id: str):
         db.commit()
     finally:
         db.close()
+
+
+@router.get("/{doc_id}/file")
+def download_file(
+    doc_id: str,
+    x_user_id: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    doc = db.query(Document).filter(Document.id == doc_id).first()
+    if not doc:
+        raise HTTPException(404, "문서를 찾을 수 없습니다.")
+    if x_user_id and doc.user_id != x_user_id and not doc.group_id:
+        raise HTTPException(403, "권한이 없습니다.")
+
+    # PDF: 디스크에 있음
+    pdf_path = f"{UPLOAD_DIR}/{doc_id}.pdf"
+    if os.path.exists(pdf_path):
+        return FileResponse(pdf_path, media_type="application/pdf", filename=doc.filename)
+
+    # 이미지: DB에 있음
+    src = db.query(DocumentFile).filter(DocumentFile.doc_id == doc_id).first()
+    if src:
+        return Response(content=src.data, media_type=src.content_type,
+                        headers={"Content-Disposition": f'attachment; filename="{doc.filename}"'})
+
+    raise HTTPException(404, "원본 파일을 찾을 수 없습니다.")
 
 
 @router.post("/{doc_id}/reprocess")
