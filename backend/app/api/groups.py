@@ -146,6 +146,28 @@ def get_group(group_id: str, x_user_id: str | None = Header(default=None), db: S
     }
 
 
+@router.get("/{group_id}/activity")
+def get_group_activity(group_id: str, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    require_member(db, group_id, _require_user(x_user_id))
+    members = db.query(StudyGroupMember).filter(StudyGroupMember.group_id == group_id).all()
+    doc_ids = [d.id for d in db.query(Document.id).filter(Document.group_id == group_id).all()]
+
+    result = []
+    for m in members:
+        uploads = db.query(Document).filter(Document.group_id == group_id, Document.user_id == m.user_id).count()
+        notes_created = db.query(Note).filter(Note.group_id == group_id, Note.user_id == m.user_id).count()
+        result.append({
+            "user_id": m.user_id,
+            "display_name": m.display_name,
+            "role": m.role,
+            "uploads": uploads,
+            "notes": notes_created,
+        })
+
+    result.sort(key=lambda x: -(x["uploads"] + x["notes"]))
+    return result
+
+
 @router.delete("/{group_id}/members/me")
 def leave_group(group_id: str, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
     user_id = _require_user(x_user_id)

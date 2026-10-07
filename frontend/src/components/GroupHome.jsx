@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { apiFetch } from "../api.js";
 
 export function timeAgo(iso) {
   if (!iso) return "";
@@ -27,6 +28,11 @@ export default function GroupHome({
   const [copied, setCopied] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [confirmDel, setConfirmDel] = useState(null);
+  const [activity, setActivity] = useState([]);
+
+  useEffect(() => {
+    apiFetch(`/groups/${group.id}/activity`).then(setActivity).catch(() => {});
+  }, [group.id, docs.length, notes.length]);
 
   const onlineIds = new Set((online || []).map(o => o.user_id));
   const viewingOf = (uid) => (online || []).find(o => o.user_id === uid)?.viewing;
@@ -174,6 +180,32 @@ export default function GroupHome({
           </div>
         )}
       </section>
+
+      {/* 멤버 활동량 */}
+      {activity.length > 0 && (
+        <section className="dash-section">
+          <div className="dash-section-header">
+            <p className="dash-section-title">멤버 활동량</p>
+          </div>
+          <div className="group-table" role="table">
+            <div className="group-row group-row--head" role="row">
+              <span>멤버</span><span>자료 업로드</span><span>노트 작성</span>
+            </div>
+            {activity.map(a => (
+              <div key={a.user_id} className="group-row" role="row">
+                <span className="group-cell-person">
+                  <Avatar name={a.display_name} online={onlineIds.has(a.user_id) || a.user_id === me.uid} size={18} />
+                  {a.display_name}
+                  {a.user_id === me.uid && " (나)"}
+                  {a.role === "owner" && <span className="group-owner-tag">그룹장</span>}
+                </span>
+                <span className="group-cell-time">{a.uploads}개</span>
+                <span className="group-cell-time">{a.notes}개</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="note-footer">
         {group.my_role !== "owner" && (confirmLeave ? (
