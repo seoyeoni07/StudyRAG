@@ -162,11 +162,6 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
   background: var(--accent); color: #fff;
 }
 .sb-install:hover { opacity: 0.88; }
-.sb-install-tip {
-  font-size: 12px; line-height: 1.6; color: var(--text-2);
-  background: var(--hover); border-radius: var(--r-sm);
-  padding: 8px 10px;
-}
 .sb-user { flex: 1; min-width: 0; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sb-logout {
   border: none; background: transparent; cursor: pointer;
