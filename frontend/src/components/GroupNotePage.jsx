@@ -189,7 +189,9 @@ function VersionPanel({ noteId, onClose }) {
   const [msg, setMsg] = useState("");
 
   useEffect(() => {
-    apiFetch(`/notes/${noteId}/versions`).then(setVersions).catch(err => setMsg(err.message));
+    apiFetch(`/notes/${noteId}/versions`)
+      .then(setVersions)
+      .catch(err => { setMsg(err.message); setVersions([]); });
   }, [noteId]);
 
   async function restore(id) {
