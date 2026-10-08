@@ -252,14 +252,25 @@ export default function App() {
     } catch (err) { setError(err.message); }
   }
 
-  async function createGroup(name, displayName) {
+  async function createGroup(name, displayName, visibility = "code", level = null, subject = null) {
     const g = await apiFetch("/groups/", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, display_name: displayName }),
+      body: JSON.stringify({ name, display_name: displayName, visibility, level, subject }),
     });
     setGroups(prev => [...prev, g]);
     await loadGroup(g.id);
     setView({ type: "group", groupId: g.id });
+  }
+
+  async function joinPublicGroup(groupId, displayName) {
+    const g = await apiFetch("/groups/join-public", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ group_id: groupId, display_name: displayName }),
+    });
+    setGroups(prev => prev.find(x => x.id === g.id) ? prev : [...prev, g]);
+    await loadGroup(g.id);
+    setView({ type: "group", groupId: g.id });
+    setTimeout(() => notify(g.id, "member-joined"), 1500);
   }
 
   async function joinGroup(code, displayName) {
@@ -504,7 +515,7 @@ export default function App() {
           )}
 
           {view.type === "group-start" && (
-            <GroupStart me={user} onCreate={createGroup} onJoin={joinGroup} />
+            <GroupStart me={user} onCreate={createGroup} onJoin={joinGroup} onJoinPublic={joinPublicGroup} />
           )}
 
           {view.type === "group" && (group ? (

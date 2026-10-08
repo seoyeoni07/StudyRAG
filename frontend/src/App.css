@@ -1075,6 +1075,26 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 .group-owner-tag { font-size: 11px; color: #183347; background: #d3e5ef; border-radius: var(--r-sm); padding: 0 5px; }
 .group-input { max-width: 260px; }
 .group-code-input { font-family: "SFMono-Regular", Menlo, Consolas, monospace; letter-spacing: .15em; }
+.group-tag { font-size: 12px; background: var(--hover-strong); color: var(--text-2); border-radius: 99px; padding: 2px 8px; }
+.group-meta-row { display: flex; gap: 8px; }
+.group-meta-row .input { flex: 1; }
+.group-select { flex: 0 0 auto; }
+.group-visibility-row { display: flex; gap: 8px; }
+.visibility-opt { display: flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: var(--r-sm); border: 1.5px solid var(--border); cursor: pointer; font-size: 13px; flex: 1; justify-content: center; }
+.visibility-opt input[type=radio] { display: none; }
+.visibility-opt.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--accent); font-weight: 600; }
+.group-search-divider { text-align: center; font-size: 12px; color: var(--text-4); margin: 16px 0 10px; position: relative; }
+.group-search-divider::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: var(--border); z-index: 0; }
+.group-search-divider span, .group-search-divider { background: var(--bg); position: relative; padding: 0 8px; }
+.group-search-row { display: flex; gap: 6px; }
+.group-search-row .input { flex: 1; }
+.group-search-results { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.group-search-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: var(--hover); border-radius: var(--r-sm); gap: 8px; }
+.group-search-name { font-weight: 600; font-size: 14px; margin-right: 6px; }
+.group-search-count { font-size: 12px; color: var(--text-3); margin-left: 4px; }
+.btn-sm { padding: 5px 12px; font-size: 13px; }
+.btn-secondary { background: var(--hover-strong); color: var(--text-1); border: none; border-radius: var(--r-sm); padding: 8px 14px; cursor: pointer; font-size: 14px; white-space: nowrap; }
+.btn-secondary:hover { background: var(--border); }
 .group-empty { font-size: 14px; color: var(--text-4); padding: 8px 6px; }
 
 .group-table { display: flex; flex-direction: column; }

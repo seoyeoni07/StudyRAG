@@ -53,6 +53,16 @@ export default function GroupHome({
 
       {/* 속성 */}
       <div className="note-props">
+        {(group.level || group.subject || group.visibility) && (
+          <div className="note-prop">
+            <span className="note-prop-key">카테고리</span>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+              {group.visibility === "public" ? <span className="group-tag">🌐 공개방</span> : <span className="group-tag">🔒 초대전용</span>}
+              {group.level && <span className="group-tag">{group.level}</span>}
+              {group.subject && <span className="group-tag">{group.subject}</span>}
+            </div>
+          </div>
+        )}
         <div className="note-prop">
           <span className="note-prop-key">초대 코드</span>
           <code className="group-code">{group.invite_code}</code>
@@ -222,17 +232,44 @@ export default function GroupHome({
   );
 }
 
-export function GroupStart({ me, onCreate, onJoin }) {
+const LEVELS = ["초등", "중등", "고등", "대학", "고시/취업"];
+
+export function GroupStart({ me, onCreate, onJoin, onJoinPublic }) {
   const defaultName = me.displayName || me.email?.split("@")[0] || "";
-  const [name, setName] = useState("");
-  const [code, setCode] = useState("");
   const [nick, setNick] = useState(defaultName);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
+  // 만들기
+  const [name, setName] = useState("");
+  const [visibility, setVisibility] = useState("code");
+  const [level, setLevel] = useState("");
+  const [subject, setSubject] = useState("");
+
+  // 참가
+  const [code, setCode] = useState("");
+
+  // 공개방 검색
+  const [searchQ, setSearchQ] = useState("");
+  const [searchLevel, setSearchLevel] = useState("");
+  const [results, setResults] = useState(null);
+  const [searching, setSearching] = useState(false);
+
   async function run(fn) {
     setBusy(true); setError("");
     try { await fn(); } catch (err) { setError(err.message); } finally { setBusy(false); }
+  }
+
+  async function doSearch() {
+    setSearching(true);
+    try {
+      const params = new URLSearchParams();
+      if (searchQ) params.set("q", searchQ);
+      if (searchLevel) params.set("level", searchLevel);
+      const { apiFetch } = await import("../api.js");
+      const data = await apiFetch(`/groups/search?${params}`);
+      setResults(data);
+    } catch { setResults([]); } finally { setSearching(false); }
   }
 
   return (
@@ -254,20 +291,77 @@ export function GroupStart({ me, onCreate, onJoin }) {
       </div>
 
       <div className="room-actions">
-        <form className="room-create-block" onSubmit={e => { e.preventDefault(); run(() => onCreate(name, nick)); }}>
+        {/* ── 만들기 ── */}
+        <form className="room-create-block" onSubmit={e => { e.preventDefault(); run(() => onCreate(name, nick, visibility, level || null, subject || null)); }}>
           <p className="room-block-title">새 그룹 만들기</p>
-          <p className="room-block-desc">만들면 초대 코드가 생겨요. 코드를 친구에게 보내주세요.</p>
-          <input className="input" value={name} maxLength={64} placeholder="그룹 이름 (예: 자료구조 스터디)"
+          <input className="input" value={name} maxLength={64} placeholder="그룹 이름 (예: 고1 수학 내신)"
             onChange={e => setName(e.target.value)} />
+
+          <div className="group-meta-row">
+            <select className="input group-select" value={level} onChange={e => setLevel(e.target.value)}>
+              <option value="">학교급 (선택)</option>
+              {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+            </select>
+            <input className="input" value={subject} maxLength={64} placeholder="과목 (선택, 예: 수학)"
+              onChange={e => setSubject(e.target.value)} />
+          </div>
+
+          <div className="group-visibility-row">
+            <label className={`visibility-opt ${visibility === "code" ? "active" : ""}`}>
+              <input type="radio" name="vis" value="code" checked={visibility === "code"} onChange={() => setVisibility("code")} />
+              🔒 초대코드 전용
+            </label>
+            <label className={`visibility-opt ${visibility === "public" ? "active" : ""}`}>
+              <input type="radio" name="vis" value="public" checked={visibility === "public"} onChange={() => setVisibility("public")} />
+              🌐 공개방
+            </label>
+          </div>
+
           <button className="btn-primary" type="submit" disabled={busy || !name.trim() || !nick.trim()}>만들기</button>
         </form>
-        <form className="room-join-block" onSubmit={e => { e.preventDefault(); run(() => onJoin(code, nick)); }}>
-          <p className="room-block-title">초대 코드로 참가</p>
-          <p className="room-block-desc">친구에게 받은 6자리 코드를 입력하세요.</p>
-          <input className="input group-code-input" value={code} maxLength={6} placeholder="ABC123"
-            onChange={e => setCode(e.target.value.toUpperCase())} />
-          <button className="btn-primary" type="submit" disabled={busy || code.trim().length < 6 || !nick.trim()}>참가하기</button>
-        </form>
+
+        {/* ── 참가 ── */}
+        <div className="room-join-block">
+          <form onSubmit={e => { e.preventDefault(); run(() => onJoin(code, nick)); }}>
+            <p className="room-block-title">초대코드로 참가</p>
+            <p className="room-block-desc">친구에게 받은 6자리 코드를 입력하세요.</p>
+            <input className="input group-code-input" value={code} maxLength={6} placeholder="ABC123"
+              onChange={e => setCode(e.target.value.toUpperCase())} />
+            <button className="btn-primary" type="submit" disabled={busy || code.trim().length < 6 || !nick.trim()}>참가하기</button>
+          </form>
+
+          <div className="group-search-divider">또는 공개방 검색</div>
+
+          <div className="group-search-row">
+            <select className="input group-select" value={searchLevel} onChange={e => setSearchLevel(e.target.value)}>
+              <option value="">전체 학교급</option>
+              {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+            </select>
+            <input className="input" value={searchQ} placeholder="그룹명·과목 검색"
+              onChange={e => setSearchQ(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && doSearch()} />
+            <button className="btn-secondary" type="button" onClick={doSearch} disabled={searching}>검색</button>
+          </div>
+
+          {results !== null && (
+            results.length === 0
+              ? <p className="sb-empty" style={{padding:"12px 0"}}>검색 결과가 없어요</p>
+              : <div className="group-search-results">
+                  {results.map(g => (
+                    <div key={g.id} className="group-search-item">
+                      <div>
+                        <span className="group-search-name">{g.name}</span>
+                        {g.level && <span className="group-tag">{g.level}</span>}
+                        {g.subject && <span className="group-tag">{g.subject}</span>}
+                        <span className="group-search-count">{g.member_count}명</span>
+                      </div>
+                      <button className="btn-primary btn-sm" disabled={busy || !nick.trim()}
+                        onClick={() => run(() => onJoinPublic(g.id, nick))}>참가</button>
+                    </div>
+                  ))}
+                </div>
+          )}
+        </div>
       </div>
     </div>
   );

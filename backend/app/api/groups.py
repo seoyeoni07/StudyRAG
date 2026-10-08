@@ -61,6 +61,7 @@ def _iso(dt: datetime | None) -> str | None:
 def _group_dict(g: StudyGroup, member_count: int, my_role: str) -> dict:
     return {
         "id": g.id, "name": g.name, "invite_code": g.invite_code,
+        "visibility": g.visibility or "code", "level": g.level, "subject": g.subject,
         "member_count": member_count, "my_role": my_role, "created_at": _iso(g.created_at),
     }
 
@@ -70,10 +71,18 @@ def _group_dict(g: StudyGroup, member_count: int, my_role: str) -> dict:
 class GroupCreate(BaseModel):
     name: str
     display_name: str
+    visibility: str = "code"   # public | code
+    level: str | None = None
+    subject: str | None = None
 
 
 class GroupJoin(BaseModel):
     code: str
+    display_name: str
+
+
+class GroupJoinPublic(BaseModel):
+    group_id: str
     display_name: str
 
 
@@ -98,7 +107,13 @@ def create_group(body: GroupCreate, x_user_id: str | None = Header(default=None)
     name = body.name.strip()[:64]
     if not name:
         raise HTTPException(400, "그룹 이름을 입력하세요.")
-    g = StudyGroup(id=str(uuid.uuid4()), name=name, invite_code=_new_code(db), owner_id=user_id)
+    visibility = body.visibility if body.visibility in ("public", "code") else "code"
+    g = StudyGroup(
+        id=str(uuid.uuid4()), name=name, invite_code=_new_code(db), owner_id=user_id,
+        visibility=visibility,
+        level=(body.level or None),
+        subject=(body.subject.strip()[:64] if body.subject else None),
+    )
     db.add(g)
     db.add(StudyGroupMember(group_id=g.id, user_id=user_id,
                             display_name=(body.display_name.strip() or "나")[:64], role="owner"))
@@ -117,6 +132,35 @@ def join_group(body: GroupJoin, x_user_id: str | None = Header(default=None), db
         .filter(StudyGroupMember.group_id == g.id, StudyGroupMember.user_id == user_id)
         .first()
     )
+    if not m:
+        m = StudyGroupMember(group_id=g.id, user_id=user_id,
+                             display_name=(body.display_name.strip() or "멤버")[:64], role="member")
+        db.add(m)
+        db.commit()
+    count = db.query(StudyGroupMember).filter(StudyGroupMember.group_id == g.id).count()
+    return _group_dict(g, count, m.role)
+
+
+@router.get("/search")
+def search_groups(q: str = "", level: str = "", db: Session = Depends(get_db)):
+    query = db.query(StudyGroup).filter(StudyGroup.visibility == "public")
+    if q:
+        query = query.filter(
+            StudyGroup.name.ilike(f"%{q}%") | StudyGroup.subject.ilike(f"%{q}%")
+        )
+    if level:
+        query = query.filter(StudyGroup.level == level)
+    groups = query.order_by(StudyGroup.created_at.desc()).limit(20).all()
+    return [_group_dict(g, db.query(StudyGroupMember).filter(StudyGroupMember.group_id == g.id).count(), "none") for g in groups]
+
+
+@router.post("/join-public")
+def join_public_group(body: GroupJoinPublic, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    user_id = _require_user(x_user_id)
+    g = db.query(StudyGroup).filter(StudyGroup.id == body.group_id, StudyGroup.visibility == "public").first()
+    if not g:
+        raise HTTPException(404, "공개 그룹을 찾을 수 없습니다.")
+    m = db.query(StudyGroupMember).filter(StudyGroupMember.group_id == g.id, StudyGroupMember.user_id == user_id).first()
     if not m:
         m = StudyGroupMember(group_id=g.id, user_id=user_id,
                              display_name=(body.display_name.strip() or "멤버")[:64], role="member")
