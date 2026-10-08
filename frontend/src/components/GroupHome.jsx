@@ -266,10 +266,9 @@ export function GroupStart({ me, onCreate, onJoin, onJoinPublic }) {
       const params = new URLSearchParams();
       if (searchQ) params.set("q", searchQ);
       if (searchLevel) params.set("level", searchLevel);
-      const { apiFetch } = await import("../api.js");
       const data = await apiFetch(`/groups/search?${params}`);
       setResults(data);
-    } catch { setResults([]); } finally { setSearching(false); }
+    } catch (err) { setError(err.message); setResults([]); } finally { setSearching(false); }
   }
 
   return (
