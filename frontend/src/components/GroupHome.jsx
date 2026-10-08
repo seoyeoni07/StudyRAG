@@ -63,11 +63,13 @@ export default function GroupHome({
             </div>
           </div>
         )}
-        <div className="note-prop">
-          <span className="note-prop-key">초대 코드</span>
-          <code className="group-code">{group.invite_code}</code>
-          <button className="note-prop-link" onClick={copyCode}>{copied ? "복사됨" : "복사"}</button>
-        </div>
+        {group.visibility !== "public" && (
+          <div className="note-prop">
+            <span className="note-prop-key">초대 코드</span>
+            <code className="group-code">{group.invite_code}</code>
+            <button className="note-prop-link" onClick={copyCode}>{copied ? "복사됨" : "복사"}</button>
+          </div>
+        )}
         <div className="note-prop">
           <span className="note-prop-key">
             멤버{realtime && <span className="group-online-count"> · 접속 {group.members.filter(m => onlineIds.has(m.user_id) || m.user_id === me.uid).length}/{group.members.length}</span>}
@@ -240,7 +242,7 @@ export default function GroupHome({
   );
 }
 
-const LEVELS = ["초등", "중등", "고등", "대학", "고시/취업"];
+const LEVELS = ["초등", "중등", "고등(내신)", "고등(수능)", "대학교", "대학원", "공무원·고시", "자격증", "어학", "취업·이직", "기타"];
 
 export function GroupStart({ me, onCreate, onJoin, onJoinPublic }) {
   const defaultName = me.displayName || me.email?.split("@")[0] || "";
@@ -306,7 +308,7 @@ export function GroupStart({ me, onCreate, onJoin, onJoinPublic }) {
 
           <div className="group-meta-row">
             <select className="input group-select" value={level} onChange={e => setLevel(e.target.value)}>
-              <option value="">학교급 (선택)</option>
+              <option value="">카테고리 (선택)</option>
               {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
             </select>
             <input className="input" value={subject} maxLength={64} placeholder="과목 (선택, 예: 수학)"
@@ -341,7 +343,7 @@ export function GroupStart({ me, onCreate, onJoin, onJoinPublic }) {
 
           <div className="group-search-row">
             <select className="input group-select" value={searchLevel} onChange={e => setSearchLevel(e.target.value)}>
-              <option value="">전체 학교급</option>
+              <option value="">전체 카테고리</option>
               {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
             </select>
             <input className="input" value={searchQ} placeholder="그룹명·과목 검색"
