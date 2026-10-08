@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export const DOC_TABS = [
   ["summary", "요약",       "AI가 강의 전체를 핵심만 정리해드립니다", "📋"],
@@ -30,13 +30,6 @@ export default function Sidebar({
   const [docsOpen, setDocsOpen] = useState(true);
   const [notesOpen, setNotesOpen] = useState(true);
   const [groupsOpen, setGroupsOpen] = useState(true);
-  const [installPrompt, setInstallPrompt] = useState(null);
-
-  useEffect(() => {
-    const handler = (e) => { e.preventDefault(); setInstallPrompt(e); };
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
   const inGroup = (id) => view.groupId === id;
   const isGroupOpen = (id) => expanded[`g:${id}`] ?? inGroup(id);
   const name = user.displayName || user.email?.split("@")[0] || "나";
@@ -195,15 +188,8 @@ export default function Sidebar({
         </nav>
 
         <div className="sb-footer">
-          {installPrompt && (
-            <button className="sb-install" onClick={() => { installPrompt.prompt(); setInstallPrompt(null); }}>
-              📲 앱으로 설치
-            </button>
-          )}
-          <div style={{display:"flex",alignItems:"center",gap:8,width:"100%"}}>
-            <span className="sb-user" title={user.email}>{user.email || name}</span>
-            <button className="sb-logout" onClick={onLogout}>로그아웃</button>
-          </div>
+          <span className="sb-user" title={user.email}>{user.email || name}</span>
+          <button className="sb-logout" onClick={onLogout}>로그아웃</button>
         </div>
       </aside>
     </>

@@ -151,17 +151,10 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 .sb-empty { font-size: 13px; color: var(--text-4); padding: 4px 10px; }
 
 .sb-footer {
-  display: flex; flex-direction: column; gap: 6px;
+  display: flex; align-items: center; gap: 8px;
   padding: 10px 16px; border-top: 1px solid var(--border);
   font-size: 12px;
 }
-.sb-footer > div, .sb-footer-row { display: flex; align-items: center; gap: 8px; }
-.sb-install {
-  width: 100%; border: none; cursor: pointer; border-radius: var(--r-sm);
-  padding: 7px 10px; font-size: 13px; font-weight: 600;
-  background: var(--accent); color: #fff;
-}
-.sb-install:hover { opacity: 0.88; }
 .sb-user { flex: 1; min-width: 0; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sb-logout {
   border: none; background: transparent; cursor: pointer;
