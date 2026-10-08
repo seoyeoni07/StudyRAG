@@ -59,6 +59,25 @@ def add_chunks(collection_name: str, chunks: list[str], metadatas: list[dict] | 
     get_vectorstore(collection_name).add_texts(chunks, metadatas=metadatas)
 
 
+def query_rag_multi(collection_names: list[str], question: str) -> dict:
+    all_docs = []
+    for name in collection_names:
+        try:
+            vs = get_vectorstore(name)
+            docs = vs.as_retriever(search_type="mmr", search_kwargs={"k": 3, "fetch_k": 10}).invoke(question)
+            all_docs.extend(docs)
+        except Exception:
+            pass
+    if not all_docs:
+        return {"answer": "선택한 자료에서 관련 내용을 찾을 수 없습니다.", "sources": []}
+    context = "\n\n".join(d.page_content for d in all_docs[:10])
+    answer = (_PROMPT | _llm() | StrOutputParser()).invoke({"context": context, "question": question})
+    return {
+        "answer": answer,
+        "sources": [{"text": d.page_content[:300], "page": d.metadata.get("page")} for d in all_docs[:10]],
+    }
+
+
 def query_rag(collection_name: str, question: str) -> dict:
     vs = get_vectorstore(collection_name)
     retriever = vs.as_retriever(search_type="mmr", search_kwargs={"k": 5, "fetch_k": 20})

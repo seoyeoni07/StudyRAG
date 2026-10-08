@@ -161,6 +161,16 @@ class StudyGroupMember(Base):
     joined_at = Column(DateTime, default=datetime.utcnow)
 
 
+class NoteVersion(Base):
+    __tablename__ = "note_versions"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    note_id = Column(String(36), nullable=False, index=True)
+    user_id = Column(String(128), nullable=True)
+    title = Column(String(256), nullable=False, default="")
+    ydoc = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class NoteImage(Base):
     """노트에 넣은 이미지. Render 디스크는 재배포 때 지워지므로 DB에 저장한다."""
     __tablename__ = "note_images"

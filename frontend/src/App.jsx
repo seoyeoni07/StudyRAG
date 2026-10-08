@@ -51,6 +51,7 @@ export default function App() {
   const [groupQuiz, setGroupQuiz] = useState({}); // { [groupId]: 열린 그룹 퀴즈 방 정보 }
   const [notifications, setNotifications] = useState([]);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [reviewDue, setReviewDue] = useState(0);
 
   const loadGroup = useCallback(async (id) => {
     try {
@@ -120,6 +121,7 @@ export default function App() {
             if (err.isColdStart) setServerWaking(true);
           });
         apiFetch("/notes/").then(setNotes).catch(() => {});
+        apiFetch("/quiz/due-count").then(d => setReviewDue(d.count || 0)).catch(() => {});
         loadGroups();
       } else {
         setUserId(null);
@@ -262,6 +264,13 @@ export default function App() {
     setView({ type: "group", groupId: g.id });
   }
 
+  async function askMultiDocs(docIds, question) {
+    return apiFetch("/qa/multi", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ doc_ids: docIds, question }),
+    });
+  }
+
   async function joinPublicGroup(groupId, displayName) {
     const g = await apiFetch("/groups/join-public", {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -373,7 +382,7 @@ export default function App() {
     <div className="app-shell">
       <Sidebar
         user={user} view={view} onNavigate={setView}
-        pastDocs={pastDocs} notes={notes} wrongCount={wrongCount}
+        pastDocs={pastDocs} notes={notes} wrongCount={wrongCount} reviewDue={reviewDue}
         onNewNote={(doc_id) => createNote({ doc_id: doc_id || null })}
         onUpload={handleFilesAccepted} uploading={uploading}
         onLogout={logout}
@@ -469,6 +478,8 @@ export default function App() {
                 onDeleteDoc={handleDeleteDoc}
                 pastDocs={pastDocs}
                 uploading={uploading}
+                reviewDue={reviewDue}
+                onAskMulti={askMultiDocs}
                 onPastDocsChange={() => apiFetch("/documents/").then(setPastDocs).catch(() => {})}
                 notesSlot={
                   <div className="dash-section">

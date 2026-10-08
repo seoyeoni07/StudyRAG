@@ -1,10 +1,11 @@
+import asyncio
 import json
 
 from fastapi import APIRouter, Depends, Header
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from ..core.rag import query_rag
+from ..core.rag import query_rag, query_rag_multi
 from ..db.models import QAFeedback, QAThread
 from ..db.session import SessionLocal
 
@@ -21,6 +22,11 @@ def get_db():
 
 class QARequest(BaseModel):
     doc_id: str
+    question: str
+
+
+class MultiQARequest(BaseModel):
+    doc_ids: list[str]
     question: str
 
 
@@ -65,6 +71,13 @@ def get_history(doc_id: str, x_user_id: str | None = Header(default=None), db: S
         }
         for t in threads
     ]
+
+
+@router.post("/multi")
+async def ask_multi(req: MultiQARequest):
+    if not req.doc_ids:
+        return {"answer": "자료를 선택해주세요.", "sources": []}
+    return await asyncio.to_thread(query_rag_multi, req.doc_ids, req.question)
 
 
 @router.post("/feedback")

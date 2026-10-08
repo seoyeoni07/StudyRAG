@@ -183,10 +183,56 @@ function Editor({ noteId, doc, provider, user, onSaved }) {
   );
 }
 
+function VersionPanel({ noteId, onClose }) {
+  const [versions, setVersions] = useState(null);
+  const [restoring, setRestoring] = useState(null);
+  const [msg, setMsg] = useState("");
+
+  useEffect(() => {
+    apiFetch(`/notes/${noteId}/versions`).then(setVersions).catch(err => setMsg(err.message));
+  }, [noteId]);
+
+  async function restore(id) {
+    setRestoring(id);
+    try {
+      await apiFetch(`/notes/${noteId}/versions/${id}/restore`, { method: "POST" });
+      setMsg("복원됐어요. 페이지를 새로고침하면 내용이 반영됩니다.");
+    } catch (err) { setMsg(err.message); }
+    finally { setRestoring(null); }
+  }
+
+  return (
+    <div className="version-panel">
+      <div className="version-panel-header">
+        <span>버전 기록</span>
+        <button className="btn-ghost" onClick={onClose}>닫기</button>
+      </div>
+      {msg && <p className="version-msg">{msg}</p>}
+      {!versions ? (
+        <div className="loading-wrap"><div className="spinner" /></div>
+      ) : versions.length === 0 ? (
+        <p className="version-empty">저장된 버전이 없어요. 노트를 편집하면 5분 간격으로 자동 저장됩니다.</p>
+      ) : (
+        <ul className="version-list">
+          {versions.map(v => (
+            <li key={v.id} className="version-item">
+              <span className="version-title">{v.title || "제목 없음"}</span>
+              <span className="version-time">{new Date(v.created_at + "Z").toLocaleString("ko-KR")}</span>
+              <button className="btn-sm btn-secondary" disabled={restoring === v.id}
+                onClick={() => restore(v.id)}>{restoring === v.id ? "복원 중..." : "복원"}</button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export default function GroupNotePage({ noteId, user, group, onSaved, onDeleted }) {
   const { state, error } = useCollabDoc(noteId);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [delError, setDelError] = useState("");
+  const [showVersions, setShowVersions] = useState(false);
 
   if (error) return <div className="error-banner"><span>{error}</span></div>;
   if (!state) return <div className="loading-wrap"><div className="spinner" /></div>;
@@ -206,10 +252,13 @@ export default function GroupNotePage({ noteId, user, group, onSaved, onDeleted 
       <div className="page-icon">{meta.icon || "📄"}</div>
       <Editor noteId={noteId} doc={state.doc} provider={state.provider} user={user} onSaved={onSaved} />
 
+      {showVersions && <VersionPanel noteId={noteId} onClose={() => setShowVersions(false)} />}
+
       {delError && <div className="error-banner"><span>{delError}</span></div>}
-      {canDelete && (
-        <div className="note-footer">
-          {confirmDelete ? (
+      <div className="note-footer">
+        <button className="btn-ghost" onClick={() => setShowVersions(v => !v)}>버전 기록</button>
+        {canDelete && (
+          confirmDelete ? (
             <>
               <span className="note-footer-text">그룹 멤버 모두에게서 이 노트가 삭제돼요. 삭제할까요?</span>
               <button className="btn-danger" onClick={handleDelete}>삭제</button>
@@ -217,9 +266,9 @@ export default function GroupNotePage({ noteId, user, group, onSaved, onDeleted 
             </>
           ) : (
             <button className="btn-ghost" onClick={() => setConfirmDelete(true)}>노트 삭제</button>
-          )}
-        </div>
-      )}
+          )
+        )}
+      </div>
     </div>
   );
 }

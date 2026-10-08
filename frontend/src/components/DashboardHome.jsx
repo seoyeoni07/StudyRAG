@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { apiFetch } from "../api";
 
-export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc, pastDocs, uploading, onPastDocsChange, onSelectDocTab, onJoinRoom, notesSlot }) {
+export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc, pastDocs, uploading, onPastDocsChange, onSelectDocTab, onJoinRoom, notesSlot, reviewDue = 0, onAskMulti }) {
   const [stats, setStats] = useState(null);
   const [history, setHistory] = useState(null);
   const [editingFolder, setEditingFolder] = useState(null);
@@ -11,6 +11,11 @@ export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState("");
   const folderRef = useRef(null);
+  const [multiOpen, setMultiOpen] = useState(false);
+  const [multiSelected, setMultiSelected] = useState([]);
+  const [multiQ, setMultiQ] = useState("");
+  const [multiLoading, setMultiLoading] = useState(false);
+  const [multiAnswer, setMultiAnswer] = useState(null);
 
   async function handleJoinRoom() {
     if (!joinNick.trim() || joinCode.length < 4) return;
@@ -55,6 +60,16 @@ export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc
     onPastDocsChange();  // 목록 새로고침
   }
 
+  async function runMultiSearch() {
+    if (!multiSelected.length || !multiQ.trim()) return;
+    setMultiLoading(true); setMultiAnswer(null);
+    try {
+      const res = await onAskMulti(multiSelected, multiQ.trim());
+      setMultiAnswer(res);
+    } catch (err) { setMultiAnswer({ answer: `오류: ${err.message}`, sources: [] }); }
+    finally { setMultiLoading(false); }
+  }
+
   const pct = (s, t) => t ? Math.round(s / t * 100) : 0;
 
   // 폴더별 그룹핑
@@ -85,6 +100,63 @@ export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc
           <span className="dash-stat-label">자료</span>
         </div>
       </div>
+
+      {/* 오답 복습 알림 */}
+      {reviewDue > 0 && (
+        <div className="dash-review-alert">
+          <span className="dash-review-alert-icon">📕</span>
+          <span className="dash-review-alert-text">복습할 오답 <strong>{reviewDue}개</strong>가 있어요.</span>
+          <span className="dash-review-alert-hint">자료를 열고 오답노트 탭에서 복습하세요.</span>
+        </div>
+      )}
+
+      {/* 다중 자료 검색 */}
+      {pastDocs.length > 1 && (
+        <div className="dash-section dash-multi-section">
+          <button className="dash-section-header dash-multi-toggle" onClick={() => setMultiOpen(o => !o)}>
+            <span className="dash-section-title">🔍 다중 자료 검색</span>
+            <span className="dash-multi-caret">{multiOpen ? "▲" : "▼"}</span>
+          </button>
+          {multiOpen && (
+            <div className="dash-multi-body">
+              <p className="dash-multi-hint">여러 자료를 선택하고 질문하면 통합 답변을 얻을 수 있어요.</p>
+              <div className="dash-multi-docs">
+                {pastDocs.map(d => (
+                  <label key={d.doc_id} className="dash-multi-doc-label">
+                    <input type="checkbox" checked={multiSelected.includes(d.doc_id)}
+                      onChange={e => setMultiSelected(prev =>
+                        e.target.checked ? [...prev, d.doc_id] : prev.filter(id => id !== d.doc_id)
+                      )} />
+                    <span className="dash-multi-doc-name">{d.filename}</span>
+                  </label>
+                ))}
+              </div>
+              <div className="dash-multi-input-row">
+                <input className="dash-multi-input" placeholder="질문을 입력하세요..." value={multiQ}
+                  onChange={e => setMultiQ(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && !e.shiftKey && runMultiSearch()} />
+                <button className="btn-primary" onClick={runMultiSearch}
+                  disabled={multiLoading || !multiSelected.length || !multiQ.trim()}>
+                  {multiLoading ? "검색 중..." : "검색"}
+                </button>
+              </div>
+              {multiAnswer && (
+                <div className="dash-multi-answer">
+                  <p className="dash-multi-answer-text">{multiAnswer.answer}</p>
+                  {multiAnswer.sources?.length > 0 && (
+                    <details className="dash-multi-sources">
+                      <summary>참고 내용 {multiAnswer.sources.length}개</summary>
+                      {multiAnswer.sources.map((s, i) => (
+                        <div key={i} className="dash-multi-source-item">{s.text}</div>
+                      ))}
+                    </details>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 오늘 복습 */}
       {stats?.today_docs?.length > 0 && (

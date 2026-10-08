@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..core.quiz import generate_quiz, grade_short_answer
-from ..db.models import QuizHistory, QuizReport, QuizSession, WrongAnswer
+from ..db.models import Document, QuizHistory, QuizReport, QuizSession, WrongAnswer
 from ..db.session import SessionLocal
 
 _REVIEW_INTERVALS = [1, 3, 7, 14, 30]  # 스페이스드 리피티션 간격 (일)
@@ -187,6 +187,30 @@ def toggle_reviewed(item_id: int, db: Session = Depends(get_db)):
         item.next_review = None
     db.commit()
     return {"reviewed": item.reviewed, "next_review": item.next_review.isoformat() if item.next_review else None}
+
+
+@router.get("/due-count")
+def get_due_count(x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    if not x_user_id:
+        return {"count": 0}
+    now = datetime.utcnow()
+    unreviewed = (
+        db.query(WrongAnswer)
+        .join(Document, WrongAnswer.doc_id == Document.id)
+        .filter(Document.user_id == x_user_id, WrongAnswer.reviewed == False)
+        .count()
+    )
+    due_again = (
+        db.query(WrongAnswer)
+        .join(Document, WrongAnswer.doc_id == Document.id)
+        .filter(
+            Document.user_id == x_user_id,
+            WrongAnswer.reviewed == True,
+            WrongAnswer.next_review <= now,
+        )
+        .count()
+    )
+    return {"count": unreviewed + due_again}
 
 
 @router.post("/report")

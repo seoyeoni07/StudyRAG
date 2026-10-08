@@ -22,7 +22,7 @@ function Caret({ open, onClick }) {
 }
 
 export default function Sidebar({
-  user, view, onNavigate, pastDocs, notes, wrongCount,
+  user, view, onNavigate, pastDocs, notes, wrongCount, reviewDue = 0,
   onNewNote, onUpload, uploading, onLogout, open, onClose,
   groups = [], groupData = {}, online = {}, onNewGroupNote,
 }) {
@@ -167,6 +167,7 @@ export default function Sidebar({
                           <span className="sb-icon">{icon}</span>
                           <span className="sb-label">{label}</span>
                           {key === "wrong" && active && wrongCount > 0 && <span className="sb-badge">{wrongCount}</span>}
+                          {key === "wrong" && !active && reviewDue > 0 && <span className="sb-badge sb-badge-due">{reviewDue}</span>}
                         </button>
                       ))}
                       {docNotes.map(n => (
