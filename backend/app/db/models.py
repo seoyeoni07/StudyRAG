@@ -145,7 +145,8 @@ class StudyGroup(Base):
     invite_code = Column(String(8), unique=True, index=True, nullable=False)
     owner_id = Column(String(128), nullable=False)
     visibility = Column(String(16), nullable=False, default="code", server_default="code")  # public | code
-    level = Column(String(16), nullable=True)   # 초/중/고/대/고시
+    level = Column(String(32), nullable=True)
+    sublevel = Column(String(64), nullable=True)
     subject = Column(String(64), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 

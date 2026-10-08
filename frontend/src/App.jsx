@@ -252,10 +252,10 @@ export default function App() {
     } catch (err) { setError(err.message); }
   }
 
-  async function createGroup(name, displayName, visibility = "code", level = null, subject = null) {
+  async function createGroup(name, displayName, visibility = "code", level = null, sublevel = null, subject = null) {
     const g = await apiFetch("/groups/", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, display_name: displayName, visibility, level, subject }),
+      body: JSON.stringify({ name, display_name: displayName, visibility, level, sublevel, subject }),
     });
     setGroups(prev => [...prev, g]);
     await loadGroup(g.id);

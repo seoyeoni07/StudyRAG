@@ -61,7 +61,7 @@ def _iso(dt: datetime | None) -> str | None:
 def _group_dict(g: StudyGroup, member_count: int, my_role: str) -> dict:
     return {
         "id": g.id, "name": g.name, "invite_code": g.invite_code,
-        "visibility": g.visibility or "code", "level": g.level, "subject": g.subject,
+        "visibility": g.visibility or "code", "level": g.level, "sublevel": g.sublevel, "subject": g.subject,
         "member_count": member_count, "my_role": my_role, "created_at": _iso(g.created_at),
     }
 
@@ -73,6 +73,7 @@ class GroupCreate(BaseModel):
     display_name: str
     visibility: str = "code"   # public | code
     level: str | None = None
+    sublevel: str | None = None
     subject: str | None = None
 
 
@@ -112,6 +113,7 @@ def create_group(body: GroupCreate, x_user_id: str | None = Header(default=None)
         id=str(uuid.uuid4()), name=name, invite_code=_new_code(db), owner_id=user_id,
         visibility=visibility,
         level=(body.level or None),
+        sublevel=(body.sublevel or None),
         subject=(body.subject.strip()[:64] if body.subject else None),
     )
     db.add(g)

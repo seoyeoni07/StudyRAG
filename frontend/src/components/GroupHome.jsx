@@ -59,6 +59,7 @@ export default function GroupHome({
             <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
               {group.visibility === "public" ? <span className="group-tag">🌐 공개방</span> : <span className="group-tag">🔒 초대전용</span>}
               {group.level && <span className="group-tag">{group.level}</span>}
+              {group.sublevel && <span className="group-tag">{group.sublevel}</span>}
               {group.subject && <span className="group-tag">{group.subject}</span>}
             </div>
           </div>
@@ -242,7 +243,20 @@ export default function GroupHome({
   );
 }
 
-const LEVELS = ["초등", "중등", "고등(내신)", "고등(수능)", "대학교", "대학원", "공무원·고시", "자격증", "어학", "취업·이직", "기타"];
+const CATEGORY_MAP = {
+  "초등":       ["국어", "수학", "영어", "과학", "사회", "기타"],
+  "중등":       ["국어", "수학", "영어", "과학", "사회", "역사", "기타"],
+  "고등(내신)": ["국어", "수학", "영어", "물리", "화학", "생명과학", "지구과학", "사회", "한국사", "기타"],
+  "고등(수능)": ["국어", "수학", "영어", "사회탐구", "과학탐구", "한국사", "제2외국어", "기타"],
+  "대학교":     ["공과대학", "인문사회", "경상·경영", "의약학", "사범대학", "예체능", "자연과학", "법학", "기타"],
+  "대학원":     ["공학", "인문사회", "경영·경제", "의약학", "자연과학", "법학", "기타"],
+  "공무원·고시":["9급 공무원", "7급 공무원", "5급(행정고시)", "사법·로스쿨", "경찰·소방", "기타"],
+  "자격증":     ["IT·정보처리", "의료·보건", "금융·경제", "건축·토목", "기타"],
+  "어학":       ["영어(토익·토플)", "영어(IELTS)", "일본어", "중국어", "기타"],
+  "취업·이직":  ["IT·개발", "금융·경제", "마케팅·기획", "디자인", "공기업", "기타"],
+  "기타":       [],
+};
+const LEVELS = Object.keys(CATEGORY_MAP);
 
 export function GroupStart({ me, onCreate, onJoin, onJoinPublic }) {
   const defaultName = me.displayName || me.email?.split("@")[0] || "";
@@ -254,6 +268,7 @@ export function GroupStart({ me, onCreate, onJoin, onJoinPublic }) {
   const [name, setName] = useState("");
   const [visibility, setVisibility] = useState("code");
   const [level, setLevel] = useState("");
+  const [sublevel, setSublevel] = useState("");
   const [subject, setSubject] = useState("");
 
   // 참가
@@ -301,19 +316,25 @@ export function GroupStart({ me, onCreate, onJoin, onJoinPublic }) {
 
       <div className="room-actions">
         {/* ── 만들기 ── */}
-        <form className="room-create-block" onSubmit={e => { e.preventDefault(); run(() => onCreate(name, nick, visibility, level || null, subject || null)); }}>
+        <form className="room-create-block" onSubmit={e => { e.preventDefault(); run(() => onCreate(name, nick, visibility, level || null, sublevel || null, subject || null)); }}>
           <p className="room-block-title">새 그룹 만들기</p>
           <input className="input" value={name} maxLength={64} placeholder="그룹 이름 (예: 고1 수학 내신)"
             onChange={e => setName(e.target.value)} />
 
           <div className="group-meta-row">
-            <select className="input group-select" value={level} onChange={e => setLevel(e.target.value)}>
+            <select className="input group-select" value={level} onChange={e => { setLevel(e.target.value); setSublevel(""); }}>
               <option value="">카테고리 (선택)</option>
               {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
             </select>
-            <input className="input" value={subject} maxLength={64} placeholder="과목 (선택, 예: 수학)"
-              onChange={e => setSubject(e.target.value)} />
+            {level && (CATEGORY_MAP[level] || []).length > 0 && (
+              <select className="input group-select" value={sublevel} onChange={e => setSublevel(e.target.value)}>
+                <option value="">세부 분야 (선택)</option>
+                {CATEGORY_MAP[level].map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            )}
           </div>
+          <input className="input" value={subject} maxLength={64} placeholder="스터디 주제 (선택, 예: 미적분, 토익 900점)"
+            onChange={e => setSubject(e.target.value)} />
 
           <div className="group-visibility-row">
             <label className={`visibility-opt ${visibility === "code" ? "active" : ""}`}>
@@ -361,6 +382,7 @@ export function GroupStart({ me, onCreate, onJoin, onJoinPublic }) {
                       <div>
                         <span className="group-search-name">{g.name}</span>
                         {g.level && <span className="group-tag">{g.level}</span>}
+                        {g.sublevel && <span className="group-tag">{g.sublevel}</span>}
                         {g.subject && <span className="group-tag">{g.subject}</span>}
                         <span className="group-search-count">{g.member_count}명</span>
                       </div>

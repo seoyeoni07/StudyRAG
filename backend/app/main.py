@@ -42,7 +42,8 @@ async def startup():
         "ALTER TABLE notes ADD COLUMN IF NOT EXISTS ydoc TEXT",
         "ALTER TABLE notes ADD COLUMN IF NOT EXISTS last_edited_by VARCHAR(128)",
         "ALTER TABLE study_groups ADD COLUMN IF NOT EXISTS visibility VARCHAR(16) NOT NULL DEFAULT 'code'",
-        "ALTER TABLE study_groups ADD COLUMN IF NOT EXISTS level VARCHAR(16)",
+        "ALTER TABLE study_groups ADD COLUMN IF NOT EXISTS level VARCHAR(32)",
+        "ALTER TABLE study_groups ADD COLUMN IF NOT EXISTS sublevel VARCHAR(64)",
         "ALTER TABLE study_groups ADD COLUMN IF NOT EXISTS subject VARCHAR(64)",
         """CREATE TABLE IF NOT EXISTS tutor_threads (
             id SERIAL PRIMARY KEY,
