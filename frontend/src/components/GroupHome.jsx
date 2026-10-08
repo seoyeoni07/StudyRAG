@@ -218,7 +218,15 @@ export default function GroupHome({
       )}
 
       <div className="note-footer">
-        {group.my_role !== "owner" && (confirmLeave ? (
+        {group.my_role === "owner" ? (confirmLeave ? (
+          <>
+            <span className="note-footer-text">그룹을 삭제할까요? 모든 자료와 노트가 사라져요.</span>
+            <button className="btn-danger" onClick={onLeave}>삭제</button>
+            <button className="btn-ghost" onClick={() => setConfirmLeave(false)}>취소</button>
+          </>
+        ) : (
+          <button className="btn-ghost" onClick={() => setConfirmLeave(true)}>그룹 삭제</button>
+        )) : (confirmLeave ? (
           <>
             <span className="note-footer-text">그룹에서 나갈까요? 올린 자료와 노트는 그룹에 남아요.</span>
             <button className="btn-danger" onClick={onLeave}>나가기</button>

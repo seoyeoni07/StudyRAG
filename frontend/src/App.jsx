@@ -287,7 +287,9 @@ export default function App() {
 
   async function leaveGroup(id) {
     try {
-      await apiFetch(`/groups/${id}/members/me`, { method: "DELETE" });
+      const group = groups.find(g => g.id === id);
+      const url = group?.my_role === "owner" ? `/groups/${id}` : `/groups/${id}/members/me`;
+      await apiFetch(url, { method: "DELETE" });
       setGroups(prev => prev.filter(g => g.id !== id));
       setGroupData(d => { const n = { ...d }; delete n[id]; return n; });
       setView({ type: "home" });

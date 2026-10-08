@@ -212,12 +212,24 @@ def get_group_activity(group_id: str, x_user_id: str | None = Header(default=Non
     return result
 
 
+@router.delete("/{group_id}")
+def delete_group(group_id: str, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    user_id = _require_user(x_user_id)
+    me = require_member(db, group_id, user_id)
+    if me.role != "owner":
+        raise HTTPException(403, "그룹장만 삭제할 수 있습니다.")
+    db.query(StudyGroupMember).filter(StudyGroupMember.group_id == group_id).delete()
+    db.query(StudyGroup).filter(StudyGroup.id == group_id).delete()
+    db.commit()
+    return {"ok": True}
+
+
 @router.delete("/{group_id}/members/me")
 def leave_group(group_id: str, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
     user_id = _require_user(x_user_id)
     me = require_member(db, group_id, user_id)
     if me.role == "owner":
-        raise HTTPException(400, "그룹장은 나갈 수 없습니다.")
+        raise HTTPException(400, "그룹장은 나갈 수 없습니다. 그룹을 삭제하거나 다른 멤버에게 소유권을 넘겨주세요.")
     db.delete(me)
     db.commit()
     return {"ok": True}
