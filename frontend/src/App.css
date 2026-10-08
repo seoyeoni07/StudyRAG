@@ -1296,3 +1296,8 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 @media (max-width: 600px) {
   .version-panel { width: 100%; }
 }
+.version-public-toggle {
+  display: flex; align-items: center; gap: 6px; font-size: 13px;
+  color: var(--text-2); cursor: pointer; user-select: none;
+}
+.version-public-toggle input { accent-color: var(--blue); cursor: pointer; }

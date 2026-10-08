@@ -7,6 +7,54 @@ import { apiFetch } from "../api";
 
 const ICONS = ["📝", "📒", "📘", "📗", "📙", "💡", "⭐", "🔖", "🧠", "📌", "✏️", "🎯"];
 
+function VersionPanel({ noteId, onClose, onRestored }) {
+  const [versions, setVersions] = useState(null);
+  const [restoring, setRestoring] = useState(null);
+  const [msg, setMsg] = useState("");
+
+  useEffect(() => {
+    apiFetch(`/notes/${noteId}/versions`)
+      .then(setVersions)
+      .catch(err => { setMsg(err.message); setVersions([]); });
+  }, [noteId]);
+
+  async function restore(id) {
+    setRestoring(id);
+    try {
+      const res = await apiFetch(`/notes/${noteId}/versions/${id}/restore`, { method: "POST" });
+      setMsg("복원됐어요.");
+      onRestored?.(res);
+    } catch (err) { setMsg(err.message); }
+    finally { setRestoring(null); }
+  }
+
+  return (
+    <div className="version-panel">
+      <div className="version-panel-header">
+        <span>버전 기록</span>
+        <button className="btn-ghost" onClick={onClose}>닫기</button>
+      </div>
+      {msg && <p className="version-msg">{msg}</p>}
+      {!versions ? (
+        <div className="loading-wrap"><div className="spinner" /></div>
+      ) : versions.length === 0 ? (
+        <p className="version-empty">저장된 버전이 없어요. 노트를 편집하면 5분 간격으로 자동 저장됩니다.</p>
+      ) : (
+        <ul className="version-list">
+          {versions.map(v => (
+            <li key={v.id} className="version-item">
+              <span className="version-title">{v.title || "제목 없음"}</span>
+              <span className="version-time">{new Date(v.created_at + "Z").toLocaleString("ko-KR")}</span>
+              <button className="btn-sm btn-secondary" disabled={restoring === v.id}
+                onClick={() => restore(v.id)}>{restoring === v.id ? "복원 중..." : "복원"}</button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export default function NotePage({ noteId, pastDocs, onChanged, onDeleted, onOpenDoc }) {
   const [note, setNote] = useState(null);
   const [error, setError] = useState("");
@@ -14,6 +62,7 @@ export default function NotePage({ noteId, pastDocs, onChanged, onDeleted, onOpe
   const [saveState, setSaveState] = useState("saved"); // saved | dirty | saving
   const [iconOpen, setIconOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showVersions, setShowVersions] = useState(false);
   const pending = useRef({});
   const timer = useRef(null);
   const bodyRef = useRef(null);
@@ -139,7 +188,16 @@ export default function NotePage({ noteId, pastDocs, onChanged, onDeleted, onOpe
         </div>
       )}
 
+      {showVersions && (
+        <VersionPanel noteId={noteId} onClose={() => setShowVersions(false)}
+          onRestored={res => {
+            if (res.content !== undefined) setNote(n => ({ ...n, title: res.title, content: res.content }));
+            setShowVersions(false);
+          }} />
+      )}
+
       <div className="note-footer">
+        <button className="btn-ghost" onClick={() => setShowVersions(v => !v)}>버전 기록</button>
         {confirmDelete ? (
           <>
             <span className="note-footer-text">이 노트를 삭제할까요?</span>

@@ -198,7 +198,7 @@ function VersionPanel({ noteId, onClose }) {
     setRestoring(id);
     try {
       await apiFetch(`/notes/${noteId}/versions/${id}/restore`, { method: "POST" });
-      setMsg("복원됐어요. 페이지를 새로고침하면 내용이 반영됩니다.");
+      setMsg("복원됐어요. 잠시 후 변경 사항이 에디터에 반영됩니다. 반영이 안 되면 새로고침하세요.");
     } catch (err) { setMsg(err.message); }
     finally { setRestoring(null); }
   }
@@ -235,12 +235,23 @@ export default function GroupNotePage({ noteId, user, group, onSaved, onDeleted 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [delError, setDelError] = useState("");
   const [showVersions, setShowVersions] = useState(false);
+  const [versionsPublic, setVersionsPublic] = useState(null); // null = 로드 전
+
+  // meta에서 versions_public 초기값 세팅
+  useEffect(() => {
+    if (state?.meta?.versions_public !== undefined) {
+      setVersionsPublic(state.meta.versions_public);
+    }
+  }, [state?.meta?.versions_public]);
 
   if (error) return <div className="error-banner"><span>{error}</span></div>;
   if (!state) return <div className="loading-wrap"><div className="spinner" /></div>;
 
   const { meta } = state;
-  const canDelete = meta.user_id === user.uid || group?.my_role === "owner";
+  const isCreator = meta.user_id === user.uid;
+  const isOwner = group?.my_role === "owner";
+  const canManage = isCreator || isOwner;      // 작성자·그룹장
+  const canSeeVersions = canManage || versionsPublic;
 
   async function handleDelete() {
     try {
@@ -249,17 +260,37 @@ export default function GroupNotePage({ noteId, user, group, onSaved, onDeleted 
     } catch (err) { setDelError(err.message); }
   }
 
+  async function toggleVersionsPublic() {
+    const next = !versionsPublic;
+    try {
+      await apiFetch(`/notes/${noteId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ versions_public: next }),
+      });
+      setVersionsPublic(next);
+    } catch (err) { setDelError(err.message); }
+  }
+
   return (
     <div className="note-page">
       <div className="page-icon">{meta.icon || "📄"}</div>
       <Editor noteId={noteId} doc={state.doc} provider={state.provider} user={user} onSaved={onSaved} />
 
-      {showVersions && <VersionPanel noteId={noteId} onClose={() => setShowVersions(false)} />}
+      {showVersions && canSeeVersions && <VersionPanel noteId={noteId} onClose={() => setShowVersions(false)} />}
 
       {delError && <div className="error-banner"><span>{delError}</span></div>}
       <div className="note-footer">
-        <button className="btn-ghost" onClick={() => setShowVersions(v => !v)}>버전 기록</button>
-        {canDelete && (
+        {canSeeVersions && (
+          <button className="btn-ghost" onClick={() => setShowVersions(v => !v)}>버전 기록</button>
+        )}
+        {canManage && versionsPublic !== null && (
+          <label className="version-public-toggle">
+            <input type="checkbox" checked={versionsPublic} onChange={toggleVersionsPublic} />
+            <span>멤버에게 버전 기록 공개</span>
+          </label>
+        )}
+        {canManage && (
           confirmDelete ? (
             <>
               <span className="note-footer-text">그룹 멤버 모두에게서 이 노트가 삭제돼요. 삭제할까요?</span>

@@ -54,6 +54,8 @@ async def startup():
             created_at TIMESTAMP DEFAULT NOW()
         )""",
         "CREATE INDEX IF NOT EXISTS ix_note_versions_note_id ON note_versions(note_id)",
+        "ALTER TABLE note_versions ADD COLUMN IF NOT EXISTS content TEXT",
+        "ALTER TABLE notes ADD COLUMN IF NOT EXISTS versions_public BOOLEAN NOT NULL DEFAULT false",
         """CREATE TABLE IF NOT EXISTS tutor_threads (
             id SERIAL PRIMARY KEY,
             doc_id VARCHAR(36) NOT NULL,

@@ -1,6 +1,6 @@
 import base64
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, File, Header, HTTPException, Response, UploadFile
 from pydantic import BaseModel
@@ -8,7 +8,6 @@ from sqlalchemy.orm import Session
 
 from ..db.models import Note, NoteImage, NoteVersion, StudyGroup, StudyGroupMember
 from ..db.session import SessionLocal
-from datetime import timedelta
 
 router = APIRouter(prefix="/notes", tags=["notes"])
 
@@ -17,8 +16,8 @@ _MAX_VERSIONS = 20
 
 
 def _maybe_save_version(db: Session, note: Note, user_id: str) -> None:
-    """5분 간격으로 최대 20개 버전 저장. ydoc이 없는 노트는 스킵."""
-    if not note.ydoc:
+    """5분 간격으로 최대 20개 버전 저장. 내용(ydoc 또는 content)이 없으면 스킵."""
+    if not note.ydoc and not note.content:
         return
     last = (
         db.query(NoteVersion)
@@ -28,8 +27,10 @@ def _maybe_save_version(db: Session, note: Note, user_id: str) -> None:
     )
     if last and datetime.utcnow() - last.created_at < timedelta(minutes=_VERSION_INTERVAL_MINUTES):
         return
-    db.add(NoteVersion(note_id=note.id, user_id=user_id, title=note.title or "", ydoc=note.ydoc))
-    # 오래된 버전 정리
+    db.add(NoteVersion(
+        note_id=note.id, user_id=user_id, title=note.title or "",
+        ydoc=note.ydoc, content=note.content or None,
+    ))
     old_ids = [
         r.id for r in (
             db.query(NoteVersion.id)
@@ -41,6 +42,18 @@ def _maybe_save_version(db: Session, note: Note, user_id: str) -> None:
     ]
     if old_ids:
         db.query(NoteVersion).filter(NoteVersion.id.in_(old_ids)).delete(synchronize_session=False)
+
+
+def _can_see_versions(note: Note, user_id: str, db: Session) -> bool:
+    """작성자, 그룹장 → 항상 True. 다른 멤버 → versions_public 여부."""
+    if note.user_id == user_id:
+        return True
+    if note.group_id:
+        g = db.query(StudyGroup).filter(StudyGroup.id == note.group_id).first()
+        if g and g.owner_id == user_id:
+            return True
+        return bool(note.versions_public)
+    return False  # 다른 사람의 개인 노트는 접근 불가 (404로 처리됨)
 
 
 def get_db():
@@ -88,6 +101,7 @@ def _to_dict(n: Note, with_content: bool = True) -> dict:
         "doc_id": n.doc_id,
         "title": n.title,
         "icon": n.icon,
+        "versions_public": bool(n.versions_public),
         "created_at": n.created_at.isoformat() if n.created_at else None,
         "updated_at": n.updated_at.isoformat() if n.updated_at else None,
     }
@@ -108,6 +122,7 @@ class NoteUpdate(BaseModel):
     content: str | None = None
     icon: str | None = None
     doc_id: str | None = None
+    versions_public: bool | None = None
 
 
 @router.get("/")
@@ -192,16 +207,29 @@ def update_note(
     user_id = _require_user(x_user_id)
     note = _get_owned(db, note_id, user_id)
     fields = body.model_dump(exclude_unset=True)
+    content_changed = False
     if "title" in fields:
         note.title = (fields["title"] or "")[:256]
     if "content" in fields:
         note.content = fields["content"] or ""
+        content_changed = True
     if "icon" in fields:
         note.icon = fields["icon"]
     if "doc_id" in fields:
         note.doc_id = fields["doc_id"]
+    if "versions_public" in fields:
+        # 그룹 노트: 작성자 또는 그룹장만 변경 가능
+        if note.group_id:
+            g = db.query(StudyGroup).filter(StudyGroup.id == note.group_id).first()
+            if note.user_id != user_id and (not g or g.owner_id != user_id):
+                raise HTTPException(403, "작성자나 그룹장만 설정을 변경할 수 있습니다.")
+        elif note.user_id != user_id:
+            raise HTTPException(403, "본인 노트만 설정을 변경할 수 있습니다.")
+        note.versions_public = fields["versions_public"]
     note.updated_at = datetime.utcnow()
     note.last_edited_by = user_id
+    if content_changed:
+        _maybe_save_version(db, note, user_id)
     db.commit()
     return _to_dict(note)
 
@@ -264,7 +292,10 @@ def save_ydoc(
 
 @router.get("/{note_id}/versions")
 def list_versions(note_id: str, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
-    _get_owned(db, note_id, _require_user(x_user_id))
+    user_id = _require_user(x_user_id)
+    note = _get_owned(db, note_id, user_id)
+    if not _can_see_versions(note, user_id, db):
+        raise HTTPException(403, "버전 기록을 볼 권한이 없습니다.")
     rows = (
         db.query(NoteVersion)
         .filter(NoteVersion.note_id == note_id)
@@ -278,15 +309,23 @@ def list_versions(note_id: str, x_user_id: str | None = Header(default=None), db
 def restore_version(note_id: str, version_id: int, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
     user_id = _require_user(x_user_id)
     note = _get_owned(db, note_id, user_id)
+    # 복원은 작성자·그룹장만
+    if note.group_id:
+        g = db.query(StudyGroup).filter(StudyGroup.id == note.group_id).first()
+        if note.user_id != user_id and (not g or g.owner_id != user_id):
+            raise HTTPException(403, "작성자나 그룹장만 복원할 수 있습니다.")
+    elif note.user_id != user_id:
+        raise HTTPException(403, "본인 노트만 복원할 수 있습니다.")
     ver = db.query(NoteVersion).filter(NoteVersion.id == version_id, NoteVersion.note_id == note_id).first()
     if not ver:
         raise HTTPException(404, "버전을 찾을 수 없습니다.")
-    # 복원 전 현재 상태를 버전으로 저장
-    if note.ydoc:
-        db.add(NoteVersion(note_id=note.id, user_id=user_id, title=note.title or "", ydoc=note.ydoc))
+    # 복원 전 현재 상태 보존
+    db.add(NoteVersion(note_id=note.id, user_id=user_id, title=note.title or "",
+                       ydoc=note.ydoc, content=note.content or None))
     note.ydoc = ver.ydoc
+    note.content = ver.content or note.content
     note.title = ver.title
     note.last_edited_by = user_id
     note.updated_at = datetime.utcnow()
     db.commit()
-    return {"ok": True, "updated_at": note.updated_at.isoformat()}
+    return {"ok": True, "title": note.title, "content": note.content, "updated_at": note.updated_at.isoformat()}

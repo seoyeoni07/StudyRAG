@@ -134,6 +134,7 @@ class Note(Base):
     group_id = Column(String(36), nullable=True, index=True)   # 그룹 공동 노트면 그룹 id
     ydoc = Column(Text, nullable=True)                         # 공동 노트의 Yjs 상태 (base64)
     last_edited_by = Column(String(128), nullable=True)
+    versions_public = Column(Boolean, nullable=False, default=False, server_default="false")
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
@@ -167,7 +168,8 @@ class NoteVersion(Base):
     note_id = Column(String(36), nullable=False, index=True)
     user_id = Column(String(128), nullable=True)
     title = Column(String(256), nullable=False, default="")
-    ydoc = Column(Text, nullable=True)
+    content = Column(Text, nullable=True)   # 개인 노트
+    ydoc = Column(Text, nullable=True)      # 그룹 노트 (Yjs 상태)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
