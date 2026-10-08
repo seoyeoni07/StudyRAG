@@ -52,6 +52,7 @@ export default function App() {
   const [notifications, setNotifications] = useState([]);
   const [notifOpen, setNotifOpen] = useState(false);
   const [reviewDue, setReviewDue] = useState(0);
+  const [sharedNotes, setSharedNotes] = useState([]);
 
   const loadGroup = useCallback(async (id) => {
     try {
@@ -122,6 +123,12 @@ export default function App() {
           });
         apiFetch("/notes/").then(setNotes).catch(() => {});
         apiFetch("/quiz/due-count").then(d => setReviewDue(d.count || 0)).catch(() => {});
+        apiFetch("/notes/shared-with-me").then(setSharedNotes).catch(() => {});
+        apiFetch("/users/me", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: u.email, display_name: u.displayName || u.email?.split("@")[0] }),
+        }).catch(() => {});
         loadGroups();
       } else {
         setUserId(null);
@@ -389,6 +396,8 @@ export default function App() {
         open={sidebarOpen} onClose={() => setSidebarOpen(false)}
         groups={groups} groupData={groupData} online={online}
         onNewGroupNote={createGroupNote}
+        sharedNotes={sharedNotes}
+        onOpenSharedNote={(noteId) => setView({ type: "note", noteId })}
       />
 
       <div className="main">
@@ -565,6 +574,7 @@ export default function App() {
             <NotePage
               key={view.noteId}
               noteId={view.noteId}
+              user={user}
               pastDocs={pastDocs}
               onChanged={(saved) => setNotes(prev => [{ ...saved, content: undefined }, ...prev.filter(n => n.id !== saved.id)])}
               onDeleted={(id) => { setNotes(prev => prev.filter(n => n.id !== id)); setView({ type: "home" }); }}

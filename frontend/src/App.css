@@ -1301,3 +1301,52 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
   color: var(--text-2); cursor: pointer; user-select: none;
 }
 .version-public-toggle input { accent-color: var(--blue); cursor: pointer; }
+
+/* ── 그룹 채팅 ───────────────────────────────── */
+.chat-panel { display: flex; flex-direction: column; gap: 8px; }
+.chat-messages {
+  max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
+  padding: 8px 0; border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px;
+  background: var(--bg-2);
+}
+.chat-empty { font-size: 13px; color: var(--text-4); text-align: center; padding: 16px 0; }
+.chat-msg { display: flex; align-items: flex-end; gap: 6px; }
+.chat-msg--me { flex-direction: row-reverse; }
+.chat-name { font-size: 11px; color: var(--text-3); white-space: nowrap; }
+.chat-bubble {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 12px;
+  padding: 6px 10px; font-size: 14px; max-width: 70%; word-break: break-word; line-height: 1.5;
+}
+.chat-msg--me .chat-bubble { background: var(--primary-light); border-color: var(--primary-muted); }
+.chat-time { font-size: 11px; color: var(--text-4); white-space: nowrap; }
+.chat-input-row { display: flex; gap: 8px; }
+.chat-input { flex: 1; }
+
+/* ── 노트 공유 모달 ───────────────────────────── */
+.share-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 400;
+  display: flex; align-items: center; justify-content: center;
+}
+.share-modal {
+  background: var(--bg); border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,.18);
+  width: min(480px, 92vw); padding: 20px; display: flex; flex-direction: column; gap: 12px;
+}
+.share-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 16px; font-weight: 600;
+}
+.share-msg { font-size: 13px; color: var(--green); }
+.share-search-row { display: flex; gap: 8px; }
+.share-results { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.share-result-item {
+  display: flex; align-items: center; gap: 8px; padding: 6px 8px;
+  border: 1px solid var(--border); border-radius: 8px; background: var(--bg-2);
+}
+.share-result-name { font-size: 14px; font-weight: 500; }
+.share-result-email { font-size: 12px; color: var(--text-3); flex: 1; }
+.share-current { display: flex; flex-direction: column; gap: 4px; }
+.share-current-title { font-size: 12px; color: var(--text-3); font-weight: 500; }
+.share-current-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 8px; border-radius: 6px; background: var(--bg-2); font-size: 14px;
+}

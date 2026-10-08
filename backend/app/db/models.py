@@ -173,6 +173,33 @@ class NoteVersion(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+class UserProfile(Base):
+    __tablename__ = "user_profiles"
+    uid = Column(String(128), primary_key=True)
+    email = Column(String(256), nullable=True, index=True)
+    display_name = Column(String(64), nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+
+class GroupMessage(Base):
+    __tablename__ = "group_messages"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    group_id = Column(String(36), nullable=False, index=True)
+    user_id = Column(String(128), nullable=False)
+    display_name = Column(String(64), nullable=False)
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class NoteShare(Base):
+    __tablename__ = "note_shares"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    note_id = Column(String(36), nullable=False, index=True)
+    owner_id = Column(String(128), nullable=False)
+    shared_with = Column(String(128), nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class NoteImage(Base):
     """노트에 넣은 이미지. Render 디스크는 재배포 때 지워지므로 DB에 저장한다."""
     __tablename__ = "note_images"

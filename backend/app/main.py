@@ -11,6 +11,7 @@ from .api.tutor import router as tutor_router
 from .api.rooms import router as rooms_router
 from .api.notes import router as notes_router
 from .api.groups import router as groups_router
+from .api.users import router as users_router
 from .db.models import Base  # noqa: F401
 from .db.session import engine
 
@@ -56,6 +57,31 @@ async def startup():
         "CREATE INDEX IF NOT EXISTS ix_note_versions_note_id ON note_versions(note_id)",
         "ALTER TABLE note_versions ADD COLUMN IF NOT EXISTS content TEXT",
         "ALTER TABLE notes ADD COLUMN IF NOT EXISTS versions_public BOOLEAN NOT NULL DEFAULT false",
+        """CREATE TABLE IF NOT EXISTS user_profiles (
+            uid VARCHAR(128) PRIMARY KEY,
+            email VARCHAR(256),
+            display_name VARCHAR(64),
+            updated_at TIMESTAMP DEFAULT NOW()
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_user_profiles_email ON user_profiles(email)",
+        """CREATE TABLE IF NOT EXISTS group_messages (
+            id SERIAL PRIMARY KEY,
+            group_id VARCHAR(36) NOT NULL,
+            user_id VARCHAR(128) NOT NULL,
+            display_name VARCHAR(64) NOT NULL,
+            content TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT NOW()
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_group_messages_group_id ON group_messages(group_id)",
+        """CREATE TABLE IF NOT EXISTS note_shares (
+            id SERIAL PRIMARY KEY,
+            note_id VARCHAR(36) NOT NULL,
+            owner_id VARCHAR(128) NOT NULL,
+            shared_with VARCHAR(128) NOT NULL,
+            created_at TIMESTAMP DEFAULT NOW()
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_note_shares_note_id ON note_shares(note_id)",
+        "CREATE INDEX IF NOT EXISTS ix_note_shares_shared_with ON note_shares(shared_with)",
         """CREATE TABLE IF NOT EXISTS tutor_threads (
             id SERIAL PRIMARY KEY,
             doc_id VARCHAR(36) NOT NULL,
@@ -120,6 +146,7 @@ app.include_router(tutor_router)
 app.include_router(rooms_router)
 app.include_router(notes_router)
 app.include_router(groups_router)
+app.include_router(users_router)
 
 
 @app.get("/health")

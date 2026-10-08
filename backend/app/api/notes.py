@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, File, Header, HTTPException, Response, U
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from ..db.models import Note, NoteImage, NoteVersion, StudyGroup, StudyGroupMember
+from ..db.models import Note, NoteImage, NoteShare, NoteVersion, StudyGroup, StudyGroupMember, UserProfile
 from ..db.session import SessionLocal
 
 router = APIRouter(prefix="/notes", tags=["notes"])
@@ -77,9 +77,15 @@ def _is_member(db: Session, group_id: str, user_id: str) -> bool:
 
 
 def _get_owned(db: Session, note_id: str, user_id: str) -> Note:
-    """개인 노트는 작성자만, 그룹 노트는 그룹 멤버 누구나 접근할 수 있다."""
+    """개인 노트는 작성자·공유받은 사람, 그룹 노트는 그룹 멤버 누구나 접근할 수 있다."""
     note = db.query(Note).filter(Note.id == note_id).first()
-    if note and (note.user_id == user_id if not note.group_id else _is_member(db, note.group_id, user_id)):
+    if not note:
+        raise HTTPException(404, "노트를 찾을 수 없습니다.")
+    if note.user_id == user_id:
+        return note
+    if note.group_id and _is_member(db, note.group_id, user_id):
+        return note
+    if not note.group_id and db.query(NoteShare).filter(NoteShare.note_id == note_id, NoteShare.shared_with == user_id).first():
         return note
     raise HTTPException(404, "노트를 찾을 수 없습니다.")
 
@@ -98,6 +104,7 @@ def _merge_ydoc(stored_b64: str | None, incoming_b64: str) -> str:
 def _to_dict(n: Note, with_content: bool = True) -> dict:
     d = {
         "id": n.id,
+        "user_id": n.user_id,
         "doc_id": n.doc_id,
         "title": n.title,
         "icon": n.icon,
@@ -188,6 +195,17 @@ def get_image(image_id: str, db: Session = Depends(get_db)):
                     headers={"Cache-Control": "public, max-age=31536000, immutable"})
 
 
+@router.get("/shared-with-me")
+def shared_with_me(x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    user_id = _require_user(x_user_id)
+    shares = db.query(NoteShare).filter(NoteShare.shared_with == user_id).all()
+    if not shares:
+        return []
+    note_ids = [s.note_id for s in shares]
+    notes = db.query(Note).filter(Note.id.in_(note_ids), Note.group_id.is_(None)).all()
+    return [_to_dict(n, with_content=False) for n in notes]
+
+
 @router.get("/{note_id}")
 def get_note(
     note_id: str,
@@ -247,6 +265,56 @@ def delete_note(
         if not group or group.owner_id != user_id:
             raise HTTPException(403, "작성자나 그룹장만 삭제할 수 있습니다.")
     db.delete(note)
+    db.commit()
+    return {"ok": True}
+
+
+# ── 노트 공유 ────────────────────────────────────────────
+
+class NoteShareCreate(BaseModel):
+    user_id: str
+
+
+@router.get("/{note_id}/shares")
+def list_shares(note_id: str, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    user_id = _require_user(x_user_id)
+    note = _get_owned(db, note_id, user_id)
+    if note.user_id != user_id:
+        raise HTTPException(403, "본인 노트만 공유 설정을 볼 수 있습니다.")
+    shares = db.query(NoteShare).filter(NoteShare.note_id == note_id).all()
+    uids = [s.shared_with for s in shares]
+    profiles = {p.uid: p for p in db.query(UserProfile).filter(UserProfile.uid.in_(uids)).all()} if uids else {}
+    return [
+        {
+            "uid": s.shared_with,
+            "email": profiles[s.shared_with].email if s.shared_with in profiles else None,
+            "display_name": profiles[s.shared_with].display_name if s.shared_with in profiles else s.shared_with,
+        }
+        for s in shares
+    ]
+
+
+@router.post("/{note_id}/shares")
+def share_note(note_id: str, body: NoteShareCreate, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    user_id = _require_user(x_user_id)
+    note = _get_owned(db, note_id, user_id)
+    if note.user_id != user_id:
+        raise HTTPException(403, "본인 노트만 공유할 수 있습니다.")
+    if body.user_id == user_id:
+        raise HTTPException(400, "자기 자신에게는 공유할 수 없습니다.")
+    if not db.query(NoteShare).filter(NoteShare.note_id == note_id, NoteShare.shared_with == body.user_id).first():
+        db.add(NoteShare(note_id=note_id, owner_id=user_id, shared_with=body.user_id))
+        db.commit()
+    return {"ok": True}
+
+
+@router.delete("/{note_id}/shares/{target_uid}")
+def unshare_note(note_id: str, target_uid: str, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    user_id = _require_user(x_user_id)
+    note = _get_owned(db, note_id, user_id)
+    if note.user_id != user_id:
+        raise HTTPException(403, "본인 노트만 공유 해제할 수 있습니다.")
+    db.query(NoteShare).filter(NoteShare.note_id == note_id, NoteShare.shared_with == target_uid).delete()
     db.commit()
     return {"ok": True}
 

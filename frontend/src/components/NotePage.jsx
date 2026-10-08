@@ -7,6 +7,89 @@ import { apiFetch } from "../api";
 
 const ICONS = ["📝", "📒", "📘", "📗", "📙", "💡", "⭐", "🔖", "🧠", "📌", "✏️", "🎯"];
 
+function ShareModal({ noteId, onClose }) {
+  const [q, setQ] = useState("");
+  const [results, setResults] = useState([]);
+  const [shares, setShares] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  useEffect(() => {
+    apiFetch(`/notes/${noteId}/shares`)
+      .then(setShares)
+      .catch(err => { setMsg(err.message); setShares([]); });
+  }, [noteId]);
+
+  async function search() {
+    if (q.length < 2) return;
+    setBusy(true);
+    try {
+      const data = await apiFetch(`/users/search?q=${encodeURIComponent(q)}`);
+      setResults(data);
+    } catch (err) { setMsg(err.message); }
+    finally { setBusy(false); }
+  }
+
+  async function share(uid) {
+    try {
+      await apiFetch(`/notes/${noteId}/shares`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: uid }) });
+      const fresh = await apiFetch(`/notes/${noteId}/shares`);
+      setShares(fresh);
+      setResults(r => r.filter(u => u.uid !== uid));
+      setMsg("공유했어요.");
+    } catch (err) { setMsg(err.message); }
+  }
+
+  async function unshare(uid) {
+    try {
+      await apiFetch(`/notes/${noteId}/shares/${uid}`, { method: "DELETE" });
+      setShares(s => s.filter(u => u.uid !== uid));
+    } catch (err) { setMsg(err.message); }
+  }
+
+  return (
+    <div className="share-modal-overlay" onClick={onClose}>
+      <div className="share-modal" onClick={e => e.stopPropagation()}>
+        <div className="share-modal-header">
+          <span>노트 공유</span>
+          <button className="btn-ghost" onClick={onClose}>닫기</button>
+        </div>
+        {msg && <p className="share-msg">{msg}</p>}
+        <div className="share-search-row">
+          <input className="input" value={q} placeholder="이메일 또는 이름으로 검색 (2자 이상)"
+            onChange={e => setQ(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && search()} />
+          <button className="btn-secondary btn-sm" onClick={search} disabled={busy || q.length < 2}>검색</button>
+        </div>
+        {results.length > 0 && (
+          <ul className="share-results">
+            {results.map(u => (
+              <li key={u.uid} className="share-result-item">
+                <span className="share-result-name">{u.display_name || u.email}</span>
+                <span className="share-result-email">{u.email}</span>
+                <button className="btn-sm btn-primary" onClick={() => share(u.uid)}>공유</button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {shares === null ? (
+          <div className="loading-wrap"><div className="spinner" /></div>
+        ) : shares.length > 0 && (
+          <div className="share-current">
+            <p className="share-current-title">공유 중</p>
+            {shares.map(u => (
+              <div key={u.uid} className="share-current-item">
+                <span>{u.display_name || u.email}</span>
+                <button className="btn-ghost btn-sm" onClick={() => unshare(u.uid)}>해제</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function VersionPanel({ noteId, onClose, onRestored }) {
   const [versions, setVersions] = useState(null);
   const [restoring, setRestoring] = useState(null);
@@ -55,7 +138,7 @@ function VersionPanel({ noteId, onClose, onRestored }) {
   );
 }
 
-export default function NotePage({ noteId, pastDocs, onChanged, onDeleted, onOpenDoc }) {
+export default function NotePage({ noteId, user, pastDocs, onChanged, onDeleted, onOpenDoc }) {
   const [note, setNote] = useState(null);
   const [error, setError] = useState("");
   const [editing, setEditing] = useState(false);
@@ -63,6 +146,7 @@ export default function NotePage({ noteId, pastDocs, onChanged, onDeleted, onOpe
   const [iconOpen, setIconOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showVersions, setShowVersions] = useState(false);
+  const [showShare, setShowShare] = useState(false);
   const pending = useRef({});
   const timer = useRef(null);
   const bodyRef = useRef(null);
@@ -196,8 +280,13 @@ export default function NotePage({ noteId, pastDocs, onChanged, onDeleted, onOpe
           }} />
       )}
 
+      {showShare && <ShareModal noteId={noteId} onClose={() => setShowShare(false)} />}
+
       <div className="note-footer">
         <button className="btn-ghost" onClick={() => setShowVersions(v => !v)}>버전 기록</button>
+        {user && note?.user_id === user.uid && (
+          <button className="btn-ghost" onClick={() => setShowShare(true)}>공유</button>
+        )}
         {confirmDelete ? (
           <>
             <span className="note-footer-text">이 노트를 삭제할까요?</span>

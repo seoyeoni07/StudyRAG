@@ -25,6 +25,7 @@ export default function Sidebar({
   user, view, onNavigate, pastDocs, notes, wrongCount, reviewDue = 0,
   onNewNote, onUpload, uploading, onLogout, open, onClose,
   groups = [], groupData = {}, online = {}, onNewGroupNote,
+  sharedNotes = [], onOpenSharedNote,
 }) {
   const [expanded, setExpanded] = useState({});
   const [docsOpen, setDocsOpen] = useState(true);
@@ -139,6 +140,22 @@ export default function Sidebar({
               ))
             )}
           </div>
+
+          {/* ── 공유된 노트 ── */}
+          {sharedNotes.length > 0 && (
+            <div className="sb-section">
+              <div className="sb-section-head">
+                <span className="sb-section-title">공유된 노트</span>
+              </div>
+              {sharedNotes.map(n => (
+                <button key={n.id} className={`sb-item ${view.type === "note" && view.noteId === n.id ? "active" : ""}`}
+                  onClick={() => { onOpenSharedNote?.(n.id); onClose?.(); }}>
+                  <span className="sb-icon">{n.icon || "📝"}</span>
+                  <span className="sb-label">{n.title || "제목 없음"}</span>
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* ── 자료 ── */}
           <div className="sb-section">

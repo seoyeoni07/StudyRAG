@@ -7,7 +7,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, File, Header, HTTPExcep
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from ..db.models import Document, Note, StudyGroup, StudyGroupMember
+from ..db.models import Document, GroupMessage, Note, StudyGroup, StudyGroupMember
 from ..db.session import SessionLocal
 from .documents import ingest_upload
 
@@ -302,6 +302,51 @@ def list_group_notes(group_id: str, x_user_id: str | None = Header(default=None)
     names = _name_map(db, group_id)
     rows = db.query(Note).filter(Note.group_id == group_id).order_by(Note.updated_at.desc()).all()
     return [group_note_dict(n, names) for n in rows]
+
+
+# ── Group Chat ───────────────────────────────────────────
+
+class MessageCreate(BaseModel):
+    content: str
+    display_name: str
+
+
+@router.get("/{group_id}/messages")
+def get_messages(
+    group_id: str,
+    limit: int = 50,
+    before: str | None = None,
+    x_user_id: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    require_member(db, group_id, _require_user(x_user_id))
+    q = db.query(GroupMessage).filter(GroupMessage.group_id == group_id)
+    if before:
+        try:
+            q = q.filter(GroupMessage.created_at < datetime.fromisoformat(before))
+        except ValueError:
+            pass
+    msgs = q.order_by(GroupMessage.created_at.desc()).limit(min(limit, 100)).all()
+    msgs.reverse()
+    return [{"id": m.id, "user_id": m.user_id, "display_name": m.display_name, "content": m.content, "created_at": m.created_at.isoformat()} for m in msgs]
+
+
+@router.post("/{group_id}/messages")
+def send_message(
+    group_id: str,
+    body: MessageCreate,
+    x_user_id: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    user_id = _require_user(x_user_id)
+    require_member(db, group_id, user_id)
+    content = body.content.strip()[:2000]
+    if not content:
+        raise HTTPException(400, "내용을 입력하세요.")
+    m = GroupMessage(group_id=group_id, user_id=user_id, display_name=body.display_name[:64], content=content)
+    db.add(m)
+    db.commit()
+    return {"id": m.id, "user_id": m.user_id, "display_name": m.display_name, "content": m.content, "created_at": m.created_at.isoformat()}
 
 
 @router.post("/{group_id}/notes")
