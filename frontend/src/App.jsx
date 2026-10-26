@@ -21,6 +21,12 @@ import "./App.css";
 // 블록 에디터(BlockNote)는 무거워서 공동 노트를 열 때만 불러온다
 const GroupNotePage = lazy(() => import("./components/GroupNotePage"));
 
+// 같은 파일명이 여러 번 업로드된 경우 가장 최신 1개만 유지
+const dedupDocs = (docs) => {
+  const seen = new Set();
+  return docs.filter(d => seen.has(d.filename) ? false : seen.add(d.filename));
+};
+
 function timeAgo(iso) {
   if (!iso) return "";
   const t = new Date(iso + (iso.endsWith("Z") ? "" : "Z")).getTime();
@@ -117,7 +123,7 @@ export default function App() {
         setUserId(u.uid);
         setServerWaking(false);
         apiFetch("/documents/")
-          .then(data => { setPastDocs(data); setServerWaking(false); })
+          .then(data => { setPastDocs(dedupDocs(data)); setServerWaking(false); })
           .catch(err => {
             if (err.isColdStart) setServerWaking(true);
           });
@@ -489,7 +495,7 @@ export default function App() {
                 uploading={uploading}
                 reviewDue={reviewDue}
                 onAskMulti={askMultiDocs}
-                onPastDocsChange={() => apiFetch("/documents/").then(setPastDocs).catch(() => {})}
+                onPastDocsChange={() => apiFetch("/documents/").then(d => setPastDocs(dedupDocs(d))).catch(() => {})}
                 notesSlot={
                   <div className="dash-section">
                     <div className="dash-section-header">
