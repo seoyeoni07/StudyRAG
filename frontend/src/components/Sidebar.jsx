@@ -194,54 +194,76 @@ export default function Sidebar({
             <div className="sb-section-head">
               <button className="sb-section-title" onClick={() => setDocsOpen(o => !o)}>강의자료</button>
             </div>
-            {docsOpen && (pastDocs.length === 0 ? (
-              <p className="sb-empty">아직 자료가 없어요</p>
-            ) : <>
-              <div className="sb-search-wrap">
-                <input className="sb-search-input" value={docSearch} placeholder="자료 검색…"
-                  onChange={e => setDocSearch(e.target.value)} />
-                {docSearch && <button className="sb-search-clear" onClick={() => setDocSearch("")}>×</button>}
-              </div>
-              {pastDocs.filter(d => !docSearch || d.filename.toLowerCase().includes(docSearch.toLowerCase())).map(d => {
-              const docNotes = notes.filter(n => n.doc_id === d.doc_id);
-              const active = view.type === "doc" && view.docId === d.doc_id;
-              return (
-                <div key={d.doc_id}>
-                  <button className={`sb-item ${active && !isOpen(d.doc_id) ? "active" : ""}`}
-                    onClick={() => go({ type: "doc", docId: d.doc_id, filename: d.filename, tab: active ? view.tab : "summary" })}
-                    title={d.filename}>
-                    <Caret open={isOpen(d.doc_id)} onClick={() => toggle(d.doc_id)} />
-                    <span className="sb-icon">{(d.status === "processing" ? "⏳" : d.status === "failed" ? "⚠️" : "📄")}</span>
-                    <span className="sb-label">{d.filename.replace(/\.pdf$/i, "")}</span>
-                  </button>
-                  {isOpen(d.doc_id) && (
-                    <div className="sb-children">
-                      {tabsFor(false).map(([key, label, , icon]) => (
-                        <button key={key} className={`sb-item sb-child ${active && view.tab === key ? "active" : ""}`}
-                          onClick={() => go({ type: "doc", docId: d.doc_id, filename: d.filename, tab: key })}>
-                          <span className="sb-icon">{icon}</span>
-                          <span className="sb-label">{label}</span>
-                          {key === "wrong" && active && wrongCount > 0 && <span className="sb-badge">{wrongCount}</span>}
-                          {key === "wrong" && !active && reviewDue > 0 && <span className="sb-badge sb-badge-due">{reviewDue}</span>}
+            {docsOpen && (
+              <>
+                {pastDocs.length > 0 && (
+                  <div className="sb-search-wrap">
+                    <input className="sb-search-input" value={docSearch} placeholder="자료 검색…"
+                      onChange={e => setDocSearch(e.target.value)} />
+                    {docSearch && <button className="sb-search-clear" onClick={() => setDocSearch("")}>×</button>}
+                  </div>
+                )}
+                {pastDocs.length === 0 ? (
+                  <p className="sb-empty">아직 자료가 없어요</p>
+                ) : docSearch ? (
+                  // 검색 중: 평면 목록
+                  (() => {
+                    const filtered = pastDocs.filter(d => d.filename.toLowerCase().includes(docSearch.toLowerCase()));
+                    return filtered.length === 0
+                      ? <p className="sb-empty">검색 결과 없음</p>
+                      : filtered.map(d => (
+                          <button key={d.doc_id}
+                            className={`sb-item ${view.type === "doc" && view.docId === d.doc_id ? "active" : ""}`}
+                            onClick={() => go({ type: "doc", docId: d.doc_id, filename: d.filename, tab: "summary" })}
+                            title={d.filename}>
+                            <span className="sb-icon">{d.status === "processing" ? "⏳" : d.status === "failed" ? "⚠️" : "📄"}</span>
+                            <span className="sb-label">{d.filename.replace(/\.pdf$/i, "")}</span>
+                          </button>
+                        ));
+                  })()
+                ) : (
+                  // 기본: 펼치기 트리
+                  pastDocs.map(d => {
+                    const docNotes = notes.filter(n => n.doc_id === d.doc_id);
+                    const active = view.type === "doc" && view.docId === d.doc_id;
+                    return (
+                      <div key={d.doc_id}>
+                        <button className={`sb-item ${active && !isOpen(d.doc_id) ? "active" : ""}`}
+                          onClick={() => go({ type: "doc", docId: d.doc_id, filename: d.filename, tab: active ? view.tab : "summary" })}
+                          title={d.filename}>
+                          <Caret open={isOpen(d.doc_id)} onClick={() => toggle(d.doc_id)} />
+                          <span className="sb-icon">{d.status === "processing" ? "⏳" : d.status === "failed" ? "⚠️" : "📄"}</span>
+                          <span className="sb-label">{d.filename.replace(/\.pdf$/i, "")}</span>
                         </button>
-                      ))}
-                      {docNotes.map(n => (
-                        <button key={n.id} className={`sb-item sb-child ${view.type === "note" && view.noteId === n.id ? "active" : ""}`}
-                          onClick={() => go({ type: "note", noteId: n.id })}>
-                          <span className="sb-icon">{n.icon || "📝"}</span>
-                          <span className="sb-label">{n.title || "제목 없음"}</span>
-                        </button>
-                      ))}
-                      <button className="sb-item sb-child sb-muted" onClick={() => { onNewNote(d.doc_id); onClose?.(); }}>
-                        <span className="sb-icon">＋</span><span className="sb-label">이 자료에 노트 추가</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-            </>
-          )}
+                        {isOpen(d.doc_id) && (
+                          <div className="sb-children">
+                            {tabsFor(false).map(([key, label, , icon]) => (
+                              <button key={key} className={`sb-item sb-child ${active && view.tab === key ? "active" : ""}`}
+                                onClick={() => go({ type: "doc", docId: d.doc_id, filename: d.filename, tab: key })}>
+                                <span className="sb-icon">{icon}</span>
+                                <span className="sb-label">{label}</span>
+                                {key === "wrong" && active && wrongCount > 0 && <span className="sb-badge">{wrongCount}</span>}
+                                {key === "wrong" && !active && reviewDue > 0 && <span className="sb-badge sb-badge-due">{reviewDue}</span>}
+                              </button>
+                            ))}
+                            {docNotes.map(n => (
+                              <button key={n.id} className={`sb-item sb-child ${view.type === "note" && view.noteId === n.id ? "active" : ""}`}
+                                onClick={() => go({ type: "note", noteId: n.id })}>
+                                <span className="sb-icon">{n.icon || "📝"}</span>
+                                <span className="sb-label">{n.title || "제목 없음"}</span>
+                              </button>
+                            ))}
+                            <button className="sb-item sb-child sb-muted" onClick={() => { onNewNote(d.doc_id); onClose?.(); }}>
+                              <span className="sb-icon">＋</span><span className="sb-label">이 자료에 노트 추가</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </>
+            )}
           </div>
         </nav>
 
