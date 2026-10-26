@@ -35,6 +35,7 @@ export default function Sidebar({
   const [noteSearch, setNoteSearch] = useState("");
   const [searchResults, setSearchResults] = useState(null); // null = 검색 전
   const searchTimer = useRef(null);
+  const [docSearch, setDocSearch] = useState("");
   const inGroup = (id) => view.groupId === id;
   const isGroupOpen = (id) => expanded[`g:${id}`] ?? inGroup(id);
   const name = user.displayName || user.email?.split("@")[0] || "나";
@@ -195,7 +196,13 @@ export default function Sidebar({
             </div>
             {docsOpen && (pastDocs.length === 0 ? (
               <p className="sb-empty">아직 자료가 없어요</p>
-            ) : pastDocs.map(d => {
+            ) : <>
+              <div className="sb-search-wrap">
+                <input className="sb-search-input" value={docSearch} placeholder="자료 검색…"
+                  onChange={e => setDocSearch(e.target.value)} />
+                {docSearch && <button className="sb-search-clear" onClick={() => setDocSearch("")}>×</button>}
+              </div>
+              {pastDocs.filter(d => !docSearch || d.filename.toLowerCase().includes(docSearch.toLowerCase())).map(d => {
               const docNotes = notes.filter(n => n.doc_id === d.doc_id);
               const active = view.type === "doc" && view.docId === d.doc_id;
               return (
@@ -232,7 +239,9 @@ export default function Sidebar({
                   )}
                 </div>
               );
-            }))}
+            })}
+            </>
+          )}
           </div>
         </nav>
 

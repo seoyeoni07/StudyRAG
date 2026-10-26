@@ -17,6 +17,11 @@ export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc
   const [multiLoading, setMultiLoading] = useState(false);
   const [multiAnswer, setMultiAnswer] = useState(null);
 
+  // 패널 열릴 때 전체 자동 선택
+  useEffect(() => {
+    if (multiOpen) setMultiSelected(pastDocs.map(d => d.doc_id));
+  }, [multiOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
   async function handleJoinRoom() {
     if (!joinNick.trim() || joinCode.length < 4) return;
     setJoining(true); setJoinError("");
