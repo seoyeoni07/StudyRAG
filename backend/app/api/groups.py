@@ -63,6 +63,7 @@ def _group_dict(g: StudyGroup, member_count: int, my_role: str) -> dict:
         "id": g.id, "name": g.name, "invite_code": g.invite_code,
         "visibility": g.visibility or "code", "level": g.level, "sublevel": g.sublevel, "subject": g.subject,
         "member_count": member_count, "my_role": my_role, "created_at": _iso(g.created_at),
+        "announcement": g.announcement, "announcement_at": _iso(g.announcement_at),
     }
 
 
@@ -302,6 +303,38 @@ def list_group_notes(group_id: str, x_user_id: str | None = Header(default=None)
     names = _name_map(db, group_id)
     rows = db.query(Note).filter(Note.group_id == group_id).order_by(Note.updated_at.desc()).all()
     return [group_note_dict(n, names) for n in rows]
+
+
+# ── Group Announcement ───────────────────────────────────
+
+class AnnouncementUpdate(BaseModel):
+    content: str
+
+
+@router.put("/{group_id}/announcement")
+def set_announcement(group_id: str, body: AnnouncementUpdate, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    user_id = _require_user(x_user_id)
+    me = require_member(db, group_id, user_id)
+    if me.role != "owner":
+        raise HTTPException(403, "그룹장만 공지를 수정할 수 있습니다.")
+    g = db.query(StudyGroup).filter(StudyGroup.id == group_id).first()
+    g.announcement = body.content.strip()[:500]
+    g.announcement_at = datetime.utcnow()
+    db.commit()
+    return {"ok": True, "announcement": g.announcement, "announcement_at": g.announcement_at.isoformat()}
+
+
+@router.delete("/{group_id}/announcement")
+def clear_announcement(group_id: str, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    user_id = _require_user(x_user_id)
+    me = require_member(db, group_id, user_id)
+    if me.role != "owner":
+        raise HTTPException(403, "그룹장만 공지를 삭제할 수 있습니다.")
+    g = db.query(StudyGroup).filter(StudyGroup.id == group_id).first()
+    g.announcement = None
+    g.announcement_at = None
+    db.commit()
+    return {"ok": True}
 
 
 # ── Group Chat ───────────────────────────────────────────

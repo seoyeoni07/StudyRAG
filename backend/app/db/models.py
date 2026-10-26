@@ -149,6 +149,8 @@ class StudyGroup(Base):
     level = Column(String(32), nullable=True)
     sublevel = Column(String(64), nullable=True)
     subject = Column(String(64), nullable=True)
+    announcement = Column(Text, nullable=True)
+    announcement_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 

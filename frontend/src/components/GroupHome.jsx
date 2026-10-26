@@ -100,13 +100,16 @@ function ChatPanel({ group, me }) {
 export default function GroupHome({
   group, docs, notes, online, me, realtime,
   uploading, onUpload, onOpenDoc, onOpenNote, onNewNote, onDeleteDoc, onLeave,
-  quiz, onJoinQuiz,
+  quiz, onJoinQuiz, onReload,
 }) {
   const [copied, setCopied] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [confirmDel, setConfirmDel] = useState(null);
   const [activity, setActivity] = useState([]);
   const [chatOpen, setChatOpen] = useState(false);
+  const [editingAnn, setEditingAnn] = useState(false);
+  const [annText, setAnnText] = useState(group.announcement || "");
+  const [annBusy, setAnnBusy] = useState(false);
 
   useEffect(() => {
     apiFetch(`/groups/${group.id}/activity`).then(setActivity).catch(() => {});
@@ -115,6 +118,23 @@ export default function GroupHome({
   const onlineIds = new Set((online || []).map(o => o.user_id));
   const viewingOf = (uid) => (online || []).find(o => o.user_id === uid)?.viewing;
   const viewers = (key) => (online || []).filter(o => o.viewing === key && o.user_id !== me.uid);
+
+  async function saveAnnouncement() {
+    setAnnBusy(true);
+    try {
+      if (annText.trim()) {
+        await apiFetch(`/groups/${group.id}/announcement`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: annText }),
+        });
+      } else {
+        await apiFetch(`/groups/${group.id}/announcement`, { method: "DELETE" });
+      }
+      setEditingAnn(false);
+      onReload?.();
+    } catch { /* 무시 */ } finally { setAnnBusy(false); }
+  }
 
   async function copyCode() {
     try {
@@ -128,6 +148,35 @@ export default function GroupHome({
     <div className="group-home">
       <div className="page-icon">👥</div>
       <h1 className="page-title">{group.name}</h1>
+
+      {/* 공지사항 */}
+      {(group.announcement || group.my_role === "owner") && (
+        <div className="group-announcement">
+          {editingAnn ? (
+            <div className="group-ann-edit">
+              <textarea className="group-ann-textarea" value={annText} maxLength={500}
+                placeholder="그룹 공지를 입력하세요 (500자 이내)…"
+                onChange={e => setAnnText(e.target.value)} />
+              <div className="group-ann-actions">
+                <button className="btn-primary btn-sm" onClick={saveAnnouncement} disabled={annBusy}>저장</button>
+                <button className="btn-ghost btn-sm" onClick={() => { setEditingAnn(false); setAnnText(group.announcement || ""); }}>취소</button>
+              </div>
+            </div>
+          ) : (
+            <div className="group-ann-view">
+              <span className="group-ann-icon">📢</span>
+              {group.announcement
+                ? <span className="group-ann-text">{group.announcement}</span>
+                : <span className="group-ann-placeholder">공지 없음</span>}
+              {group.my_role === "owner" && (
+                <button className="btn-ghost btn-sm group-ann-edit-btn" onClick={() => setEditingAnn(true)}>
+                  {group.announcement ? "수정" : "공지 등록"}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 속성 */}
       <div className="note-props">

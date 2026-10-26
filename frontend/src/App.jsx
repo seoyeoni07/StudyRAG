@@ -554,6 +554,7 @@ export default function App() {
               onLeave={() => leaveGroup(groupId)}
               quiz={groupQuiz[groupId]}
               onJoinQuiz={(info) => joinGroupQuiz(groupId, info)}
+              onReload={() => loadGroup(groupId)}
             />
           ) : <div className="loading-wrap"><div className="spinner" /></div>)}
 

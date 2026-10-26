@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, File, Header, HTTPException, Response, UploadFile
 from pydantic import BaseModel
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from ..db.models import Note, NoteImage, NoteShare, NoteVersion, StudyGroup, StudyGroupMember, UserProfile
@@ -193,6 +194,25 @@ def get_image(image_id: str, db: Session = Depends(get_db)):
         raise HTTPException(404, "이미지를 찾을 수 없습니다.")
     return Response(content=img.data, media_type=img.content_type,
                     headers={"Cache-Control": "public, max-age=31536000, immutable"})
+
+
+@router.get("/search")
+def search_notes(q: str = "", x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    user_id = _require_user(x_user_id)
+    if not q.strip():
+        return []
+    notes = (
+        db.query(Note)
+        .filter(
+            Note.user_id == user_id,
+            Note.group_id.is_(None),
+            or_(Note.title.ilike(f"%{q}%"), Note.content.ilike(f"%{q}%")),
+        )
+        .order_by(Note.updated_at.desc())
+        .limit(20)
+        .all()
+    )
+    return [_to_dict(n, with_content=False) for n in notes]
 
 
 @router.get("/shared-with-me")

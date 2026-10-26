@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { apiFetch } from "../api.js";
 
 export const DOC_TABS = [
   ["summary", "요약",       "AI가 강의 전체를 핵심만 정리해드립니다", "📋"],
@@ -31,6 +32,9 @@ export default function Sidebar({
   const [docsOpen, setDocsOpen] = useState(true);
   const [notesOpen, setNotesOpen] = useState(true);
   const [groupsOpen, setGroupsOpen] = useState(true);
+  const [noteSearch, setNoteSearch] = useState("");
+  const [searchResults, setSearchResults] = useState(null); // null = 검색 전
+  const searchTimer = useRef(null);
   const inGroup = (id) => view.groupId === id;
   const isGroupOpen = (id) => expanded[`g:${id}`] ?? inGroup(id);
   const name = user.displayName || user.email?.split("@")[0] || "나";
@@ -40,6 +44,21 @@ export default function Sidebar({
   const go = (v) => { onNavigate(v); onClose?.(); };
 
   const looseNotes = notes.filter(n => !n.doc_id || !pastDocs.some(d => d.doc_id === n.doc_id));
+
+  function onNoteSearchChange(q) {
+    setNoteSearch(q);
+    clearTimeout(searchTimer.current);
+    if (!q.trim()) { setSearchResults(null); return; }
+    // 제목 즉시 필터
+    const byTitle = looseNotes.filter(n => n.title?.toLowerCase().includes(q.toLowerCase()));
+    setSearchResults(byTitle);
+    // 내용 검색은 0.5초 디바운스
+    searchTimer.current = setTimeout(() => {
+      apiFetch(`/notes/search?q=${encodeURIComponent(q)}`)
+        .then(setSearchResults)
+        .catch(() => {});
+    }, 500);
+  }
 
   return (
     <>
@@ -127,17 +146,29 @@ export default function Sidebar({
               <button className="sb-add" title="새 노트" onClick={() => { onNewNote(); onClose?.(); }}>+</button>
             </div>
             {notesOpen && (
-              looseNotes.length === 0 ? (
-                <button className="sb-item sb-muted" onClick={() => { onNewNote(); onClose?.(); }}>
-                  <span className="sb-icon">＋</span><span className="sb-label">새 노트 만들기</span>
-                </button>
-              ) : looseNotes.map(n => (
-                <button key={n.id} className={`sb-item ${view.type === "note" && view.noteId === n.id ? "active" : ""}`}
-                  onClick={() => go({ type: "note", noteId: n.id })}>
-                  <span className="sb-icon">{n.icon || "📝"}</span>
-                  <span className="sb-label">{n.title || "제목 없음"}</span>
-                </button>
-              ))
+              <>
+                <div className="sb-search-wrap">
+                  <input className="sb-search-input" value={noteSearch} placeholder="노트 검색…"
+                    onChange={e => onNoteSearchChange(e.target.value)} />
+                  {noteSearch && <button className="sb-search-clear" onClick={() => { setNoteSearch(""); setSearchResults(null); }}>×</button>}
+                </div>
+                {(() => {
+                  const list = searchResults !== null ? searchResults : looseNotes;
+                  if (list.length === 0 && !noteSearch) return (
+                    <button className="sb-item sb-muted" onClick={() => { onNewNote(); onClose?.(); }}>
+                      <span className="sb-icon">＋</span><span className="sb-label">새 노트 만들기</span>
+                    </button>
+                  );
+                  if (list.length === 0) return <p className="sb-empty">검색 결과 없음</p>;
+                  return list.map(n => (
+                    <button key={n.id} className={`sb-item ${view.type === "note" && view.noteId === n.id ? "active" : ""}`}
+                      onClick={() => go({ type: "note", noteId: n.id })}>
+                      <span className="sb-icon">{n.icon || "📝"}</span>
+                      <span className="sb-label">{n.title || "제목 없음"}</span>
+                    </button>
+                  ));
+                })()}
+              </>
             )}
           </div>
 

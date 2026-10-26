@@ -287,6 +287,7 @@ export default function NotePage({ noteId, user, pastDocs, onChanged, onDeleted,
         {user && note?.user_id === user.uid && (
           <button className="btn-ghost" onClick={() => setShowShare(true)}>공유</button>
         )}
+        <button className="btn-ghost" onClick={() => window.print()}>PDF 저장</button>
         {confirmDelete ? (
           <>
             <span className="note-footer-text">이 노트를 삭제할까요?</span>
