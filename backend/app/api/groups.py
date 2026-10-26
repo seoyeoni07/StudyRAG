@@ -7,7 +7,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, File, Header, HTTPExcep
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from ..db.models import Document, GroupMessage, Note, StudyGroup, StudyGroupMember
+from ..db.models import Document, GroupMessage, Note, StudyGroup, StudyGroupMember, StudyRoom, StudyRoomMember
 from ..db.session import SessionLocal
 from .documents import ingest_upload
 
@@ -400,3 +400,43 @@ def create_group_note(
     db.add(n)
     db.commit()
     return group_note_dict(n, _name_map(db, group_id))
+
+
+@router.get("/{group_id}/quiz-history")
+def get_quiz_history(
+    group_id: str,
+    x_user_id: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    user_id = _require_user(x_user_id)
+    require_member(db, group_id, user_id)
+    rooms = (
+        db.query(StudyRoom)
+        .filter(StudyRoom.group_id == group_id, StudyRoom.status == "finished")
+        .order_by(StudyRoom.created_at.desc())
+        .limit(20)
+        .all()
+    )
+    result = []
+    doc_map = {}
+    for room in rooms:
+        if room.doc_id not in doc_map:
+            doc = db.query(Document).filter(Document.id == room.doc_id).first()
+            doc_map[room.doc_id] = doc.filename if doc else room.doc_id
+        members = (
+            db.query(StudyRoomMember)
+            .filter(StudyRoomMember.room_id == room.id, StudyRoomMember.submitted_at.isnot(None))
+            .order_by(StudyRoomMember.score.desc())
+            .all()
+        )
+        result.append({
+            "room_id": room.id,
+            "doc_name": doc_map[room.doc_id],
+            "created_at": room.created_at.isoformat(),
+            "members": [
+                {"nickname": m.nickname, "score": m.score, "total": m.total,
+                 "is_me": m.user_id == user_id}
+                for m in members
+            ],
+        })
+    return result

@@ -110,10 +110,17 @@ export default function GroupHome({
   const [editingAnn, setEditingAnn] = useState(false);
   const [annText, setAnnText] = useState(group.announcement || "");
   const [annBusy, setAnnBusy] = useState(false);
+  const [quizHistory, setQuizHistory] = useState([]);
+  const [quizHistOpen, setQuizHistOpen] = useState(false);
 
   useEffect(() => {
     apiFetch(`/groups/${group.id}/activity`).then(setActivity).catch(() => {});
   }, [group.id, docs.length, notes.length]);
+
+  useEffect(() => {
+    if (quizHistOpen && quizHistory.length === 0)
+      apiFetch(`/groups/${group.id}/quiz-history`).then(setQuizHistory).catch(() => {});
+  }, [quizHistOpen, group.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onlineIds = new Set((online || []).map(o => o.user_id));
   const viewingOf = (uid) => (online || []).find(o => o.user_id === uid)?.viewing;
@@ -346,6 +353,38 @@ export default function GroupHome({
           </div>
         </section>
       )}
+
+      {/* 그룹 퀴즈 히스토리 */}
+      <section className="dash-section">
+        <div className="dash-section-header">
+          <p className="dash-section-title">퀴즈 히스토리</p>
+          <button className="btn-ghost" onClick={() => setQuizHistOpen(o => !o)}>{quizHistOpen ? "접기" : "열기"}</button>
+        </div>
+        {quizHistOpen && (
+          quizHistory.length === 0
+            ? <p className="sb-empty">아직 퀴즈 기록이 없어요</p>
+            : quizHistory.map(r => (
+                <div key={r.room_id} className="quiz-hist-room">
+                  <div className="quiz-hist-room-header">
+                    <span className="quiz-hist-doc">{r.doc_name.replace(/\.pdf$/i, "")}</span>
+                    <span className="quiz-hist-date">{new Date(r.created_at).toLocaleDateString("ko-KR")}</span>
+                  </div>
+                  <div className="quiz-hist-members">
+                    {r.members.map((m, i) => (
+                      <div key={m.nickname} className={`quiz-hist-member ${m.is_me ? "quiz-hist-member--me" : ""}`}>
+                        <span className="quiz-hist-rank">{i + 1}</span>
+                        <span className="quiz-hist-nick">{m.nickname}{m.is_me ? " (나)" : ""}</span>
+                        <span className="quiz-hist-score">
+                          {m.score ?? "—"}/{m.total ?? "—"}
+                          {m.total ? ` (${Math.round(m.score / m.total * 100)}%)` : ""}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))
+        )}
+      </section>
 
       {/* 그룹 채팅 */}
       <section className="dash-section">

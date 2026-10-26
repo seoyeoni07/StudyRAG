@@ -1396,3 +1396,56 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
   .main { margin: 0 !important; padding: 0 !important; }
   .note-page { padding: 24px; max-width: none; box-shadow: none; }
 }
+
+/* ── 노트 태그 ────────────────────────────────── */
+.note-tags-wrap {
+  display: flex; flex-wrap: wrap; gap: 4px; align-items: center;
+}
+.note-tag {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 8px; border-radius: 12px; font-size: 12px;
+  background: var(--bg-2); border: 1px solid var(--border); color: var(--text-2);
+}
+.note-tag-del {
+  background: none; border: none; cursor: pointer; padding: 0;
+  color: var(--text-4); font-size: 13px; line-height: 1;
+}
+.note-tag-del:hover { color: var(--red); }
+.note-tag-input {
+  height: 24px; padding: 0 8px; font-size: 12px; width: 100px;
+  border: 1px dashed var(--border); border-radius: 12px;
+  background: transparent; color: var(--text-1); outline: none;
+}
+.note-tag-input:focus { border-color: var(--primary); }
+
+/* ── 사이드바 태그 필터 ─────────────────────── */
+.sb-tags-row {
+  display: flex; flex-wrap: wrap; gap: 3px; padding: 0 8px 4px;
+}
+.sb-tag {
+  font-size: 11px; padding: 2px 7px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--bg-2);
+  color: var(--text-3); cursor: pointer;
+}
+.sb-tag:hover { background: var(--bg-3); color: var(--text-1); }
+.sb-tag.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* ── 퀴즈 히스토리 ──────────────────────────── */
+.quiz-hist-room {
+  border: 1px solid var(--border); border-radius: 8px; margin: 6px 0; overflow: hidden;
+}
+.quiz-hist-room-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 12px; background: var(--bg-2);
+}
+.quiz-hist-doc { font-size: 13px; font-weight: 600; color: var(--text-1); }
+.quiz-hist-date { font-size: 12px; color: var(--text-4); }
+.quiz-hist-members { padding: 4px 0; }
+.quiz-hist-member {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 12px; font-size: 13px;
+}
+.quiz-hist-member--me { background: var(--primary-bg, rgba(99,102,241,.06)); }
+.quiz-hist-rank { width: 18px; color: var(--text-4); font-size: 12px; text-align: right; }
+.quiz-hist-nick { flex: 1; color: var(--text-1); }
+.quiz-hist-score { font-size: 12px; color: var(--text-3); }

@@ -247,6 +247,26 @@ export default function NotePage({ noteId, user, pastDocs, onChanged, onDeleted,
           )}
         </div>
         <div className="note-prop">
+          <span className="note-prop-key">태그</span>
+          <div className="note-tags-wrap">
+            {(note.tags || []).map(t => (
+              <span key={t} className="note-tag">
+                {t}
+                <button className="note-tag-del" onClick={() => update({ tags: (note.tags || []).filter(x => x !== t) }, true)}>×</button>
+              </span>
+            ))}
+            <input className="note-tag-input" placeholder="태그 추가…" maxLength={32}
+              onKeyDown={e => {
+                if ((e.key === "Enter" || e.key === ",") && e.target.value.trim()) {
+                  e.preventDefault();
+                  const t = e.target.value.trim().replace(/,/g, "");
+                  if (t && !(note.tags || []).includes(t)) update({ tags: [...(note.tags || []), t] }, true);
+                  e.target.value = "";
+                }
+              }} />
+          </div>
+        </div>
+        <div className="note-prop">
           <span className="note-prop-key">수정</span>
           <span className="note-prop-val">
             {note.updated_at ? new Date(note.updated_at + (note.updated_at.endsWith("Z") ? "" : "Z")).toLocaleString("ko-KR") : "—"}

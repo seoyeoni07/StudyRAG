@@ -36,6 +36,7 @@ export default function Sidebar({
   const [searchResults, setSearchResults] = useState(null); // null = 검색 전
   const searchTimer = useRef(null);
   const [docSearch, setDocSearch] = useState("");
+  const [tagFilter, setTagFilter] = useState("");
   const inGroup = (id) => view.groupId === id;
   const isGroupOpen = (id) => expanded[`g:${id}`] ?? inGroup(id);
   const name = user.displayName || user.email?.split("@")[0] || "나";
@@ -45,6 +46,9 @@ export default function Sidebar({
   const go = (v) => { onNavigate(v); onClose?.(); };
 
   const looseNotes = notes.filter(n => !n.doc_id || !pastDocs.some(d => d.doc_id === n.doc_id));
+
+  // 전체 태그 목록 (중복 제거)
+  const allTags = [...new Set(looseNotes.flatMap(n => n.tags || []))];
 
   function onNoteSearchChange(q) {
     setNoteSearch(q);
@@ -153,8 +157,19 @@ export default function Sidebar({
                     onChange={e => onNoteSearchChange(e.target.value)} />
                   {noteSearch && <button className="sb-search-clear" onClick={() => { setNoteSearch(""); setSearchResults(null); }}>×</button>}
                 </div>
+                {allTags.length > 0 && (
+                  <div className="sb-tags-row">
+                    {allTags.map(t => (
+                      <button key={t} className={`sb-tag ${tagFilter === t ? "active" : ""}`}
+                        onClick={() => setTagFilter(f => f === t ? "" : t)}>
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {(() => {
-                  const list = searchResults !== null ? searchResults : looseNotes;
+                  const base = searchResults !== null ? searchResults : looseNotes;
+                  const list = tagFilter ? base.filter(n => (n.tags || []).includes(tagFilter)) : base;
                   if (list.length === 0 && !noteSearch) return (
                     <button className="sb-item sb-muted" onClick={() => { onNewNote(); onClose?.(); }}>
                       <span className="sb-icon">＋</span><span className="sb-label">새 노트 만들기</span>

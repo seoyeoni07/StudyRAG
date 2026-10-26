@@ -662,6 +662,7 @@ export default function App() {
                                 onCountLoaded={setWrongCount}
                                 onGoToQuiz={() => setView(v => ({ ...v, tab: "quiz" }))} />],
                   ...(groupId ? [["room", <StudyRoomSection key="room" docId={docId} userId={user?.uid}
+                    groupId={groupId}
                     preJoined={preJoined?.doc_id === docId ? preJoined : null}
                     defaultNickname={myGroupName}
                     onRoomCreated={({ room_id, code }) => notify(groupId, "quiz-room", {

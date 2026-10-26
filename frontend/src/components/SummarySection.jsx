@@ -12,11 +12,11 @@ export default function SummarySection({ docId, onSaveNote }) {
     load();
   }, [docId]);
 
-  async function load() {
+  async function load(force = false) {
     setLoading(true);
     setError("");
     try {
-      const data = await apiFetch(`/documents/${docId}/summary`);
+      const data = await apiFetch(`/documents/${docId}/summary${force ? "?force=true" : ""}`);
       setSummary(data);
     } catch (err) {
       setError(err.message);
@@ -96,7 +96,7 @@ export default function SummarySection({ docId, onSaveNote }) {
             노트로 저장
           </button>
         )}
-        <button className="btn-secondary" onClick={() => setSummary(null)}>
+        <button className="btn-secondary" onClick={() => load(true)}>
           다시 생성
         </button>
       </div>

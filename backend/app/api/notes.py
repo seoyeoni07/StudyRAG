@@ -103,12 +103,20 @@ def _merge_ydoc(stored_b64: str | None, incoming_b64: str) -> str:
 
 
 def _to_dict(n: Note, with_content: bool = True) -> dict:
+    import json as _json
+    tags = []
+    if n.tags:
+        try:
+            tags = _json.loads(n.tags)
+        except Exception:
+            pass
     d = {
         "id": n.id,
         "user_id": n.user_id,
         "doc_id": n.doc_id,
         "title": n.title,
         "icon": n.icon,
+        "tags": tags,
         "versions_public": bool(n.versions_public),
         "created_at": n.created_at.isoformat() if n.created_at else None,
         "updated_at": n.updated_at.isoformat() if n.updated_at else None,
@@ -131,6 +139,7 @@ class NoteUpdate(BaseModel):
     icon: str | None = None
     doc_id: str | None = None
     versions_public: bool | None = None
+    tags: list[str] | None = None
 
 
 @router.get("/")
@@ -264,6 +273,9 @@ def update_note(
         elif note.user_id != user_id:
             raise HTTPException(403, "본인 노트만 설정을 변경할 수 있습니다.")
         note.versions_public = fields["versions_public"]
+    if "tags" in fields and fields["tags"] is not None:
+        import json as _json
+        note.tags = _json.dumps([t[:32] for t in fields["tags"][:10]], ensure_ascii=False)
     note.updated_at = datetime.utcnow()
     note.last_edited_by = user_id
     if content_changed:

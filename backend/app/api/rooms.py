@@ -33,6 +33,7 @@ def _make_code(db: Session) -> str:
 class CreateRoomRequest(BaseModel):
     doc_id: str
     nickname: str
+    group_id: str | None = None
 
 
 class JoinRoomRequest(BaseModel):
@@ -50,7 +51,7 @@ def create_room(req: CreateRoomRequest, x_user_id: str | None = Header(default=N
         raise HTTPException(401, "로그인이 필요합니다.")
     room_id = str(uuid.uuid4())
     code = _make_code(db)
-    room = StudyRoom(id=room_id, code=code, doc_id=req.doc_id, host_user_id=x_user_id)
+    room = StudyRoom(id=room_id, code=code, doc_id=req.doc_id, host_user_id=x_user_id, group_id=req.group_id)
     db.add(room)
     db.add(StudyRoomMember(room_id=room_id, user_id=x_user_id, nickname=req.nickname))
     db.commit()

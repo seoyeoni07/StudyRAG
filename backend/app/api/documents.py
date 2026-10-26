@@ -323,7 +323,7 @@ def get_doc_history(doc_id: str, x_user_id: str | None = Header(default=None), d
 
 
 @router.get("/{doc_id}/summary")
-async def get_summary(doc_id: str, db: Session = Depends(get_db)):
+async def get_summary(doc_id: str, force: bool = False, db: Session = Depends(get_db)):
     doc = db.query(Document).filter(Document.id == doc_id).first()
     if not doc:
         raise HTTPException(404, "문서를 찾을 수 없습니다.")
@@ -333,6 +333,9 @@ async def get_summary(doc_id: str, db: Session = Depends(get_db)):
         raise HTTPException(409, "이미지 인식에 실패한 자료예요. 다시 시도한 뒤 요약할 수 있어요.")
     if not doc.chunks:
         raise HTTPException(409, "이 자료에서 인식된 내용이 없어 요약할 수 없어요. 다시 시도하거나 파일을 다시 올려주세요.")
+    if force:
+        doc.summary = None
+        db.commit()
     if doc.summary:
         import json
         try:

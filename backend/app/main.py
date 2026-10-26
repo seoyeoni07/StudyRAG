@@ -84,6 +84,9 @@ async def startup():
         "CREATE INDEX IF NOT EXISTS ix_note_shares_shared_with ON note_shares(shared_with)",
         "ALTER TABLE study_groups ADD COLUMN IF NOT EXISTS announcement TEXT",
         "ALTER TABLE study_groups ADD COLUMN IF NOT EXISTS announcement_at TIMESTAMP",
+        "ALTER TABLE notes ADD COLUMN IF NOT EXISTS tags TEXT",
+        "ALTER TABLE study_rooms ADD COLUMN IF NOT EXISTS group_id VARCHAR(36)",
+        "CREATE INDEX IF NOT EXISTS ix_study_rooms_group_id ON study_rooms(group_id)",
         """CREATE TABLE IF NOT EXISTS tutor_threads (
             id SERIAL PRIMARY KEY,
             doc_id VARCHAR(36) NOT NULL,

@@ -3,7 +3,7 @@ import { apiFetch } from "../api";
 
 const POLL_INTERVAL = 3000;
 
-export default function StudyRoomSection({ docId, userId, preJoined, defaultNickname = "", onRoomCreated }) {
+export default function StudyRoomSection({ docId, userId, groupId, preJoined, defaultNickname = "", onRoomCreated }) {
   const [view, setView] = useState("home"); // home | lobby | quiz | result
   const [nickname, setNickname] = useState(preJoined?.nickname || defaultNickname);
   const [joinCode, setJoinCode] = useState("");
@@ -58,7 +58,7 @@ export default function StudyRoomSection({ docId, userId, preJoined, defaultNick
       const { room_id } = await apiFetch("/rooms/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ doc_id: docId, nickname }),
+        body: JSON.stringify({ doc_id: docId, nickname, group_id: groupId || null }),
       });
       const data = await apiFetch(`/rooms/${room_id}`);
       setRoom(data);

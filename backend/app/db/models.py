@@ -108,6 +108,7 @@ class StudyRoom(Base):
     host_user_id = Column(String(128), nullable=False)
     session_id = Column(String(36), nullable=True)
     status = Column(String(16), default="waiting")  # waiting / active / finished
+    group_id = Column(String(36), nullable=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
@@ -132,6 +133,7 @@ class Note(Base):
     icon = Column(String(16), nullable=True)
     content = Column(Text, nullable=False, default="")
     group_id = Column(String(36), nullable=True, index=True)   # 그룹 공동 노트면 그룹 id
+    tags = Column(Text, nullable=True)                         # JSON array of tag strings
     ydoc = Column(Text, nullable=True)                         # 공동 노트의 Yjs 상태 (base64)
     last_edited_by = Column(String(128), nullable=True)
     versions_public = Column(Boolean, nullable=False, default=False, server_default="false")
