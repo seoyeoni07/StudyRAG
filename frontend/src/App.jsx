@@ -15,6 +15,7 @@ import LoginPage from "./components/LoginPage";
 import Sidebar, { tabsFor } from "./components/Sidebar";
 import GroupHome, { GroupStart, timeAgo as groupTimeAgo } from "./components/GroupHome";
 import ChatApp from "./components/ChatApp";
+import ChatWidget from "./components/chat/ChatWidget";
 import { useGroupChannels } from "./realtime/useGroupChannels";
 import { supabase } from "./supabase";
 import "./App.css";
@@ -62,6 +63,7 @@ export default function App() {
   const [reviewDue, setReviewDue] = useState(0);
   const [sharedNotes, setSharedNotes] = useState([]);
   const [dmUnread, setDmUnread] = useState(0);
+  const clearDmUnread = useCallback(() => setDmUnread(0), []);
   const [streak, setStreak] = useState(0);
   const [wrongRefreshKey, setWrongRefreshKey] = useState(0);
 
@@ -752,6 +754,20 @@ export default function App() {
           )}
         </div>
       </div>
+
+      {/* 오른쪽 아래 작은 채팅창 — 채팅 페이지에서는 숨김 */}
+      {view.type !== "chat" && (
+        <ChatWidget
+          me={user}
+          groups={groups}
+          groupDetails={Object.fromEntries(
+            Object.entries(groupData).filter(([, v]) => v?.detail).map(([k, v]) => [k, v.detail])
+          )}
+          unread={dmUnread}
+          onOpened={clearDmUnread}
+          onExpand={() => setView({ type: "chat" })}
+        />
+      )}
 
       {toast && <div className="toast" role="status">{toast}</div>}
     </div>

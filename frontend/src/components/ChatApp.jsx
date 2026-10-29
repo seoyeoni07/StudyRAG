@@ -1,188 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { apiFetch } from "../api.js";
-import { supabase } from "../supabase.js";
-
-function timeAgo(iso) {
-  if (!iso) return "";
-  const t = new Date(iso + (/[zZ]|[+-]\d\d:\d\d$/.test(iso) ? "" : "Z")).getTime();
-  const m = Math.round((Date.now() - t) / 60000);
-  if (m < 1) return "방금";
-  if (m < 60) return `${m}분 전`;
-  if (m < 1440) return `${Math.round(m / 60)}시간 전`;
-  return new Date(t).toLocaleDateString("ko-KR");
-}
-
-// ── DM 채팅창 ─────────────────────────────────────────────────────────────────
-
-function DmChat({ roomId, other, me, onBack }) {
-  const [messages, setMessages] = useState(null);
-  const [text, setText] = useState("");
-  const [sending, setSending] = useState(false);
-  const bottomRef = useRef(null);
-  const channelRef = useRef(null);
-  const myName = me.displayName || me.email?.split("@")[0] || "나";
-
-  useEffect(() => {
-    setMessages(null);
-    apiFetch(`/chat/rooms/${roomId}/messages`)
-      .then(setMessages)
-      .catch(() => setMessages([]));
-  }, [roomId]);
-
-  useEffect(() => {
-    if (!supabase) return;
-    const ch = supabase.channel(`dm:${roomId}`, { config: { broadcast: { self: false } } });
-    channelRef.current = ch;
-    ch.on("broadcast", { event: "dm-msg" }, ({ payload }) => {
-      setMessages(prev => prev ? [...prev, payload] : [payload]);
-    }).subscribe();
-    return () => { supabase.removeChannel(ch); channelRef.current = null; };
-  }, [roomId]);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages?.length]);
-
-  async function send() {
-    const content = text.trim();
-    if (!content || sending) return;
-    setSending(true);
-    setText("");
-    try {
-      const saved = await apiFetch(`/chat/rooms/${roomId}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, display_name: myName }),
-      });
-      setMessages(prev => prev ? [...prev, saved] : [saved]);
-      channelRef.current?.send({ type: "broadcast", event: "dm-msg", payload: saved }).catch(() => {});
-      // 상대방 inbox 알림
-      if (supabase && other?.uid) {
-        supabase.channel(`inbox:${other.uid}`).send({
-          type: "broadcast", event: "dm-notif",
-          payload: { from: myName, content, room_id: roomId },
-        }).catch(() => {});
-      }
-    } catch { setText(content); }
-    finally { setSending(false); }
-  }
-
-  return (
-    <div className="chatapp-room">
-      <div className="chatapp-room-header">
-        <button className="btn-ghost chatapp-back" onClick={onBack}>←</button>
-        <span className="chatapp-room-name">{other?.display_name || other?.uid?.slice(0, 8)}</span>
-        {other?.email && <span className="chatapp-room-sub">{other.email}</span>}
-      </div>
-      <div className="chat-messages">
-        {messages === null
-          ? <div className="loading-wrap"><div className="spinner" /></div>
-          : messages.length === 0
-          ? <p className="chat-empty">첫 메시지를 보내보세요!</p>
-          : messages.map(m => (
-            <div key={m.id} className={`chat-msg ${m.user_id === me.uid ? "chat-msg--me" : ""}`}>
-              <span className="chat-name">{m.user_id === me.uid ? "나" : m.display_name}</span>
-              <span className="chat-bubble">{m.content}</span>
-              <span className="chat-time">{new Date(m.created_at + (m.created_at.endsWith("Z") ? "" : "Z")).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}</span>
-            </div>
-          ))
-        }
-        <div ref={bottomRef} />
-      </div>
-      <div className="chat-input-row">
-        <input className="input chat-input" value={text} placeholder="메시지 입력…"
-          onChange={e => setText(e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
-        <button className="btn-primary btn-sm" onClick={send} disabled={sending || !text.trim()}>전송</button>
-      </div>
-    </div>
-  );
-}
-
-// ── 그룹 채팅창 ───────────────────────────────────────────────────────────────
-
-function GroupChat({ group, me, onBack }) {
-  const [messages, setMessages] = useState(null);
-  const [text, setText] = useState("");
-  const [sending, setSending] = useState(false);
-  const bottomRef = useRef(null);
-  const channelRef = useRef(null);
-  const myName = group.members?.find(m => m.user_id === me.uid)?.display_name
-    || me.displayName || me.email?.split("@")[0] || "나";
-
-  useEffect(() => {
-    setMessages(null);
-    apiFetch(`/groups/${group.id}/messages`)
-      .then(setMessages)
-      .catch(() => setMessages([]));
-  }, [group.id]);
-
-  useEffect(() => {
-    if (!supabase) return;
-    const ch = supabase.channel(`chat:${group.id}`, { config: { broadcast: { self: false } } });
-    channelRef.current = ch;
-    ch.on("broadcast", { event: "chat-msg" }, ({ payload }) => {
-      setMessages(prev => prev ? [...prev, payload] : [payload]);
-    }).subscribe();
-    return () => { supabase.removeChannel(ch); channelRef.current = null; };
-  }, [group.id]);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages?.length]);
-
-  async function send() {
-    const content = text.trim();
-    if (!content || sending) return;
-    setSending(true);
-    setText("");
-    try {
-      const saved = await apiFetch(`/groups/${group.id}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, display_name: myName }),
-      });
-      setMessages(prev => prev ? [...prev, saved] : [saved]);
-      channelRef.current?.send({ type: "broadcast", event: "chat-msg", payload: saved }).catch(() => {});
-    } catch { setText(content); }
-    finally { setSending(false); }
-  }
-
-  return (
-    <div className="chatapp-room">
-      <div className="chatapp-room-header">
-        <button className="btn-ghost chatapp-back" onClick={onBack}>←</button>
-        <span className="chatapp-room-name">{group.name}</span>
-        <span className="chatapp-room-sub">{group.members?.length || 0}명</span>
-      </div>
-      <div className="chat-messages">
-        {messages === null
-          ? <div className="loading-wrap"><div className="spinner" /></div>
-          : messages.length === 0
-          ? <p className="chat-empty">아직 메시지가 없어요. 첫 메시지를 남겨보세요!</p>
-          : messages.map(m => (
-            <div key={m.id} className={`chat-msg ${m.user_id === me.uid ? "chat-msg--me" : ""}`}>
-              <span className="chat-name">{m.user_id === me.uid ? "나" : m.display_name}</span>
-              <span className="chat-bubble">{m.content}</span>
-              <span className="chat-time">{new Date(m.created_at + (m.created_at.endsWith("Z") ? "" : "Z")).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}</span>
-            </div>
-          ))
-        }
-        <div ref={bottomRef} />
-      </div>
-      <div className="chat-input-row">
-        <input className="input chat-input" value={text} placeholder="메시지 입력…"
-          onChange={e => setText(e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
-        <button className="btn-primary btn-sm" onClick={send} disabled={sending || !text.trim()}>전송</button>
-      </div>
-    </div>
-  );
-}
+import ChatRoom, { timeAgo } from "./chat/ChatRoom";
 
 // ── 새 DM 시작 (유저 검색) ────────────────────────────────────────────────────
 
-function NewDmPanel({ me, onOpen, onClose }) {
+export function NewDmPanel({ me, onOpen, onClose }) {
   const [q, setQ] = useState("");
   const [results, setResults] = useState([]);
   const [busy, setBusy] = useState(false);
@@ -262,12 +84,19 @@ export default function ChatApp({ me, groups = [], groupDetails = {} }) {
 
   // 오른쪽 패널
   let rightPanel = null;
+  const myName = me.displayName || me.email?.split("@")[0] || "나";
   if (active?.kind === "dm") {
-    rightPanel = <DmChat roomId={active.roomId} other={active.other} me={me}
+    rightPanel = <ChatRoom key={active.roomId} kind="dm" id={active.roomId} me={me} myName={myName}
+      other={active.other}
+      title={active.other?.display_name || active.other?.uid?.slice(0, 8)} subtitle={active.other?.email}
       onBack={() => setActive(null)} />;
   } else if (active?.kind === "group") {
     const g = groupDetails[active.groupId] || groups.find(g => g.id === active.groupId);
-    if (g) rightPanel = <GroupChat group={g} me={me} onBack={() => setActive(null)} />;
+    if (g) rightPanel = <ChatRoom key={g.id} kind="group" id={g.id} me={me}
+      myName={g.members?.find(m => m.user_id === me.uid)?.display_name || myName}
+      title={g.name} subtitle={`${g.members?.length || g.member_count || 0}명`}
+      emptyText="아직 메시지가 없어요. 첫 메시지를 남겨보세요!"
+      onBack={() => setActive(null)} />;
   } else if (active?.kind === "new-dm") {
     rightPanel = <NewDmPanel me={me}
       onOpen={(rid, other) => openDm(rid, other)}

@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from ..db.models import DmRoom, DmMessage, UserProfile
 from ..db.session import SessionLocal
+from .attachments import Attachment, attachment_out, preview_text, validate_attachment
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -62,7 +63,7 @@ def list_dm_rooms(
         result.append({
             "room_id": r.id,
             "other": _other_profile(db, other_id),
-            "last_message": last.content if last else None,
+            "last_message": preview_text(last) if last else None,
             "last_at": _iso(last.created_at) if last else _iso(r.created_at),
         })
     return result
@@ -108,15 +109,19 @@ def get_dm_messages(
         raise HTTPException(403, "권한이 없습니다.")
     msgs = db.query(DmMessage).filter(DmMessage.room_id == room_id).order_by(DmMessage.id).all()
     return [
-        {"id": m.id, "user_id": m.user_id, "display_name": m.display_name,
-         "content": m.content, "created_at": _iso(m.created_at)}
-        for m in msgs[-100:]
+        _msg_out(m) for m in msgs[-100:]
     ]
 
 
+def _msg_out(m: DmMessage) -> dict:
+    return {"id": m.id, "user_id": m.user_id, "display_name": m.display_name,
+            "content": m.content, "attachment": attachment_out(m), "created_at": _iso(m.created_at)}
+
+
 class SendDmBody(BaseModel):
-    content: str
+    content: str = ""
     display_name: str | None = None
+    attachment: Attachment | None = None
 
 
 @router.post("/rooms/{room_id}/messages")
@@ -131,16 +136,16 @@ def send_dm(
     if not room or me not in (room.user1_id, room.user2_id):
         raise HTTPException(403, "권한이 없습니다.")
     content = body.content.strip()
-    if not content:
+    att = validate_attachment(db, body.attachment)
+    if not content and not att:
         raise HTTPException(400, "메시지가 비어 있습니다.")
     p = db.query(UserProfile).filter(UserProfile.uid == me).first()
     display_name = body.display_name or (p.display_name if p else None) or me[:8]
     msg = DmMessage(
         room_id=room_id, user_id=me,
-        display_name=display_name[:64], content=content[:2000],
+        display_name=display_name[:64], content=content[:2000], **att,
     )
     db.add(msg)
     db.commit()
     db.refresh(msg)
-    return {"id": msg.id, "user_id": msg.user_id, "display_name": msg.display_name,
-            "content": msg.content, "created_at": _iso(msg.created_at)}
+    return _msg_out(msg)

@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from ..db.models import Document, GroupMessage, Note, StudyGroup, StudyGroupMember, StudyRoom, StudyRoomMember
 from ..db.session import SessionLocal
+from .attachments import Attachment, attachment_out, validate_attachment
 from .documents import ingest_upload
 
 router = APIRouter(prefix="/groups", tags=["groups"])
@@ -340,8 +341,14 @@ def clear_announcement(group_id: str, x_user_id: str | None = Header(default=Non
 # ── Group Chat ───────────────────────────────────────────
 
 class MessageCreate(BaseModel):
-    content: str
+    content: str = ""
     display_name: str
+    attachment: Attachment | None = None
+
+
+def _gmsg_out(m: GroupMessage) -> dict:
+    return {"id": m.id, "user_id": m.user_id, "display_name": m.display_name, "content": m.content,
+            "attachment": attachment_out(m), "created_at": m.created_at.isoformat()}
 
 
 @router.get("/{group_id}/messages")
@@ -361,7 +368,7 @@ def get_messages(
             pass
     msgs = q.order_by(GroupMessage.created_at.desc()).limit(min(limit, 100)).all()
     msgs.reverse()
-    return [{"id": m.id, "user_id": m.user_id, "display_name": m.display_name, "content": m.content, "created_at": m.created_at.isoformat()} for m in msgs]
+    return [_gmsg_out(m) for m in msgs]
 
 
 @router.post("/{group_id}/messages")
@@ -374,12 +381,13 @@ def send_message(
     user_id = _require_user(x_user_id)
     require_member(db, group_id, user_id)
     content = body.content.strip()[:2000]
-    if not content:
+    att = validate_attachment(db, body.attachment)
+    if not content and not att:
         raise HTTPException(400, "내용을 입력하세요.")
-    m = GroupMessage(group_id=group_id, user_id=user_id, display_name=body.display_name[:64], content=content)
+    m = GroupMessage(group_id=group_id, user_id=user_id, display_name=body.display_name[:64], content=content, **att)
     db.add(m)
     db.commit()
-    return {"id": m.id, "user_id": m.user_id, "display_name": m.display_name, "content": m.content, "created_at": m.created_at.isoformat()}
+    return _gmsg_out(m)
 
 
 @router.post("/{group_id}/notes")

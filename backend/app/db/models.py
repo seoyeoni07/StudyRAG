@@ -192,6 +192,11 @@ class GroupMessage(Base):
     user_id = Column(String(128), nullable=False)
     display_name = Column(String(64), nullable=False)
     content = Column(Text, nullable=False)
+    # 첨부파일 (사진·파일) — 실제 파일은 note_images 테이블(/notes/files)에 있다
+    attachment_url = Column(String(128), nullable=True)
+    attachment_name = Column(String(256), nullable=True)
+    attachment_type = Column(String(128), nullable=True)
+    attachment_size = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
@@ -231,4 +236,9 @@ class DmMessage(Base):
     user_id = Column(String(128), nullable=False)
     display_name = Column(String(64), nullable=False, default="나")
     content = Column(Text, nullable=False)
+    # 첨부파일 (사진·파일) — 실제 파일은 note_images 테이블(/notes/files)에 있다
+    attachment_url = Column(String(128), nullable=True)
+    attachment_name = Column(String(256), nullable=True)
+    attachment_type = Column(String(128), nullable=True)
+    attachment_size = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

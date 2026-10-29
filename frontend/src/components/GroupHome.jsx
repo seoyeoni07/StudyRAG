@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { apiFetch } from "../api.js";
-import { supabase } from "../supabase.js";
 
 export function timeAgo(iso) {
   if (!iso) return "";
@@ -18,82 +17,6 @@ export function Avatar({ name = "?", online, size = 22 }) {
     <span className={`avatar ${online ? "avatar--online" : ""}`} style={{ width: size, height: size, fontSize: size * 0.48 }} title={name}>
       {name.slice(0, 1).toUpperCase()}
     </span>
-  );
-}
-
-export function ChatPanel({ group, me }) {
-  const [messages, setMessages] = useState(null); // null = loading
-  const [text, setText] = useState("");
-  const [sending, setSending] = useState(false);
-  const bottomRef = useRef(null);
-  const channelRef = useRef(null);
-  const myName = group.members.find(m => m.user_id === me.uid)?.display_name
-    || me.displayName || me.email?.split("@")[0] || "나";
-
-  useEffect(() => {
-    apiFetch(`/groups/${group.id}/messages`)
-      .then(setMessages)
-      .catch(() => setMessages([]));
-  }, [group.id]);
-
-  useEffect(() => {
-    if (!supabase) return;
-    const ch = supabase.channel(`chat:${group.id}`, { config: { broadcast: { self: false } } });
-    channelRef.current = ch;
-    ch.on("broadcast", { event: "chat-msg" }, ({ payload }) => {
-      setMessages(prev => prev ? [...prev, payload] : [payload]);
-    }).subscribe();
-    return () => { supabase.removeChannel(ch); channelRef.current = null; };
-  }, [group.id]);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages?.length]);
-
-  async function send() {
-    const content = text.trim();
-    if (!content || sending) return;
-    setSending(true);
-    setText("");
-    try {
-      const saved = await apiFetch(`/groups/${group.id}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, display_name: myName }),
-      });
-      setMessages(prev => prev ? [...prev, saved] : [saved]);
-      if (channelRef.current) {
-        channelRef.current.send({ type: "broadcast", event: "chat-msg", payload: saved }).catch(() => {});
-      }
-    } catch { setText(content); }
-    finally { setSending(false); }
-  }
-
-  return (
-    <div className="chat-panel">
-      <div className="chat-messages">
-        {messages === null ? (
-          <div className="loading-wrap"><div className="spinner" /></div>
-        ) : messages.length === 0 ? (
-          <p className="chat-empty">아직 메시지가 없어요. 첫 메시지를 남겨보세요!</p>
-        ) : (
-          messages.map(m => (
-            <div key={m.id} className={`chat-msg ${m.user_id === me.uid ? "chat-msg--me" : ""}`}>
-              <span className="chat-name">{m.user_id === me.uid ? "나" : m.display_name}</span>
-              <span className="chat-bubble">{m.content}</span>
-              <span className="chat-time">{new Date(m.created_at + (m.created_at.endsWith("Z") ? "" : "Z")).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}</span>
-            </div>
-          ))
-        )}
-        <div ref={bottomRef} />
-      </div>
-      <div className="chat-input-row">
-        <input className="input chat-input" value={text} placeholder="메시지 입력…"
-          onChange={e => setText(e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
-        <button className="btn-primary btn-sm" onClick={send} disabled={sending || !text.trim()}>전송</button>
-      </div>
-    </div>
   );
 }
 
