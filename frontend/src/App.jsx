@@ -16,6 +16,7 @@ import Sidebar, { tabsFor } from "./components/Sidebar";
 import GroupHome, { GroupStart, timeAgo as groupTimeAgo } from "./components/GroupHome";
 import ChatApp from "./components/ChatApp";
 import ChatWidget from "./components/chat/ChatWidget";
+import { useDmRooms, refreshDmRooms, resetDmStore, isRoomOpen, touchDmRoom, totalUnread } from "./realtime/dmStore";
 import { useGroupChannels } from "./realtime/useGroupChannels";
 import { supabase } from "./supabase";
 import "./App.css";
@@ -62,8 +63,8 @@ export default function App() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [reviewDue, setReviewDue] = useState(0);
   const [sharedNotes, setSharedNotes] = useState([]);
-  const [dmUnread, setDmUnread] = useState(0);
-  const clearDmUnread = useCallback(() => setDmUnread(0), []);
+  // 안 읽은 DM 수 — 사이드바·작은 채팅창·큰 채팅창이 같은 숫자를 쓴다 (realtime/dmStore)
+  const dmUnread = totalUnread(useDmRooms());
   const [streak, setStreak] = useState(0);
   const [wrongRefreshKey, setWrongRefreshKey] = useState(0);
 
@@ -122,16 +123,21 @@ export default function App() {
     if (!supabase || !user?.uid) return;
     const ch = supabase.channel(`inbox:${user.uid}`, { config: { broadcast: { self: false } } });
     ch.on("broadcast", { event: "dm-notif" }, ({ payload }) => {
-      setDmUnread(n => n + 1);
-      setToast(`💬 ${payload.from}: ${payload.content.slice(0, 40)}`);
+      if (isRoomOpen(payload.room_id)) {
+        // 지금 그 대화방을 보고 있다 — 알림·배지 없이 목록 순서만 갱신
+        touchDmRoom(payload.room_id, { last_message: payload.content, last_at: new Date().toISOString() });
+        return;
+      }
+      refreshDmRooms();
+      setToast(`💬 ${payload.from}: ${(payload.content || "").slice(0, 40)}`);
     }).subscribe();
     return () => supabase.removeChannel(ch);
   }, [user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 채팅 뷰 진입 시 미읽음 초기화
+  // 로그인·로그아웃 때 대화 목록을 새로
   useEffect(() => {
-    if (view.type === "chat") setDmUnread(0);
-  }, [view.type]);
+    if (user?.uid) refreshDmRooms(); else resetDmStore();
+  }, [user?.uid]);
 
   // 연속 학습일 로드
   useEffect(() => {
@@ -764,7 +770,6 @@ export default function App() {
             Object.entries(groupData).filter(([, v]) => v?.detail).map(([k, v]) => [k, v.detail])
           )}
           unread={dmUnread}
-          onOpened={clearDmUnread}
           onExpand={() => setView({ type: "chat" })}
         />
       )}

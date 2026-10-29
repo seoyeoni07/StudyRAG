@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { apiFetch, BASE } from "../../api";
 import { subscribeBroadcast, sendBroadcast } from "../../realtime/chatBus";
+import { registerOpenRoom, markDmRead, touchDmRoom } from "../../realtime/dmStore";
 
 /*
  * 채팅방 공용 부품 — 채팅 페이지와 오른쪽 아래 작은 채팅창이 같이 쓴다.
@@ -106,7 +107,7 @@ const NEAR_BOTTOM = 120; // px — 이만큼 안쪽이면 '맨 아래를 보고 
 /**
  * readInfo(m) → { label?, count? } : 읽음 표시 (DM: "읽음", 그룹: 안 읽은 사람 수)
  */
-function MessageList({ messages, me, emptyText, onDropFiles, readInfo, onRetry }) {
+function MessageList({ messages, me, emptyText, onDropFiles, readInfo, onRetry, typingNames = [] }) {
   const boxRef = useRef(null);
   const stick = useRef(true);       // 맨 아래를 보고 있으면 새 메시지가 올 때 따라 내려간다
   const [dragging, setDragging] = useState(false);
@@ -123,6 +124,7 @@ function MessageList({ messages, me, emptyText, onDropFiles, readInfo, onRetry }
     // 내가 보낸 메시지거나, 이미 맨 아래를 보고 있었을 때만 내려간다 — 위쪽을 읽는 중이면 그대로 둔다
     if (stick.current || last?.user_id === me.uid) toBottom();
   }, [messages, last, me.uid, toBottom]);
+  useEffect(() => { if (typingNames.length && stick.current) toBottom(); }, [typingNames.length, toBottom]);
 
   return (
     <div ref={boxRef} className={`chat-messages ${dragging ? "chat-messages--drop" : ""}`}
@@ -163,6 +165,12 @@ function MessageList({ messages, me, emptyText, onDropFiles, readInfo, onRetry }
           </div>
         );
       })}
+      {typingNames.length > 0 && (
+        <div className="chat-typing" aria-live="polite">
+          <span className="chat-typing-dots"><span /><span /><span /></span>
+          {typingNames.length === 1 ? `${typingNames[0]}님이 입력 중…` : `${typingNames.length}명이 입력 중…`}
+        </div>
+      )}
       {dragging && <div className="chat-drop-hint">여기에 놓으면 파일을 보내요</div>}
     </div>
   );
@@ -170,7 +178,7 @@ function MessageList({ messages, me, emptyText, onDropFiles, readInfo, onRetry }
 
 // ── 입력창 ───────────────────────────────────────────────────────────────────
 
-function Composer({ onSend, pickRef }) {
+function Composer({ onSend, pickRef, onTyping }) {
   const [text, setText] = useState("");
   const [att, setAtt] = useState(null); // { status: "uploading"|"ready"|"error", name, data?, error? }
   const [sending, setSending] = useState(false);
@@ -204,6 +212,7 @@ function Composer({ onSend, pickRef }) {
     // 보내자마자 화면에 뜨고(보내는 중), 실패하면 메시지 옆에 '다시 보내기'가 나온다
     setText("");
     setAtt(null);
+    onTyping?.(false);
     try { await onSend({ content, attachment }); }
     finally { setSending(false); }
   }
@@ -226,7 +235,8 @@ function Composer({ onSend, pickRef }) {
         <input ref={fileRef} type="file" hidden
           onChange={e => { attach(e.target.files?.[0]); e.target.value = ""; }} />
         <input ref={inputRef} className="input chat-input" value={text} placeholder="메시지 입력…"
-          onChange={e => setText(e.target.value)}
+          onChange={e => { setText(e.target.value); onTyping?.(!!e.target.value.trim()); }}
+          onBlur={() => onTyping?.(false)}
           onPaste={e => {
             const f = e.clipboardData?.files?.[0];
             if (f) { e.preventDefault(); attach(f); }
@@ -321,16 +331,61 @@ function useChatRoom({ kind, id, me, myName, other }) {
     const run = () => {
       if (document.visibilityState !== "visible") return;
       setReads(r => ({ ...r, [me.uid]: lastOther }));
+      if (kind === "dm") markDmRead(id);
       apiFetch(`${readBase}/read`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ last_id: lastOther }),
-      }).catch(() => {});
+      }).then(() => kind === "dm" && markDmRead(id)).catch(() => {});
       sendBroadcast(topic, `${ev}-read`, { user_id: me.uid, last_id: lastOther });
     };
     run();
     document.addEventListener("visibilitychange", run);
     return () => document.removeEventListener("visibilitychange", run);
-  }, [lastOther, myRead, readBase, topic, ev, me.uid]);
+  }, [lastOther, myRead, readBase, topic, ev, me.uid, kind, id]);
+
+  // 이 DM 방이 화면에 열려 있는 동안 등록 — 이 방 메시지로는 알림(토스트)·배지를 띄우지 않는다
+  useEffect(() => (kind === "dm" ? registerOpenRoom(id) : undefined), [kind, id]);
+
+  // ── 입력 중 표시 ──
+  const [typing, setTyping] = useState({}); // user_id → { name, until }
+  useEffect(() => subscribeBroadcast(topic, `${ev}-typing`, ({ user_id, name, stop }) => {
+    if (user_id === me.uid) return;
+    setTyping(t => {
+      const next = { ...t };
+      if (stop) delete next[user_id]; else next[user_id] = { name, until: Date.now() + 4000 };
+      return next;
+    });
+  }), [topic, ev, me.uid]);
+  // 메시지가 오면 그 사람의 '입력 중'은 끝
+  const lastSender = messages?.at(-1)?.user_id;
+  useEffect(() => {
+    if (!lastSender) return;
+    setTyping(t => {
+      if (!t[lastSender]) return t;
+      const next = { ...t };
+      delete next[lastSender];
+      return next;
+    });
+  }, [messages?.length, lastSender]);
+  // 신호가 끊기면(창을 닫는 등) 4초 뒤 사라지게
+  useEffect(() => {
+    if (!Object.keys(typing).length) return;
+    const t = setInterval(() => setTyping(cur => {
+      const now = Date.now();
+      const next = Object.fromEntries(Object.entries(cur).filter(([, v]) => v.until > now));
+      return Object.keys(next).length === Object.keys(cur).length ? cur : next;
+    }), 1000);
+    return () => clearInterval(t);
+  }, [typing]);
+  const lastTypingSent = useRef(0);
+  const notifyTyping = useCallback((active) => {
+    const now = Date.now();
+    if (active && now - lastTypingSent.current < 2000) return; // 2초에 한 번만
+    if (!active && !lastTypingSent.current) return;           // 입력 중이라고 알린 적 없으면 '멈춤'도 안 보낸다
+    lastTypingSent.current = active ? now : 0;
+    sendBroadcast(topic, `${ev}-typing`, { user_id: me.uid, name: myName, stop: !active });
+  }, [topic, ev, me.uid, myName]);
+  const typingNames = Object.values(typing).map(v => v.name);
 
   const deliver = useCallback(async (msg) => {
     const { key, content, attachment } = msg;
@@ -342,6 +397,12 @@ function useChatRoom({ kind, id, me, myName, other }) {
       });
       upsert({ ...saved, key, pending: false, failed: false });
       sendBroadcast(topic, `${ev}-saved`, { key, id: saved.id, created_at: saved.created_at });
+      if (kind === "dm") {
+        touchDmRoom(id, {
+          last_message: content || (attachment?.type?.startsWith("image/") ? "📷 사진" : `📎 ${attachment?.name || "파일"}`),
+          last_at: saved.created_at,
+        });
+      }
       if (kind === "dm" && other?.uid) {
         const preview = content || (attachment?.type?.startsWith("image/") ? "📷 사진" : `📎 ${attachment?.name || "파일"}`);
         sendBroadcast(`inbox:${other.uid}`, "dm-notif", { from: myName, content: preview, room_id: id, from_uid: me.uid });
@@ -369,12 +430,12 @@ function useChatRoom({ kind, id, me, myName, other }) {
     deliver(m);
   }, [upsert, topic, ev, deliver]);
 
-  return { messages, reads, send, retry };
+  return { messages, reads, send, retry, typingNames, notifyTyping };
 }
 
 /** 대화방 하나 (헤더 + 메시지 + 입력창). compact = 오른쪽 아래 작은 창용 */
 export default function ChatRoom({ kind, id, title, subtitle, me, myName, other, memberIds, onBack, compact, emptyText }) {
-  const { messages, reads, send, retry } = useChatRoom({ kind, id, me, myName, other });
+  const { messages, reads, send, retry, typingNames, notifyTyping } = useChatRoom({ kind, id, me, myName, other });
   const pickRef = useRef(null);
 
   // DM: 상대가 읽은 내 메시지 중 가장 마지막 것에만 "읽음"
@@ -399,9 +460,9 @@ export default function ChatRoom({ kind, id, title, subtitle, me, myName, other,
       </div>
       <MessageList messages={messages} me={me}
         emptyText={emptyText || "첫 메시지를 보내보세요!"}
-        readInfo={readInfo} onRetry={retry}
+        readInfo={readInfo} onRetry={retry} typingNames={typingNames}
         onDropFiles={f => pickRef.current?.(f)} />
-      <Composer onSend={send} pickRef={pickRef} />
+      <Composer onSend={send} pickRef={pickRef} onTyping={notifyTyping} />
     </div>
   );
 }

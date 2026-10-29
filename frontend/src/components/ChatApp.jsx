@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { apiFetch } from "../api.js";
 import ChatRoom, { timeAgo } from "./chat/ChatRoom";
+import { useDmRooms, refreshDmRooms, addDmRoom } from "../realtime/dmStore";
 
 // ── 새 DM 시작 (유저 검색) ────────────────────────────────────────────────────
 
@@ -62,24 +63,14 @@ export function NewDmPanel({ me, onOpen, onClose }) {
 
 export default function ChatApp({ me, groups = [], groupDetails = {} }) {
   const [tab, setTab] = useState("dm"); // dm | group
-  const [dmRooms, setDmRooms] = useState(null);
+  const dmRooms = useDmRooms();
   const [active, setActive] = useState(null); // { kind: "dm"|"group"|"new-dm", ... }
 
-  useEffect(() => {
-    if (tab === "dm") {
-      apiFetch("/chat/rooms").then(setDmRooms).catch(() => setDmRooms([]));
-    }
-  }, [tab]);
+  useEffect(() => { if (tab === "dm") refreshDmRooms(); }, [tab]);
 
   function openDm(roomId, other) {
     setActive({ kind: "dm", roomId, other });
-    // 목록 갱신
-    setDmRooms(prev => {
-      if (!prev) return prev;
-      const exists = prev.find(r => r.room_id === roomId);
-      if (exists) return prev;
-      return [{ room_id: roomId, other, last_message: null, last_at: new Date().toISOString() }, ...prev];
-    });
+    addDmRoom(roomId, other);
   }
 
   // 오른쪽 패널
@@ -133,10 +124,7 @@ export default function ChatApp({ me, groups = [], groupDetails = {} }) {
               : dmRooms.map(r => (
                 <button key={r.room_id}
                   className={`chatapp-room-row ${active?.roomId === r.room_id ? "active" : ""}`}
-                  onClick={() => {
-                    setActive({ kind: "dm", roomId: r.room_id, other: r.other });
-                    setDmRooms(prev => prev?.map(x => x.room_id === r.room_id ? { ...x, unread: 0 } : x));
-                  }}>
+                  onClick={() => setActive({ kind: "dm", roomId: r.room_id, other: r.other })}>
                   <span className="chatapp-user-avatar">{(r.other?.display_name || "?").slice(0, 1).toUpperCase()}</span>
                   <span className="chatapp-room-info">
                     <span className="chatapp-room-row-name">{r.other?.display_name || r.other?.uid?.slice(0, 8)}</span>

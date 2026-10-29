@@ -1,31 +1,26 @@
 import { useEffect, useState } from "react";
-import { apiFetch } from "../../api";
 import ChatRoom, { timeAgo } from "./ChatRoom";
 import { NewDmPanel } from "../ChatApp";
+import { useDmRooms, refreshDmRooms, addDmRoom } from "../../realtime/dmStore";
 
 /*
  * 화면 오른쪽 아래 작은 채팅창 (인스타그램 DM처럼).
  * 어느 화면에서든 대화 목록을 열고 바로 답장할 수 있다. 채팅 페이지에 있을 땐 숨긴다.
+ * 대화 목록·안 읽은 개수는 큰 채팅창·사이드바와 같은 것을 쓴다 (realtime/dmStore).
  */
-export default function ChatWidget({ me, groups = [], groupDetails = {}, unread = 0, onOpened, onExpand }) {
+export default function ChatWidget({ me, groups = [], groupDetails = {}, unread = 0, onExpand }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState("dm");          // dm | group
   const [active, setActive] = useState(null);    // { kind: "dm"|"group"|"new-dm", ... }
-  const [dmRooms, setDmRooms] = useState(null);
+  const dmRooms = useDmRooms();
   const myName = me.displayName || me.email?.split("@")[0] || "나";
 
-  // 열려 있는 동안 새 DM이 오면 목록(마지막 메시지·순서)도 갱신
-  useEffect(() => {
-    if (!open || tab !== "dm") return;
-    apiFetch("/chat/rooms").then(setDmRooms).catch(() => setDmRooms([]));
-  }, [open, tab, unread]);
-
-  useEffect(() => { if (open) onOpened?.(); }, [open, unread, onOpened]);
+  // 열 때 한 번 최신으로 (그 뒤로는 앱 전체가 같은 목록을 갱신한다)
+  useEffect(() => { if (open && tab === "dm") refreshDmRooms(); }, [open, tab]);
 
   function openDm(roomId, other) {
     setActive({ kind: "dm", roomId, other });
-    setDmRooms(prev => !prev || prev.some(r => r.room_id === roomId) ? prev
-      : [{ room_id: roomId, other, last_message: null, last_at: new Date().toISOString() }, ...prev]);
+    addDmRoom(roomId, other);
   }
 
   let body;
@@ -61,10 +56,8 @@ export default function ChatWidget({ me, groups = [], groupDetails = {}, unread 
           ) : dmRooms.length === 0 ? (
             <p className="chatw-empty">아직 대화가 없어요.<br />✎ 버튼으로 새 대화를 시작하세요.</p>
           ) : dmRooms.map(r => (
-            <button key={r.room_id} className="chatapp-room-row" onClick={() => {
-                    setActive({ kind: "dm", roomId: r.room_id, other: r.other });
-                    setDmRooms(prev => prev?.map(x => x.room_id === r.room_id ? { ...x, unread: 0 } : x));
-                  }}>
+            <button key={r.room_id} className="chatapp-room-row"
+              onClick={() => setActive({ kind: "dm", roomId: r.room_id, other: r.other })}>
               <span className="chatapp-user-avatar">{(r.other?.display_name || "?").slice(0, 1).toUpperCase()}</span>
               <span className="chatapp-room-info">
                 <span className="chatapp-room-row-name">{r.other?.display_name || r.other?.uid?.slice(0, 8)}</span>
