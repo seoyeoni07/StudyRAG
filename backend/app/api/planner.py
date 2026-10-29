@@ -107,6 +107,25 @@ def my_planner(x_user_id: str | None = Header(default=None), db: Session = Depen
     return _planner_out(_get_or_create(db, "user", user_id, "나의 공부 플래너"))
 
 
+@router.get("/today-summary")
+def today_summary(x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    from datetime import date as _date
+    user_id = _require_user(x_user_id)
+    p = _get_or_create(db, "user", user_id, "나의 공부 플래너")
+    today = str(_date.today())
+    tasks = (db.query(PlannerTask)
+             .filter(PlannerTask.planner_id == p.id, PlannerTask.date == today)
+             .order_by(PlannerTask.sort, PlannerTask.id).all())
+    day = db.query(PlannerDay).filter(PlannerDay.planner_id == p.id, PlannerDay.date == today).first()
+    subjects = (_settings(p).get("subjects") or [])
+    color_map = {s["name"]: s["color"] for s in subjects}
+    return {
+        "tasks": [_task_out(t) for t in tasks],
+        "goal": day.goal if day else None,
+        "color_map": color_map,
+    }
+
+
 @router.get("/group/{group_id}")
 def group_planner(group_id: str, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
     user_id = _require_user(x_user_id)

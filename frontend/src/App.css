@@ -1079,6 +1079,34 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 .dash-multi-sources summary { font-size: 13px; color: var(--text-3); cursor: pointer; margin-top: 8px; }
 .dash-multi-source-item { font-size: 12px; color: var(--text-3); padding: 6px 0; border-top: 1px solid var(--border); }
 
+/* ── Planner today card ── */
+.dash-planner-goal {
+  font-size: 13px; color: var(--text-2); padding: 8px 16px;
+  border-bottom: 1px solid var(--border); font-style: italic;
+}
+.dash-planner-progress {
+  height: 3px; background: var(--border); margin: 0;
+}
+.dash-planner-progress-bar {
+  height: 100%; background: var(--primary); transition: width .4s;
+}
+.dash-planner-task {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 16px; border-top: 1px solid var(--border);
+  font-size: 14px; color: var(--text-1);
+}
+.dash-planner-task:first-child { border-top: none; }
+.dash-planner-task--done .dash-planner-task-text { text-decoration: line-through; color: var(--text-4); }
+.dash-planner-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.dash-planner-task-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-planner-check { font-size: 12px; color: var(--primary); flex-shrink: 0; }
+.dash-planner-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 16px; border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--text-3);
+}
+.dash-planner-all-done { color: var(--green); font-weight: 600; }
+
 /* ── Notes: gallery on home ───────────────── */
 .note-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-top: 6px; }
 .note-card {

@@ -632,6 +632,7 @@ export default function App() {
                 uploading={uploading}
                 reviewDue={reviewDue}
                 onAskMulti={askMultiDocs}
+                onOpenPlanner={() => setView({ type: "planner" })}
                 onPastDocsChange={() => apiFetch("/documents/").then(d => setPastDocs(dedupDocs(d))).catch(() => {})}
                 notesSlot={
                   <div className="dash-panel">

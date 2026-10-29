@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { apiFetch } from "../api";
 
-export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc, pastDocs, uploading, onPastDocsChange, onSelectDocTab, notesSlot, reviewDue = 0, onAskMulti }) {
+export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc, pastDocs, uploading, onPastDocsChange, onSelectDocTab, notesSlot, reviewDue = 0, onAskMulti, onOpenPlanner }) {
   const [stats, setStats] = useState(null);
+  const [planner, setPlanner] = useState(null);
   const [history, setHistory] = useState(null);
   const [editingFolder, setEditingFolder] = useState(null);
   const [folderInput, setFolderInput] = useState("");
@@ -19,6 +20,7 @@ export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc
 
   useEffect(() => {
     apiFetch("/documents/dashboard").then(setStats).catch(() => {});
+    apiFetch("/planner/today-summary").then(setPlanner).catch(() => {});
   }, [pastDocs.length]);
 
   useEffect(() => {
@@ -232,8 +234,48 @@ export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc
           )}
         </div>
 
-        {/* 오른쪽: 오늘 복습 + 최근 퀴즈 + 노트 */}
+        {/* 오른쪽: 오늘 플래너 + 오늘 복습 + 최근 퀴즈 + 노트 */}
         <div className="dash-body-side">
+
+          {/* 오늘 할 일 */}
+          {planner && (planner.tasks.length > 0 || planner.goal) && (() => {
+            const done = planner.tasks.filter(t => t.done).length;
+            const total = planner.tasks.length;
+            const pctDone = total ? Math.round(done / total * 100) : 0;
+            return (
+              <div className="dash-panel">
+                <div className="dash-panel-head">
+                  <span className="dash-panel-title">오늘 할 일</span>
+                  <button className="btn-ghost" style={{ fontSize: 12 }} onClick={onOpenPlanner}>플래너 →</button>
+                </div>
+                {planner.goal && (
+                  <div className="dash-planner-goal">{planner.goal}</div>
+                )}
+                {total > 0 && (
+                  <>
+                    <div className="dash-planner-progress">
+                      <div className="dash-planner-progress-bar" style={{ width: `${pctDone}%` }} />
+                    </div>
+                    <div className="dash-side-list">
+                      {planner.tasks.map(t => (
+                        <div key={t.id} className={`dash-planner-task${t.done ? " dash-planner-task--done" : ""}`}>
+                          {t.subject && (
+                            <span className="dash-planner-dot" style={{ background: planner.color_map[t.subject] || "#CBCBCB" }} />
+                          )}
+                          <span className="dash-planner-task-text">{t.text}</span>
+                          {t.done && <span className="dash-planner-check">✓</span>}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="dash-planner-footer">
+                      <span>{done}/{total} 완료</span>
+                      {pctDone === 100 && <span className="dash-planner-all-done">오늘 목표 달성!</span>}
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })()}
 
           {/* 오늘 복습 */}
           {stats?.today_docs?.length > 0 && (
