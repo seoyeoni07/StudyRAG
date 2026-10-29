@@ -176,6 +176,11 @@ export default function WrongAnswerBook({ docId, refreshKey = 0, onCountLoaded, 
                     {explaining === item.id ? "AI 해설 생성 중…" : "🤖 AI 해설 받기"}
                   </button>
               }
+              {item.reviewed && item.next_review && (
+                <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>
+                  📅 다음 복습: {new Date(item.next_review + (item.next_review.endsWith("Z") ? "" : "Z")).toLocaleDateString("ko-KR")}
+                </p>
+              )}
             </div>
           ));
       })()}
