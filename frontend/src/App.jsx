@@ -609,17 +609,19 @@ export default function App() {
 
           {view.type === "home" && (
             <>
-              <div className="page-icon">🏠</div>
-              <h1 className="page-title">{greeting}{displayName ? `, ${displayName}님` : ""}</h1>
-
-              {streak > 0 && (
-                <div className="streak-banner">
-                  <span className="streak-fire">🔥</span>
-                  <span><strong>{streak}일</strong> 연속 학습 중!</span>
-                  {streak >= 7 && <span className="streak-badge">주간 달성</span>}
-                  {streak >= 30 && <span className="streak-badge streak-badge--gold">월간 달성</span>}
+              <div className="dash-welcome">
+                <div className="dash-welcome-text">
+                  <span className="dash-welcome-sub">{greeting}</span>
+                  <h1 className="dash-welcome-name">{displayName ? `${displayName}님` : "안녕하세요"}</h1>
                 </div>
-              )}
+                {streak > 0 && (
+                  <div className="streak-pill">
+                    🔥 <strong>{streak}일</strong> 연속
+                    {streak >= 30 && <span className="streak-badge"> 월간 달성</span>}
+                    {streak >= 7 && streak < 30 && <span className="streak-badge"> 주간 달성</span>}
+                  </div>
+                )}
+              </div>
 
               <DashboardHome
                 onFileAccepted={handleFilesAccepted}
@@ -632,22 +634,22 @@ export default function App() {
                 onAskMulti={askMultiDocs}
                 onPastDocsChange={() => apiFetch("/documents/").then(d => setPastDocs(dedupDocs(d))).catch(() => {})}
                 notesSlot={
-                  <div className="dash-section">
-                    <div className="dash-section-header">
-                      <p className="dash-section-title">최근 노트</p>
-                      <button className="btn-ghost" onClick={() => createNote()}>+ 새 노트</button>
+                  <div className="dash-panel">
+                    <div className="dash-panel-head">
+                      <span className="dash-panel-title">최근 노트</span>
+                      <button className="btn-ghost" style={{ fontSize: 13 }} onClick={() => createNote()}>+ 새 노트</button>
                     </div>
                     {notes.length === 0 ? (
-                      <button className="note-empty" onClick={() => createNote()}>
-                        <span>📝</span> 첫 노트를 만들어보세요. 강의 정리, 질문 메모, 시험 대비 요점 무엇이든요.
+                      <button className="note-empty" style={{ borderRadius: 0, border: "none", borderTop: "none" }} onClick={() => createNote()}>
+                        <span>📝</span> 첫 노트를 만들어보세요.
                       </button>
                     ) : (
-                      <div className="note-gallery">
-                        {notes.slice(0, 6).map(n => (
-                          <button key={n.id} className="note-card" onClick={() => setView({ type: "note", noteId: n.id })}>
-                            <span className="note-card-icon">{n.icon || "📝"}</span>
-                            <span className="note-card-title">{n.title || "제목 없음"}</span>
-                            <span className="note-card-meta">{timeAgo(n.updated_at)}</span>
+                      <div className="dash-side-list">
+                        {notes.slice(0, 5).map(n => (
+                          <button key={n.id} className="dash-side-row" onClick={() => setView({ type: "note", noteId: n.id })}>
+                            <span style={{ fontSize: 14, flexShrink: 0 }}>{n.icon || "📝"}</span>
+                            <span className="dash-side-name">{n.title || "제목 없음"}</span>
+                            <span style={{ fontSize: 12, color: "var(--text-4)", flexShrink: 0 }}>{timeAgo(n.updated_at)}</span>
                           </button>
                         ))}
                       </div>
