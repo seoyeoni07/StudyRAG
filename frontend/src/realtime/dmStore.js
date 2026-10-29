@@ -28,12 +28,13 @@ export function refreshDmRooms() {
   return inflight;
 }
 
-export function resetDmStore() { openRooms.clear(); setRooms(null); }
+export function resetDmStore() { openRooms.clear(); seen = {}; saveSeen(); setRooms(null); }
 
 /** 이 방을 읽었다 — 모든 창의 배지에서 지운다 */
 export function markDmRead(roomId) {
   if (!rooms) return;
   if (!rooms.some(r => r.room_id === roomId && r.unread)) return;
+  if (seen[roomId]) { delete seen[roomId]; saveSeen(); }
   setRooms(rooms.map(r => (r.room_id === roomId ? { ...r, unread: 0 } : r)));
 }
 
@@ -65,6 +66,28 @@ export function isRoomOpen(roomId) {
 }
 
 export const totalUnread = (list) => (list || []).reduce((n, r) => n + (r.unread || 0), 0);
+
+// ── 사이드바·채팅 버튼 숫자 (인스타그램 방식) ──
+// 대화 목록을 한 번 보면 '새 메시지가 있다는 걸 봤다'로 치고 바깥 숫자를 지운다.
+// 목록의 방별 숫자는 그 방을 실제로 열어 읽을 때까지 남는다.
+const SEEN_KEY = "studyrag:dm-seen";
+let seen = (() => { try { return JSON.parse(localStorage.getItem(SEEN_KEY)) || {}; } catch { return {}; } })();
+
+function saveSeen() { try { localStorage.setItem(SEEN_KEY, JSON.stringify(seen)); } catch { /* 저장 못 해도 동작은 한다 */ } }
+
+/** 지금 보이는 방별 안 읽은 개수를 '봤음'으로 기록 — 채팅 페이지·작은 창 목록을 열었을 때 */
+export function markListSeen() {
+  if (!rooms) return;
+  const next = Object.fromEntries(rooms.filter(r => r.unread).map(r => [r.room_id, r.unread]));
+  if (JSON.stringify(next) === JSON.stringify(seen)) return;
+  seen = next;
+  saveSeen();
+  setRooms([...rooms]); // 새 배열이어야 화면(배지 숫자)이 다시 그려진다
+}
+
+/** 바깥 배지 숫자: 목록을 마지막으로 본 뒤에 새로 온 것만 */
+export const badgeCount = (list) =>
+  (list || []).reduce((n, r) => n + Math.max(0, (r.unread || 0) - (seen[r.room_id] || 0)), 0);
 
 /** 목록 구독. 처음 쓰는 곳에서 서버에서 한 번 불러온다. */
 export function useDmRooms() {

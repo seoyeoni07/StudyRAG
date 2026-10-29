@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { apiFetch } from "../api";
 import NoteEditor, { useCollabDoc } from "./NoteEditor";
+import { sendBroadcast } from "../realtime/chatBus";
 
 const ICONS = ["📝", "📒", "📘", "📗", "📙", "💡", "⭐", "🔖", "🧠", "📌", "✏️", "🎯"];
 
-function ShareModal({ noteId, onClose }) {
+function ShareModal({ noteId, getTitle, getIcon, me, onClose }) {
   const [q, setQ] = useState("");
   const [results, setResults] = useState([]);
   const [shares, setShares] = useState(null);
@@ -32,6 +33,11 @@ function ShareModal({ noteId, onClose }) {
       await apiFetch(`/notes/${noteId}/shares`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: uid }) });
       const fresh = await apiFetch(`/notes/${noteId}/shares`);
       setShares(fresh);
+      // 상대 화면에 새로고침 없이 바로 보이도록 (사이드바 '공유받은 노트' + 알림)
+      sendBroadcast(`inbox:${uid}`, "note-shared", {
+        note_id: noteId, title: getTitle?.() || "", icon: getIcon?.() || "📝",
+        from: me?.displayName || me?.email?.split("@")[0] || "누군가", from_uid: me?.uid,
+      });
       setResults(r => r.filter(u => u.uid !== uid));
       setMsg("공유했어요.");
     } catch (err) { setMsg(err.message); }
@@ -41,6 +47,7 @@ function ShareModal({ noteId, onClose }) {
     try {
       await apiFetch(`/notes/${noteId}/shares/${uid}`, { method: "DELETE" });
       setShares(s => s.filter(u => u.uid !== uid));
+      sendBroadcast(`inbox:${uid}`, "note-unshared", { note_id: noteId, from_uid: me?.uid });
     } catch (err) { setMsg(err.message); }
   }
 
@@ -183,7 +190,12 @@ export default function NotePage({ noteId, user, pastDocs, onChanged, onDeleted,
       </NoteEditor>
 
       {error && <div className="error-banner"><span>{error}</span></div>}
-      {showShare && <ShareModal noteId={noteId} onClose={() => setShowShare(false)} />}
+      {showShare && (
+        <ShareModal noteId={noteId} me={user}
+          getTitle={() => state.doc.getMap("meta").get("title") || props.title || ""}
+          getIcon={() => props.icon}
+          onClose={() => setShowShare(false)} />
+      )}
 
       <div className="note-footer">
         <button className="btn-ghost" onClick={() => setShowVersions(v => !v)}>버전 기록</button>

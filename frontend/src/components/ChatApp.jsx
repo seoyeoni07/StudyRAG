@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { apiFetch } from "../api.js";
 import ChatRoom, { timeAgo } from "./chat/ChatRoom";
-import { useDmRooms, refreshDmRooms, addDmRoom } from "../realtime/dmStore";
+import { useDmRooms, refreshDmRooms, addDmRoom, markListSeen } from "../realtime/dmStore";
 
 // ── 새 DM 시작 (유저 검색) ────────────────────────────────────────────────────
 
@@ -67,6 +67,8 @@ export default function ChatApp({ me, groups = [], groupDetails = {} }) {
   const [active, setActive] = useState(null); // { kind: "dm"|"group"|"new-dm", ... }
 
   useEffect(() => { if (tab === "dm") refreshDmRooms(); }, [tab]);
+  // 채팅 페이지에 있는 동안은 새로 온 것도 '봤음' — 사이드바 숫자를 지운다
+  useEffect(() => { markListSeen(); }, [dmRooms]);
 
   function openDm(roomId, other) {
     setActive({ kind: "dm", roomId, other });

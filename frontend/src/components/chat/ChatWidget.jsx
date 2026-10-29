@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import ChatRoom, { timeAgo } from "./ChatRoom";
 import { NewDmPanel } from "../ChatApp";
-import { useDmRooms, refreshDmRooms, addDmRoom } from "../../realtime/dmStore";
+import { useDmRooms, refreshDmRooms, addDmRoom, markListSeen } from "../../realtime/dmStore";
 
 /*
  * 화면 오른쪽 아래 작은 채팅창 (인스타그램 DM처럼).
@@ -17,6 +17,8 @@ export default function ChatWidget({ me, groups = [], groupDetails = {}, unread 
 
   // 열 때 한 번 최신으로 (그 뒤로는 앱 전체가 같은 목록을 갱신한다)
   useEffect(() => { if (open && tab === "dm") refreshDmRooms(); }, [open, tab]);
+  // 작은 창이 열려 있는 동안은 새로 온 것도 '봤음' — 채팅 버튼·사이드바 숫자를 지운다
+  useEffect(() => { if (open) markListSeen(); }, [open, dmRooms]);
 
   function openDm(roomId, other) {
     setActive({ kind: "dm", roomId, other });

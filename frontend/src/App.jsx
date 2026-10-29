@@ -16,7 +16,7 @@ import Sidebar, { tabsFor } from "./components/Sidebar";
 import GroupHome, { GroupStart, timeAgo as groupTimeAgo } from "./components/GroupHome";
 import ChatApp from "./components/ChatApp";
 import ChatWidget from "./components/chat/ChatWidget";
-import { useDmRooms, refreshDmRooms, resetDmStore, isRoomOpen, touchDmRoom, totalUnread } from "./realtime/dmStore";
+import { useDmRooms, refreshDmRooms, resetDmStore, isRoomOpen, touchDmRoom, badgeCount } from "./realtime/dmStore";
 import { useGroupChannels } from "./realtime/useGroupChannels";
 import { supabase } from "./supabase";
 import "./App.css";
@@ -64,7 +64,7 @@ export default function App() {
   const [reviewDue, setReviewDue] = useState(0);
   const [sharedNotes, setSharedNotes] = useState([]);
   // 안 읽은 DM 수 — 사이드바·작은 채팅창·큰 채팅창이 같은 숫자를 쓴다 (realtime/dmStore)
-  const dmUnread = totalUnread(useDmRooms());
+  const dmUnread = badgeCount(useDmRooms());
   const [streak, setStreak] = useState(0);
   const [wrongRefreshKey, setWrongRefreshKey] = useState(0);
 
@@ -130,6 +130,15 @@ export default function App() {
       }
       refreshDmRooms();
       setToast(`💬 ${payload.from}: ${(payload.content || "").slice(0, 40)}`);
+    }).on("broadcast", { event: "note-shared" }, ({ payload }) => {
+      // 새로고침 없이 사이드바 '공유받은 노트'에 바로 추가
+      apiFetch("/notes/shared-with-me").then(setSharedNotes).catch(() => {});
+      const msg = `📝 ${payload.from}님이 "${payload.title || "제목 없음"}" 노트를 공유했어요`;
+      setToast(msg);
+      pushNotif(msg, null, { type: "note", noteId: payload.note_id });
+    }).on("broadcast", { event: "note-unshared" }, ({ payload }) => {
+      setSharedNotes(prev => prev.filter(n => n.id !== payload.note_id));
+      setView(v => (v.type === "note" && v.noteId === payload.note_id ? { type: "home" } : v));
     }).subscribe();
     return () => supabase.removeChannel(ch);
   }, [user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -492,6 +501,13 @@ export default function App() {
                       <div key={n.id} className={`notif-item ${n.unread ? "notif-item--unread" : ""}`}
                         onClick={() => {
                           const t = n.target || (n.groupId && { type: "group", groupId: n.groupId });
+                          if (t?.type === "note") {
+                            // 공유받은 노트 — 그새 공유가 해제됐으면 열지 않는다
+                            if (sharedNotes.some(x => x.id === t.noteId) || notes.some(x => x.id === t.noteId)) setView(t);
+                            else setToast("공유가 해제된 노트예요");
+                            closeNotif();
+                            return;
+                          }
                           // 그새 그룹에서 나갔거나 삭제된 자료면 그룹 홈으로
                           const gd = t && groupData[t.groupId];
                           const exists = !t || !gd ? !!gd
