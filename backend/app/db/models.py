@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, LargeBinary, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Integer, LargeBinary, String, Text, UniqueConstraint
 
 from .session import Base
 
@@ -218,6 +218,18 @@ class NoteImage(Base):
     filename = Column(String(256), nullable=True)
     data = Column(LargeBinary, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class ChatRead(Base):
+    """대화방별로 각 사람이 어디까지 읽었는지 (읽음 표시·안 읽은 개수용).
+    room_key: "dm:{방 id}" 또는 "group:{그룹 id}"."""
+    __tablename__ = "chat_reads"
+    __table_args__ = (UniqueConstraint("room_key", "user_id", name="uq_chat_reads_room_user"),)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    room_key = Column(String(48), nullable=False, index=True)
+    user_id = Column(String(128), nullable=False)
+    last_read_id = Column(Integer, nullable=False, default=0)
+    updated_at = Column(DateTime, default=datetime.utcnow)
 
 
 class DmRoom(Base):

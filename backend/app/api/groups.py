@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from ..db.models import Document, GroupMessage, Note, StudyGroup, StudyGroupMember, StudyRoom, StudyRoomMember
 from ..db.session import SessionLocal
-from .attachments import Attachment, attachment_out, validate_attachment
+from .attachments import Attachment, ReadBody, attachment_out, mark_read, read_positions, validate_attachment
 from .documents import ingest_upload
 
 router = APIRouter(prefix="/groups", tags=["groups"])
@@ -384,10 +384,26 @@ def send_message(
     att = validate_attachment(db, body.attachment)
     if not content and not att:
         raise HTTPException(400, "내용을 입력하세요.")
-    m = GroupMessage(group_id=group_id, user_id=user_id, display_name=body.display_name[:64], content=content, **att)
+    m = GroupMessage(group_id=group_id, user_id=user_id, display_name=body.display_name[:64], content=content,
+                     created_at=datetime.utcnow(), **att)
     db.add(m)
+    db.flush()             # INSERT … RETURNING id
+    out = _gmsg_out(m)     # commit 뒤에 읽으면 다시 SELECT 하므로 먼저 만든다
     db.commit()
-    return _gmsg_out(m)
+    return out
+
+
+@router.get("/{group_id}/messages/reads")
+def get_message_reads(group_id: str, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    require_member(db, group_id, _require_user(x_user_id))
+    return read_positions(db, f"group:{group_id}")
+
+
+@router.post("/{group_id}/messages/read")
+def read_messages(group_id: str, body: ReadBody, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    user_id = _require_user(x_user_id)
+    require_member(db, group_id, user_id)
+    return {"last_read_id": mark_read(db, f"group:{group_id}", user_id, body.last_id)}
 
 
 @router.post("/{group_id}/notes")

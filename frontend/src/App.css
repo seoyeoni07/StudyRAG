@@ -1678,3 +1678,23 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
   }
 }
 @media print { .chatw-fab, .chatw-panel { display: none !important; } }
+
+/* ── 채팅: 아래부터 쌓기·읽음 표시 ───────────── */
+.chat-messages { overscroll-behavior: contain; }          /* 끝까지 스크롤해도 바깥 페이지가 따라 움직이지 않게 */
+.chat-messages > :first-child { margin-top: auto; }        /* 메시지가 적어도 아래쪽부터 쌓이게 */
+.chat-meta { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0; }
+.chat-msg:not(.chat-msg--me) .chat-meta { align-items: flex-start; }
+.chat-read { font-size: 11px; color: var(--text-3); font-weight: 600; }
+.chat-unread-count { font-size: 11px; font-weight: 700; color: #e8b100; line-height: 1; }
+.chat-msg--pending .chat-bubble { opacity: .6; }
+.chat-retry {
+  border: none; background: transparent; padding: 0; cursor: pointer;
+  font-size: 11px; color: var(--red); text-decoration: underline;
+}
+.chatapp-room-unread {
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; flex-shrink: 0;
+  background: #ff3040; color: #fff; font-size: 11px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+/* 채팅 페이지에서는 화면 높이에 고정 — 메시지가 늘어도 페이지가 길어지지 않고 채팅 영역만 스크롤 */
+.main:has(> .chatapp) { height: 100vh; height: 100dvh; overflow: hidden; }

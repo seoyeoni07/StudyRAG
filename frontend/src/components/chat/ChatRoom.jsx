@@ -101,15 +101,35 @@ function AttachmentView({ att, onLoad }) {
 
 // ── 메시지 목록 ────────────────────────────────────────────────────────────────
 
-function MessageList({ messages, me, emptyText, onDropFiles }) {
-  const bottomRef = useRef(null);
-  const [dragging, setDragging] = useState(false);
-  const scroll = useCallback(() => bottomRef.current?.scrollIntoView({ block: "end" }), []);
+const NEAR_BOTTOM = 120; // px — 이만큼 안쪽이면 '맨 아래를 보고 있는 중'으로 본다
 
-  useEffect(() => { scroll(); }, [messages?.length, scroll]);
+/**
+ * readInfo(m) → { label?, count? } : 읽음 표시 (DM: "읽음", 그룹: 안 읽은 사람 수)
+ */
+function MessageList({ messages, me, emptyText, onDropFiles, readInfo, onRetry }) {
+  const boxRef = useRef(null);
+  const stick = useRef(true);       // 맨 아래를 보고 있으면 새 메시지가 올 때 따라 내려간다
+  const [dragging, setDragging] = useState(false);
+
+  // 페이지 전체가 아니라 채팅 영역만 스크롤한다 (scrollIntoView는 바깥 페이지까지 같이 내렸다)
+  const toBottom = useCallback(() => {
+    const el = boxRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, []);
+
+  const last = messages?.[messages.length - 1];
+  useEffect(() => {
+    if (!messages) return;
+    // 내가 보낸 메시지거나, 이미 맨 아래를 보고 있었을 때만 내려간다 — 위쪽을 읽는 중이면 그대로 둔다
+    if (stick.current || last?.user_id === me.uid) toBottom();
+  }, [messages, last, me.uid, toBottom]);
 
   return (
-    <div className={`chat-messages ${dragging ? "chat-messages--drop" : ""}`}
+    <div ref={boxRef} className={`chat-messages ${dragging ? "chat-messages--drop" : ""}`}
+      onScroll={e => {
+        const el = e.currentTarget;
+        stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < NEAR_BOTTOM;
+      }}
       onDragOver={e => { if (e.dataTransfer.types.includes("Files")) { e.preventDefault(); setDragging(true); } }}
       onDragLeave={() => setDragging(false)}
       onDrop={e => {
@@ -123,19 +143,27 @@ function MessageList({ messages, me, emptyText, onDropFiles }) {
       ) : messages.map(m => {
         const mine = m.user_id === me.uid;
         const onlyImage = !m.content && m.attachment && IMAGE_TYPES.includes(m.attachment.type);
+        const read = !m.pending && !m.failed ? readInfo?.(m) : null;
         return (
-          <div key={m.id} className={`chat-msg ${mine ? "chat-msg--me" : ""}`}>
+          <div key={m.key || m.id} className={`chat-msg ${mine ? "chat-msg--me" : ""} ${m.pending && mine ? "chat-msg--pending" : ""}`}>
             <span className="chat-name">{mine ? "나" : m.display_name}</span>
             <span className={`chat-bubble ${onlyImage ? "chat-bubble--media" : ""}`}>
-              {m.attachment && <AttachmentView att={m.attachment} onLoad={scroll} />}
+              {m.attachment && <AttachmentView att={m.attachment} onLoad={() => stick.current && toBottom()} />}
               {m.content && <span className="chat-text"><Linkified text={m.content} /></span>}
             </span>
-            <span className="chat-time">{clock(m.created_at)}</span>
+            <span className="chat-meta">
+              {read?.count > 0 && <span className="chat-unread-count">{read.count}</span>}
+              {read?.label && <span className="chat-read">{read.label}</span>}
+              {m.failed ? (
+                <button className="chat-retry" onClick={() => onRetry(m)}>전송 실패 · 다시 보내기</button>
+              ) : (
+                <span className="chat-time">{m.pending && mine ? "보내는 중" : clock(m.created_at)}</span>
+              )}
+            </span>
           </div>
         );
       })}
       {dragging && <div className="chat-drop-hint">여기에 놓으면 파일을 보내요</div>}
-      <div ref={bottomRef} />
     </div>
   );
 }
@@ -173,11 +201,10 @@ function Composer({ onSend, pickRef }) {
     const attachment = att?.status === "ready" ? att.data : null;
     if ((!content && !attachment) || sending || att?.status === "uploading") return;
     setSending(true);
-    try {
-      await onSend({ content, attachment });
-      setText("");
-      setAtt(null);
-    } catch { /* 입력 내용은 그대로 둬서 다시 보낼 수 있게 */ }
+    // 보내자마자 화면에 뜨고(보내는 중), 실패하면 메시지 옆에 '다시 보내기'가 나온다
+    setText("");
+    setAtt(null);
+    try { await onSend({ content, attachment }); }
     finally { setSending(false); }
   }
 
@@ -218,50 +245,150 @@ function Composer({ onSend, pickRef }) {
 
 // ── 대화방 데이터 + 실시간 ───────────────────────────────────────────────────
 
+const newKey = () => `c-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
 /**
  * kind: "dm" (id = DM 방 id) | "group" (id = 그룹 id)
+ *
+ * 빠르게 보이게:
+ *  1) 보내면 내 화면에 바로 띄우고(보내는 중), 상대에게도 실시간 채널로 바로 보낸다
+ *  2) 서버 저장이 끝나면 "saved"로 진짜 id를 알려 같은 메시지로 바꿔 끼운다
+ *  3) 저장 실패면 "failed"로 상대 화면에서 지우고, 내 화면엔 '다시 보내기'
  */
 function useChatRoom({ kind, id, me, myName, other }) {
   const [messages, setMessages] = useState(null);
+  const [reads, setReads] = useState({}); // user_id → 어디까지 읽었는지(메시지 id)
   const base = kind === "dm" ? `/chat/rooms/${id}/messages` : `/groups/${id}/messages`;
+  const readBase = kind === "dm" ? `/chat/rooms/${id}` : `/groups/${id}/messages`;
   const topic = kind === "dm" ? `dm:${id}` : `chat:${id}`;
-  const event = kind === "dm" ? "dm-msg" : "chat-msg";
+  const ev = kind === "dm" ? "dm" : "chat";
 
-  const add = useCallback((m) => {
-    setMessages(prev => (prev || []).some(x => x.id === m.id) ? prev : [...(prev || []), m]);
+  const upsert = useCallback((m) => {
+    setMessages(prev => {
+      const list = prev || [];
+      if (m.id != null && list.some(x => x.id === m.id)) {
+        // 이미 진짜 메시지가 있으면 같은 key의 임시 메시지만 정리
+        return m.key ? list.filter(x => !(x.key === m.key && x.id !== m.id)) : list;
+      }
+      const i = m.key ? list.findIndex(x => x.key === m.key) : -1;
+      if (i >= 0) { const next = [...list]; next[i] = { ...list[i], ...m }; return next; }
+      if (m.content == null && !m.attachment) return list; // 내용 없는 상태 갱신이 먼저 도착한 경우
+      return [...list, m];
+    });
   }, []);
+  const drop = useCallback((key) => setMessages(prev => (prev || []).filter(x => x.key !== key || x.id != null)), []);
 
+  // 처음 불러오기: 메시지 + 읽음 위치
   useEffect(() => {
     let alive = true;
-    setMessages(null);
+    setMessages(null); setReads({});
     apiFetch(base).then(d => alive && setMessages(d)).catch(() => alive && setMessages([]));
+    apiFetch(`${readBase}/reads`)
+      .then(rows => alive && setReads(Object.fromEntries(rows.map(r => [r.user_id, r.last_read_id]))))
+      .catch(() => {});
     return () => { alive = false; };
-  }, [base]);
+  }, [base, readBase]);
 
-  useEffect(() => subscribeBroadcast(topic, event, add), [topic, event, add]);
+  // 실시간: 새 메시지(임시) / 저장 완료 / 실패 / 읽음
+  // '저장 완료'가 메시지보다 먼저 도착하는 드문 경우를 위해 잠깐 기억해 둔다
+  const savedEarly = useRef({});
+  useEffect(() => {
+    const offs = [
+      subscribeBroadcast(topic, `${ev}-msg`, (m) => {  // 예전 버전이 보내는 저장된 메시지도 여기로 온다
+        const early = m.key && savedEarly.current[m.key];
+        if (early) delete savedEarly.current[m.key];
+        upsert(early ? { ...m, ...early, pending: false } : m);
+      }),
+      subscribeBroadcast(topic, `${ev}-saved`, ({ key, id: realId, created_at }) => {
+        setMessages(prev => {
+          if (!(prev || []).some(x => x.key === key)) savedEarly.current[key] = { id: realId, created_at };
+          return prev;
+        });
+        upsert({ key, id: realId, created_at, pending: false });
+      }),
+      subscribeBroadcast(topic, `${ev}-failed`, ({ key }) => drop(key)),
+      subscribeBroadcast(topic, `${ev}-read`, ({ user_id, last_id }) =>
+        setReads(r => (r[user_id] || 0) >= last_id ? r : { ...r, [user_id]: last_id })),
+    ];
+    return () => offs.forEach(off => off());
+  }, [topic, ev, upsert, drop]);
 
-  const send = useCallback(async ({ content, attachment }) => {
-    const saved = await apiFetch(base, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content, attachment, display_name: myName }),
-    });
-    add(saved);
-    sendBroadcast(topic, event, saved);
-    if (kind === "dm" && other?.uid) {
-      const preview = content || (attachment?.type?.startsWith("image/") ? "📷 사진" : `📎 ${attachment?.name || "파일"}`);
-      sendBroadcast(`inbox:${other.uid}`, "dm-notif", { from: myName, content: preview, room_id: id, from_uid: me.uid });
+  // 내가 이 방을 보고 있으면 읽음 처리 (탭이 보일 때만)
+  const lastOther = messages?.filter(m => m.id != null && m.user_id !== me.uid).at(-1)?.id;
+  const myRead = reads[me.uid] || 0;
+  useEffect(() => {
+    if (!lastOther || lastOther <= myRead) return;
+    const run = () => {
+      if (document.visibilityState !== "visible") return;
+      setReads(r => ({ ...r, [me.uid]: lastOther }));
+      apiFetch(`${readBase}/read`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ last_id: lastOther }),
+      }).catch(() => {});
+      sendBroadcast(topic, `${ev}-read`, { user_id: me.uid, last_id: lastOther });
+    };
+    run();
+    document.addEventListener("visibilitychange", run);
+    return () => document.removeEventListener("visibilitychange", run);
+  }, [lastOther, myRead, readBase, topic, ev, me.uid]);
+
+  const deliver = useCallback(async (msg) => {
+    const { key, content, attachment } = msg;
+    try {
+      const saved = await apiFetch(base, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content, attachment, display_name: myName }),
+      });
+      upsert({ ...saved, key, pending: false, failed: false });
+      sendBroadcast(topic, `${ev}-saved`, { key, id: saved.id, created_at: saved.created_at });
+      if (kind === "dm" && other?.uid) {
+        const preview = content || (attachment?.type?.startsWith("image/") ? "📷 사진" : `📎 ${attachment?.name || "파일"}`);
+        sendBroadcast(`inbox:${other.uid}`, "dm-notif", { from: myName, content: preview, room_id: id, from_uid: me.uid });
+      }
+    } catch {
+      upsert({ key, pending: false, failed: true });
+      sendBroadcast(topic, `${ev}-failed`, { key });
     }
-    return saved;
-  }, [base, topic, event, add, kind, other, myName, id, me.uid]);
+  }, [base, myName, upsert, topic, ev, kind, other, id, me.uid]);
 
-  return { messages, send };
+  const send = useCallback(({ content, attachment }) => {
+    const msg = {
+      key: newKey(), id: null, user_id: me.uid, display_name: myName,
+      content, attachment, created_at: new Date().toISOString(), pending: true,
+    };
+    upsert(msg);
+    // 저장을 기다리지 않고 상대에게 먼저 보낸다
+    sendBroadcast(topic, `${ev}-msg`, msg);
+    return deliver(msg);
+  }, [me.uid, myName, upsert, topic, ev, deliver]);
+
+  const retry = useCallback((m) => {
+    upsert({ key: m.key, pending: true, failed: false });
+    sendBroadcast(topic, `${ev}-msg`, { ...m, pending: true, failed: false });
+    deliver(m);
+  }, [upsert, topic, ev, deliver]);
+
+  return { messages, reads, send, retry };
 }
 
 /** 대화방 하나 (헤더 + 메시지 + 입력창). compact = 오른쪽 아래 작은 창용 */
-export default function ChatRoom({ kind, id, title, subtitle, me, myName, other, onBack, compact, emptyText }) {
-  const { messages, send } = useChatRoom({ kind, id, me, myName, other });
+export default function ChatRoom({ kind, id, title, subtitle, me, myName, other, memberIds, onBack, compact, emptyText }) {
+  const { messages, reads, send, retry } = useChatRoom({ kind, id, me, myName, other });
   const pickRef = useRef(null);
+
+  // DM: 상대가 읽은 내 메시지 중 가장 마지막 것에만 "읽음"
+  // 그룹: 메시지마다 아직 안 읽은 사람 수 (보낸 사람 제외)
+  const lastReadMine = kind === "dm" && other?.uid
+    ? messages?.filter(m => m.user_id === me.uid && m.id != null && m.id <= (reads[other.uid] || 0)).at(-1)?.id
+    : null;
+  const readInfo = (m) => {
+    if (m.id == null) return null;
+    if (kind === "dm") return m.id === lastReadMine ? { label: "읽음" } : null;
+    if (!memberIds?.length) return null;
+    const unread = memberIds.filter(uid => uid !== m.user_id && (reads[uid] || 0) < m.id).length;
+    return unread > 0 ? { count: unread } : null;
+  };
 
   return (
     <div className={`chatapp-room ${compact ? "chatapp-room--compact" : ""}`}>
@@ -272,6 +399,7 @@ export default function ChatRoom({ kind, id, title, subtitle, me, myName, other,
       </div>
       <MessageList messages={messages} me={me}
         emptyText={emptyText || "첫 메시지를 보내보세요!"}
+        readInfo={readInfo} onRetry={retry}
         onDropFiles={f => pickRef.current?.(f)} />
       <Composer onSend={send} pickRef={pickRef} />
     </div>

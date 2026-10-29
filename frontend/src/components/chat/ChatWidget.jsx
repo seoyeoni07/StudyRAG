@@ -40,6 +40,7 @@ export default function ChatWidget({ me, groups = [], groupDetails = {}, unread 
     const g = groupDetails[active.groupId] || groups.find(x => x.id === active.groupId);
     body = g && (
       <ChatRoom key={g.id} compact kind="group" id={g.id} me={me}
+      memberIds={g.members?.map(m => m.user_id)}
         myName={g.members?.find(m => m.user_id === me.uid)?.display_name || myName}
         title={g.name} subtitle={`${g.members?.length || g.member_count || 0}명`}
         emptyText="아직 메시지가 없어요. 첫 메시지를 남겨보세요!"
@@ -60,13 +61,17 @@ export default function ChatWidget({ me, groups = [], groupDetails = {}, unread 
           ) : dmRooms.length === 0 ? (
             <p className="chatw-empty">아직 대화가 없어요.<br />✎ 버튼으로 새 대화를 시작하세요.</p>
           ) : dmRooms.map(r => (
-            <button key={r.room_id} className="chatapp-room-row" onClick={() => setActive({ kind: "dm", roomId: r.room_id, other: r.other })}>
+            <button key={r.room_id} className="chatapp-room-row" onClick={() => {
+                    setActive({ kind: "dm", roomId: r.room_id, other: r.other });
+                    setDmRooms(prev => prev?.map(x => x.room_id === r.room_id ? { ...x, unread: 0 } : x));
+                  }}>
               <span className="chatapp-user-avatar">{(r.other?.display_name || "?").slice(0, 1).toUpperCase()}</span>
               <span className="chatapp-room-info">
                 <span className="chatapp-room-row-name">{r.other?.display_name || r.other?.uid?.slice(0, 8)}</span>
                 <span className="chatapp-room-last">{r.last_message || "대화를 시작해보세요"}</span>
               </span>
               <span className="chatapp-room-time">{timeAgo(r.last_at)}</span>
+              {r.unread > 0 && active?.roomId !== r.room_id && <span className="chatapp-room-unread">{r.unread > 99 ? "99+" : r.unread}</span>}
             </button>
           )))}
           {tab === "group" && (groups.length === 0 ? (
