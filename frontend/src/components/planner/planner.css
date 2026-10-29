@@ -1,11 +1,11 @@
 /* ── 스터디 플래너 ─────────────────────────────────────────── */
 .planner {
   --pl-paper: #ffffff;
-  --pl-ink: var(--text-1, #37352f);
-  --pl-sub: var(--text-3, #787774);
-  --pl-line: rgba(55, 53, 47, .12);
-  --pl-cell: rgba(55, 53, 47, .05);
-  --pl-accent: #2383e2;
+  --pl-ink: var(--text-1, #111827);
+  --pl-sub: var(--text-3, #6b7280);
+  --pl-line: #e5e7eb;
+  --pl-cell: #f9fafb;
+  --pl-accent: #2563eb;
   --pl-box: transparent;
   --pl-pattern: none;
   color: var(--pl-ink);
