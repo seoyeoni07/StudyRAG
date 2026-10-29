@@ -92,6 +92,28 @@ export default function App() {
       text, groupId, target, time: new Date().toISOString(), unread: true,
     }, ...prev].slice(0, 50));
 
+  // 공유받은 노트 목록을 새로 받고, 처음 보는 노트는 🔔 알림에 남긴다.
+  // (내가 꺼져 있을 때 공유된 노트도 다음 접속 때 알림으로 보이게 — 본 적 있는 목록은 브라우저에 기억)
+  const syncShared = useCallback(async (fromNames = {}) => {
+    if (!user?.uid) return;
+    try {
+      const list = await apiFetch("/notes/shared-with-me");
+      setSharedNotes(list);
+      const key = `studyrag:shared-known:${user.uid}`;
+      let known = null;
+      try { known = JSON.parse(localStorage.getItem(key)); } catch { /* 없음 */ }
+      if (Array.isArray(known)) {   // 맨 처음엔 기존 공유 노트를 한꺼번에 알리지 않는다
+        list.filter(n => !known.includes(n.id)).forEach(n => {
+          const from = fromNames[n.id];
+          const title = n.title || "제목 없음";
+          pushNotif(from ? `📝 ${from}님이 "${title}" 노트를 공유했어요` : `📝 새로 공유받은 노트: "${title}"`,
+            null, { type: "note", noteId: n.id });
+        });
+      }
+      try { localStorage.setItem(key, JSON.stringify(list.map(n => n.id))); } catch { /* 저장 못 해도 동작 */ }
+    } catch { /* 서버 기동 중 등 — 다음에 다시 */ }
+  }, [user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const myGroupNameFor = (gid) =>
     groupData[gid]?.detail?.members?.find(m => m.user_id === user?.uid)?.display_name;
 
@@ -131,17 +153,36 @@ export default function App() {
       refreshDmRooms();
       setToast(`💬 ${payload.from}: ${(payload.content || "").slice(0, 40)}`);
     }).on("broadcast", { event: "note-shared" }, ({ payload }) => {
-      // 새로고침 없이 사이드바 '공유받은 노트'에 바로 추가
-      apiFetch("/notes/shared-with-me").then(setSharedNotes).catch(() => {});
-      const msg = `📝 ${payload.from}님이 "${payload.title || "제목 없음"}" 노트를 공유했어요`;
-      setToast(msg);
-      pushNotif(msg, null, { type: "note", noteId: payload.note_id });
+      // 새로고침 없이 사이드바 '공유받은 노트'에 추가하고 🔔 알림에 기록
+      syncShared({ [payload.note_id]: payload.from });
     }).on("broadcast", { event: "note-unshared" }, ({ payload }) => {
       setSharedNotes(prev => prev.filter(n => n.id !== payload.note_id));
       setView(v => (v.type === "note" && v.noteId === payload.note_id ? { type: "home" } : v));
     }).subscribe();
     return () => supabase.removeChannel(ch);
   }, [user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 공유받은 노트: 로그인할 때, 탭으로 돌아올 때, 2분마다 확인 (실시간 신호를 놓쳤을 때 대비)
+  useEffect(() => {
+    if (!user?.uid) return;
+    syncShared();
+    const onVisible = () => { if (document.visibilityState === "visible") syncShared(); };
+    document.addEventListener("visibilitychange", onVisible);
+    const t = setInterval(onVisible, 120000);
+    return () => { document.removeEventListener("visibilitychange", onVisible); clearInterval(t); };
+  }, [user?.uid, syncShared]);
+
+  // 🔔 알림 기록은 새로고침해도 남게 (사람별로 브라우저에 저장)
+  useEffect(() => {
+    if (!user?.uid) { setNotifications([]); return; }
+    try { setNotifications(JSON.parse(localStorage.getItem(`studyrag:notifs:${user.uid}`)) || []); }
+    catch { setNotifications([]); }
+  }, [user?.uid]);
+  useEffect(() => {
+    if (!user?.uid) return;
+    try { localStorage.setItem(`studyrag:notifs:${user.uid}`, JSON.stringify(notifications.slice(0, 50))); }
+    catch { /* 저장 못 해도 동작 */ }
+  }, [notifications, user?.uid]);
 
   // 로그인·로그아웃 때 대화 목록을 새로
   useEffect(() => {
@@ -173,7 +214,6 @@ export default function App() {
           });
         apiFetch("/notes/").then(setNotes).catch(() => {});
         apiFetch("/quiz/due-count").then(d => setReviewDue(d.count || 0)).catch(() => {});
-        apiFetch("/notes/shared-with-me").then(setSharedNotes).catch(() => {});
         apiFetch("/users/me", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
