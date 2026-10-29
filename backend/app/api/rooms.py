@@ -58,6 +58,33 @@ def create_room(req: CreateRoomRequest, x_user_id: str | None = Header(default=N
     return {"room_id": room_id, "code": code}
 
 
+@router.get("/group/{group_id}")
+def list_group_rooms(group_id: str, doc_id: str | None = None, db: Session = Depends(get_db)):
+    """그룹 내 활성(대기/진행중) 방 목록."""
+    q = db.query(StudyRoom).filter(StudyRoom.group_id == group_id, StudyRoom.status != "finished")
+    if doc_id:
+        q = q.filter(StudyRoom.doc_id == doc_id)
+    rooms = q.order_by(StudyRoom.created_at.desc()).limit(5).all()
+    return [{"room_id": r.id, "code": r.code, "status": r.status, "doc_id": r.doc_id} for r in rooms]
+
+
+@router.post("/join-by-id")
+def join_room_by_id(room_id: str, nickname: str, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    """그룹 멤버가 코드 없이 방 ID로 바로 참가."""
+    if not x_user_id:
+        raise HTTPException(401, "로그인이 필요합니다.")
+    room = db.get(StudyRoom, room_id)
+    if not room or room.status == "finished":
+        raise HTTPException(400, "참가할 수 없는 방입니다.")
+    existing = db.query(StudyRoomMember).filter(
+        StudyRoomMember.room_id == room_id, StudyRoomMember.user_id == x_user_id
+    ).first()
+    if not existing:
+        db.add(StudyRoomMember(room_id=room_id, user_id=x_user_id, nickname=nickname))
+        db.commit()
+    return {"room_id": room.id, "doc_id": room.doc_id, "status": room.status, "host_user_id": room.host_user_id}
+
+
 @router.post("/join")
 def join_room(req: JoinRoomRequest, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
     if not x_user_id:

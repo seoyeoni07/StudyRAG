@@ -42,6 +42,7 @@ export default function WrongAnswerBook({ docId, refreshKey = 0, onCountLoaded, 
     let result = items;
     if (filter === "pending") result = result.filter(it => !it.reviewed);
     else if (filter === "today") result = result.filter(it => {
+      if (!it.reviewed) return true; // 한 번도 복습 안 한 항목은 오늘 복습 대상
       if (!it.next_review) return false;
       const d = new Date(it.next_review + (it.next_review.endsWith("Z") ? "" : "Z"));
       return d.toLocaleDateString("en-CA") <= todayLocal && d.getTime() <= nowMs + 86400000;

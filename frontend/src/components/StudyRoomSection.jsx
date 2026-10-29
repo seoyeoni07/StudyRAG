@@ -8,6 +8,7 @@ export default function StudyRoomSection({ docId, userId, groupId, preJoined, de
   const [nickname, setNickname] = useState(preJoined?.nickname || defaultNickname);
   const [joinCode, setJoinCode] = useState("");
   const [room, setRoom] = useState(null);
+  const [groupRooms, setGroupRooms] = useState([]);
   const [error, setError] = useState("");
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
@@ -17,6 +18,13 @@ export default function StudyRoomSection({ docId, userId, groupId, preJoined, de
   const viewRef = useRef(view);
 
   useEffect(() => { viewRef.current = view; }, [view]);
+
+  // 그룹 내 활성 방 목록 로드
+  useEffect(() => {
+    if (!groupId) return;
+    apiFetch(`/rooms/group/${groupId}?doc_id=${docId}`)
+      .then(setGroupRooms).catch(() => {});
+  }, [groupId, docId]);
 
   // 대시보드에서 이미 참가한 경우 자동 진입
   useEffect(() => {
@@ -78,6 +86,18 @@ export default function StudyRoomSection({ docId, userId, groupId, preJoined, de
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: joinCode.trim().toUpperCase(), nickname }),
       });
+      const data = await apiFetch(`/rooms/${res.room_id}`);
+      setRoom(data);
+      setView(data.status === "active" ? "quiz" : "lobby");
+      startPoll(res.room_id);
+    } catch (err) { setError(err.message); }
+  }
+
+  async function handleJoinById(roomId) {
+    if (!nickname.trim()) { setError("닉네임을 입력하세요."); return; }
+    setError("");
+    try {
+      const res = await apiFetch(`/rooms/join-by-id?room_id=${roomId}&nickname=${encodeURIComponent(nickname)}`, { method: "POST" });
       const data = await apiFetch(`/rooms/${res.room_id}`);
       setRoom(data);
       setView(data.status === "active" ? "quiz" : "lobby");
@@ -158,15 +178,29 @@ export default function StudyRoomSection({ docId, userId, groupId, preJoined, de
           <div className="room-divider" />
           <div className="room-join-block">
             <h4 className="room-block-title">방 참가</h4>
-            <p className="room-block-desc">친구에게 받은 6자리 코드를 입력하세요.</p>
-            <input
-              className="input" placeholder="방 코드 (예: AB12CD)" value={joinCode}
-              onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-              maxLength={6} style={{ marginBottom: 8 }}
-            />
-            <button className="btn-secondary" onClick={handleJoin} disabled={!nickname.trim() || joinCode.length < 4}>
-              참가하기
-            </button>
+            {groupId && groupRooms.length > 0 ? (
+              <>
+                <p className="room-block-desc">그룹 내 열려 있는 방에 바로 참가하세요.</p>
+                {groupRooms.map(r => (
+                  <button key={r.room_id} className="btn-secondary" style={{ marginBottom: 6, width: "100%" }}
+                    onClick={() => handleJoinById(r.room_id)} disabled={!nickname.trim()}>
+                    {r.status === "active" ? "🟢 진행 중" : "⏳ 대기 중"} — 바로 참가하기
+                  </button>
+                ))}
+              </>
+            ) : (
+              <>
+                <p className="room-block-desc">{groupId ? "아직 열린 방이 없어요. 코드로 참가하거나 방을 만드세요." : "친구에게 받은 6자리 코드를 입력하세요."}</p>
+                <input
+                  className="input" placeholder="방 코드 (예: AB12CD)" value={joinCode}
+                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                  maxLength={6} style={{ marginBottom: 8 }}
+                />
+                <button className="btn-secondary" onClick={handleJoin} disabled={!nickname.trim() || joinCode.length < 4}>
+                  참가하기
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
