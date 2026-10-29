@@ -24,7 +24,7 @@ function Caret({ open, onClick }) {
 
 export default function Sidebar({
   user, view, onNavigate, pastDocs, notes, wrongCount, reviewDue = 0,
-  onNewNote, onUpload, uploading, onLogout, open, onClose,
+  onNewNote, onUpload, uploading, onLogout, open, onClose, collapsed = false,
   groups = [], groupData = {}, online = {}, onNewGroupNote,
   sharedNotes = [], onOpenSharedNote,
   dmUnread = 0, streak = 0,
@@ -70,7 +70,7 @@ export default function Sidebar({
   return (
     <>
       <div className={`sb-backdrop ${open ? "show" : ""}`} onClick={onClose} />
-      <aside className={`sidebar ${open ? "open" : ""}`}>
+      <aside className={`sidebar ${open ? "open" : ""} ${collapsed ? "collapsed" : ""}`}>
         <div className="sb-workspace">
           <span className="sb-ws-icon">{name.slice(0, 1).toUpperCase()}</span>
           <span className="sb-ws-name">{name}의 StudyRAG</span>

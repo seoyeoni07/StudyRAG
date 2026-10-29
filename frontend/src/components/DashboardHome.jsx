@@ -262,7 +262,7 @@ export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc
                           {t.subject && (
                             <span className="dash-planner-dot" style={{ background: planner.color_map[t.subject] || "#CBCBCB" }} />
                           )}
-                          <span className="dash-planner-task-text">{t.text}</span>
+                          <span className="dash-planner-task-text">{t.title}</span>
                           {t.done && <span className="dash-planner-check">✓</span>}
                         </div>
                       ))}

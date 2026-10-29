@@ -55,6 +55,7 @@ export default function App() {
   const [preJoined, setPreJoined] = useState(null);
   const [serverWaking, setServerWaking] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [toast, setToast] = useState("");
   const [groups, setGroups] = useState([]);
   const [groupData, setGroupData] = useState({}); // { [groupId]: { detail, docs, notes } }
@@ -507,6 +508,7 @@ export default function App() {
         onUpload={handleFilesAccepted} uploading={uploading}
         onLogout={logout}
         open={sidebarOpen} onClose={() => setSidebarOpen(false)}
+        collapsed={sidebarCollapsed}
         groups={groups} groupData={groupData} online={online}
         onNewGroupNote={createGroupNote}
         sharedNotes={sharedNotes}
@@ -519,6 +521,13 @@ export default function App() {
         <div className="topbar">
           <button className="topbar-menu" onClick={() => setSidebarOpen(true)} aria-label="메뉴 열기">
             <svg width="18" height="18" viewBox="0 0 18 18"><path d="M3 5h12M3 9h12M3 13h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
+          </button>
+          <button className="topbar-collapse" onClick={() => setSidebarCollapsed(c => !c)} aria-label="사이드바 접기">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              {sidebarCollapsed
+                ? <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                : <path d="M10 3l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>}
+            </svg>
           </button>
           <nav className="breadcrumb" aria-label="현재 위치">
             {crumbs.map(([icon, label], i) => (
