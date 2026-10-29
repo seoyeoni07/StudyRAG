@@ -3,7 +3,7 @@ import { apiFetch } from "../api";
 
 const FILTERS = [["all", "전체"], ["pending", "미복습"], ["today", "오늘 복습"]];
 
-export default function WrongAnswerBook({ docId, onCountLoaded, onGoToQuiz }) {
+export default function WrongAnswerBook({ docId, refreshKey = 0, onCountLoaded, onGoToQuiz }) {
   const [items, setItems] = useState([]);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,6 +17,7 @@ export default function WrongAnswerBook({ docId, onCountLoaded, onGoToQuiz }) {
   const [explaining, setExplaining] = useState(null); // item id
 
   useEffect(() => {
+    setLoading(true);
     Promise.all([
       apiFetch(`/quiz/wrong-answers?doc_id=${docId}`),
       apiFetch(`/quiz/history?doc_id=${docId}`),
@@ -24,7 +25,7 @@ export default function WrongAnswerBook({ docId, onCountLoaded, onGoToQuiz }) {
       .then(([w, h]) => { setItems(w); setHistory(h); onCountLoaded?.(w.length); })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [docId]);
+  }, [docId, refreshKey]);
 
   async function toggleReviewed(item) {
     try {

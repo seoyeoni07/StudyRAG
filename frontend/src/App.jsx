@@ -63,6 +63,7 @@ export default function App() {
   const [sharedNotes, setSharedNotes] = useState([]);
   const [dmUnread, setDmUnread] = useState(0);
   const [streak, setStreak] = useState(0);
+  const [wrongRefreshKey, setWrongRefreshKey] = useState(0);
 
   const loadGroup = useCallback(async (id) => {
     try {
@@ -720,8 +721,8 @@ export default function App() {
                   ["summary", <SummarySection key="summary" docId={docId} onSaveNote={saveToNote} />],
                   ["qa",      <QASection key="qa" docId={docId} onSaveNote={saveToNote} />],
                   ["tutor",   <TutorSection key="tutor" docId={docId} />],
-                  ["quiz",    <QuizSection key="quiz" docId={docId} onGoToWrong={() => setView(v => ({ ...v, tab: "wrong" }))} />],
-                  ["wrong",   <WrongAnswerBook key="wrong" docId={docId}
+                  ["quiz",    <QuizSection key="quiz" docId={docId} onGoToWrong={() => { setView(v => ({ ...v, tab: "wrong" })); setWrongRefreshKey(k => k + 1); }} />],
+                  ["wrong",   <WrongAnswerBook key="wrong" docId={docId} refreshKey={wrongRefreshKey}
                                 onCountLoaded={setWrongCount}
                                 onGoToQuiz={() => setView(v => ({ ...v, tab: "quiz" }))} />],
                   ...(groupId ? [["room", <StudyRoomSection key="room" docId={docId} userId={user?.uid}
