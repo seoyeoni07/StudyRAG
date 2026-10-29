@@ -3,8 +3,9 @@ import { apiFetch } from "../../api";
 import { subscribeBroadcast, sendBroadcast } from "../../realtime/chatBus";
 import DayView from "./DayView";
 import WeekView from "./WeekView";
+import MonthView from "./MonthView";
 import AiPlanModal from "./AiPlanModal";
-import { COLORS, THEMES, addDays, ddayText, prettyDate, today, weekStart } from "./plannerUtils";
+import { COLORS, THEMES, addDays, ddayText, monthEnd, monthStart, prettyDate, prettyMonth, today, weekStart } from "./plannerUtils";
 import "./planner.css";
 
 /**
@@ -15,14 +16,15 @@ export default function PlannerPage({ user, groupId, groupName, onOpenLink }) {
   const [planner, setPlanner] = useState(null);
   const [error, setError] = useState("");
   const [date, setDate] = useState(today());
-  const [mode, setMode] = useState("day");                 // day | week
-  const [data, setData] = useState({ days: {}, tasks: [] }); // 지금 보는 주
+  const [mode, setMode] = useState("day");                 // day | week | month
+  const [data, setData] = useState({ days: {}, tasks: [] }); // 지금 보는 범위
   const [aiOpen, setAiOpen] = useState(false);
   const [decoOpen, setDecoOpen] = useState(false);
   const [editTitle, setEditTitle] = useState(null);
   const ws = weekStart(date);
-  const rangeRef = useRef(ws);
-  useEffect(() => { rangeRef.current = ws; }, [ws]);
+  const rangeStart = mode === "month" ? monthStart(date) : ws;
+  const rangeRef = useRef(rangeStart);
+  useEffect(() => { rangeRef.current = rangeStart; }, [rangeStart]);
 
   // 플래너 불러오기 (없으면 서버가 만든다)
   useEffect(() => {
@@ -33,13 +35,15 @@ export default function PlannerPage({ user, groupId, groupName, onOpenLink }) {
   const load = useCallback(async (start = rangeRef.current) => {
     if (!planner) return;
     try {
-      const r = await apiFetch(`/planner/${planner.id}/range?start=${start}&end=${addDays(start, 6)}`);
-      if (start !== rangeRef.current) return; // 그새 다른 주로 넘어감
+      const isMonth = start === monthStart(start);
+      const end = isMonth ? monthEnd(start) : addDays(start, 6);
+      const r = await apiFetch(`/planner/${planner.id}/range?start=${start}&end=${end}`);
+      if (start !== rangeRef.current) return;
       setData({ days: Object.fromEntries(r.days.map(d => [d.date, d])), tasks: r.tasks });
     } catch (err) { setError(err.message); }
   }, [planner]);
 
-  useEffect(() => { load(ws); }, [load, ws]);
+  useEffect(() => { load(rangeStart); }, [load, rangeStart]);
 
   // 다른 기기·그룹 멤버가 고치면 다시 불러온다
   const topic = planner ? `planner:${planner.id}` : null;
@@ -132,15 +136,24 @@ export default function PlannerPage({ user, groupId, groupName, onOpenLink }) {
 
         <div className="pl-toolbar">
           <div className="pl-nav">
-            <button onClick={() => setDate(addDays(date, mode === "week" ? -7 : -1))} aria-label="이전">‹</button>
+            <button onClick={() => {
+              if (mode === "month") { const d = new Date(date.slice(0,4), +date.slice(5,7)-2, 1); setDate(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-01`); }
+              else setDate(addDays(date, mode === "week" ? -7 : -1));
+            }} aria-label="이전">‹</button>
             <button className="pl-today" onClick={() => setDate(today())}>오늘</button>
-            <button onClick={() => setDate(addDays(date, mode === "week" ? 7 : 1))} aria-label="다음">›</button>
+            <button onClick={() => {
+              if (mode === "month") { const d = new Date(date.slice(0,4), +date.slice(5,7), 1); setDate(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-01`); }
+              else setDate(addDays(date, mode === "week" ? 7 : 1));
+            }} aria-label="다음">›</button>
             <input type="date" value={date} onChange={e => e.target.value && setDate(e.target.value)} aria-label="날짜 고르기" />
-            <span className="pl-range">{mode === "week" ? `${prettyDate(ws)} ~ ${prettyDate(addDays(ws, 6))}` : ""}</span>
+            <span className="pl-range">
+              {mode === "week" ? `${prettyDate(ws)} ~ ${prettyDate(addDays(ws, 6))}` : mode === "month" ? prettyMonth(date) : ""}
+            </span>
           </div>
           <div className="pl-seg">
             <button className={mode === "day" ? "active" : ""} onClick={() => setMode("day")}>하루</button>
             <button className={mode === "week" ? "active" : ""} onClick={() => setMode("week")}>일주일</button>
+            <button className={mode === "month" ? "active" : ""} onClick={() => setMode("month")}>한달</button>
           </div>
           <button className="btn-secondary btn-sm" onClick={() => setDecoOpen(o => !o)}>🎨 꾸미기·과목</button>
           <button className="btn-primary btn-sm" onClick={() => setAiOpen(true)}>✨ AI로 계획 세우기</button>
@@ -199,10 +212,13 @@ export default function PlannerPage({ user, groupId, groupName, onOpenLink }) {
         {mode === "day" ? (
           <DayView date={date} day={data.days[date] || { date }} tasks={dayTasks} subjects={subjects}
             colorOf={colorOf} api={api} plannerId={planner.id} onOpenLink={onOpenLink} />
-        ) : (
+        ) : mode === "week" ? (
           <WeekView start={ws} days={data.days} tasks={data.tasks} colorOf={colorOf}
             onPickDay={(d) => { setDate(d); setMode("day"); }}
             onToggle={(id, done) => api.updateTask(id, { done })} onOpenLink={onOpenLink} />
+        ) : (
+          <MonthView date={date} days={data.days} tasks={data.tasks} colorOf={colorOf}
+            onPickDay={(d) => { setDate(d); setMode("day"); }} />
         )}
       </div>
 

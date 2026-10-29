@@ -19,6 +19,12 @@ export const today = () => toKey(new Date());
 export const addDays = (k, n) => { const d = fromKey(k); d.setDate(d.getDate() + n); return toKey(d); };
 /** 월요일 시작 주 */
 export const weekStart = (k) => { const d = fromKey(k); const wd = (d.getDay() + 6) % 7; return addDays(k, -wd); };
+/** 해당 날짜가 속한 달의 1일 */
+export const monthStart = (k) => { const d = fromKey(k); return toKey(new Date(d.getFullYear(), d.getMonth(), 1)); };
+/** 해당 달의 마지막 날 */
+export const monthEnd = (k) => { const d = fromKey(k); return toKey(new Date(d.getFullYear(), d.getMonth() + 1, 0)); };
+/** YYYY년 M월 */
+export const prettyMonth = (k) => { const d = fromKey(k); return `${d.getFullYear()}년 ${d.getMonth() + 1}월`; };
 export const weekdayIdx = (k) => (fromKey(k).getDay() + 6) % 7;
 export const prettyDate = (k) => { const d = fromKey(k); return `${d.getMonth() + 1}/${d.getDate()} (${WEEKDAYS[weekdayIdx(k)]})`; };
 

@@ -211,6 +211,32 @@
 .pl-link-row:hover { background: var(--hover); }
 .pl-link-row--remove { color: var(--red, #e03e3e); }
 
+/* ── 월간 뷰 ───────────────────────────────────────────────── */
+.pl-month { display: flex; flex-direction: column; gap: 2px; }
+.pl-month-head { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 4px; }
+.pl-month-dow { text-align: center; font-size: 12px; font-weight: 600; color: var(--pl-sub); padding: 4px 0; }
+.pl-month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.pl-month-cell {
+  min-height: 80px; border-radius: 8px; padding: 6px; border: 1px solid var(--pl-line);
+  background: var(--pl-cell); cursor: pointer; text-align: left;
+  display: flex; flex-direction: column; gap: 3px; position: relative;
+  transition: background .15s;
+}
+.pl-month-cell:hover { background: var(--hover, rgba(55,53,47,.06)); }
+.pl-month-cell--empty { background: transparent; border-color: transparent; cursor: default; }
+.pl-month-cell--today { border-color: var(--pl-accent); background: rgba(35,131,226,.06); }
+.pl-month-cell--selected { box-shadow: 0 0 0 2px var(--pl-accent); }
+.pl-month-day { font-size: 13px; font-weight: 600; color: var(--pl-ink); }
+.pl-month-cell--today .pl-month-day {
+  background: var(--pl-accent); color: #fff;
+  width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px;
+}
+.pl-month-sticker { font-size: 16px; line-height: 1; }
+.pl-month-dots { display: flex; gap: 3px; flex-wrap: wrap; }
+.pl-month-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.pl-month-progress { font-size: 11px; color: var(--pl-sub); margin-top: auto; }
+.pl-month-progress--done { color: var(--green, #2fb67c); font-weight: 600; }
+
 /* 좁은 화면 */
 @media (max-width: 900px) {
   .pl-day-body, .pl-day-foot { grid-template-columns: 1fr; }
