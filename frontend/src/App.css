@@ -1453,7 +1453,8 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 /* ── ChatApp ──────────────────────────────────────────────────── */
 .chatapp {
   display: flex;
-  height: calc(100vh - 56px);
+  flex: 1;           /* .main이 flex column이므로 topbar 제외한 나머지 전부 */
+  min-height: 0;     /* flex child가 콘텐츠 크기로 늘어나는 것 방지 */
   overflow: hidden;
   gap: 0;
 }
@@ -1514,6 +1515,14 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 .chatapp-empty p:first-child { font-size: 40px; }
 .chatapp-room {
   display: flex; flex-direction: column; height: 100%; overflow: hidden;
+}
+/* chat-messages는 GroupHome 용 max-height:320px가 있으므로 ChatApp 내부에서 재정의 */
+.chatapp-room .chat-messages {
+  flex: 1; min-height: 0; max-height: none;
+  border-radius: 0; border-left: none; border-right: none; border-top: none;
+}
+.chatapp-room .chat-input-row {
+  padding: 10px 14px; border-top: 1px solid var(--border); flex-shrink: 0;
 }
 .chatapp-room-header {
   display: flex; align-items: center; gap: 10px;

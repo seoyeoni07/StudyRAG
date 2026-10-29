@@ -475,7 +475,17 @@ export default function App() {
           </div>
         </div>
 
-        <div className="page">
+        {view.type === "chat" && (
+          <ChatApp
+            me={user}
+            groups={groups}
+            groupDetails={Object.fromEntries(
+              Object.entries(groupData).filter(([, v]) => v?.detail).map(([k, v]) => [k, v.detail])
+            )}
+          />
+        )}
+
+        <div className="page" style={view.type === "chat" ? { display: "none" } : undefined}>
           {serverWaking && (
             <div className="callout callout--amber">
               <div className="spinner spinner-sm" />
@@ -553,16 +563,6 @@ export default function App() {
 
           {view.type === "group-start" && (
             <GroupStart me={user} onCreate={createGroup} onJoin={joinGroup} onJoinPublic={joinPublicGroup} />
-          )}
-
-          {view.type === "chat" && (
-            <ChatApp
-              me={user}
-              groups={groups}
-              groupDetails={Object.fromEntries(
-                Object.entries(groupData).filter(([, v]) => v?.detail).map(([k, v]) => [k, v.detail])
-              )}
-            />
           )}
 
           {view.type === "group" && (group ? (
