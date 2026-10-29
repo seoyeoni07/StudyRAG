@@ -254,3 +254,52 @@ class DmMessage(Base):
     attachment_type = Column(String(128), nullable=True)
     attachment_size = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+# ── 스터디 플래너 ─────────────────────────────────────────────────────────────
+
+class Planner(Base):
+    """플래너 한 권. 개인용(owner_type=user)은 사람마다, 스터디용(owner_type=group)은 그룹마다 하나."""
+    __tablename__ = "planners"
+    __table_args__ = (UniqueConstraint("owner_type", "owner_id", name="uq_planner_owner"),)
+    id = Column(String(36), primary_key=True)
+    owner_type = Column(String(8), nullable=False)        # user | group
+    owner_id = Column(String(128), nullable=False, index=True)
+    title = Column(String(64), nullable=False, default="스터디 플래너")
+    theme = Column(String(16), nullable=False, default="basic")
+    settings = Column(Text, nullable=True)                 # JSON: {subjects:[{name,color}], dday:{label,date}}
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class PlannerDay(Base):
+    """하루 칸: 오늘의 목표, 메모, 스티커, 10분 시간표."""
+    __tablename__ = "planner_days"
+    __table_args__ = (UniqueConstraint("planner_id", "date", name="uq_planner_day"),)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    planner_id = Column(String(36), nullable=False, index=True)
+    date = Column(String(10), nullable=False)              # YYYY-MM-DD
+    goal = Column(String(200), nullable=True)
+    memo = Column(Text, nullable=True)
+    stickers = Column(Text, nullable=True)                 # JSON: ["🔥", ...]
+    timeline = Column(Text, nullable=True)                 # JSON: {"슬롯번호": {"s": 과목, "k": "plan"|"done"}}
+    updated_by = Column(String(128), nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+
+class PlannerTask(Base):
+    """할 일 하나. 자료·노트와 연결할 수 있다."""
+    __tablename__ = "planner_tasks"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    planner_id = Column(String(36), nullable=False, index=True)
+    date = Column(String(10), nullable=False, index=True)
+    title = Column(String(200), nullable=False)
+    subject = Column(String(40), nullable=True)
+    minutes = Column(Integer, nullable=True)
+    done = Column(Boolean, default=False, nullable=False)
+    sort = Column(Integer, default=0, nullable=False)
+    link_type = Column(String(8), nullable=True)           # doc | note | gnote
+    link_id = Column(String(36), nullable=True)
+    link_label = Column(String(256), nullable=True)
+    source = Column(String(8), nullable=True)              # ai | user
+    created_by = Column(String(128), nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow)

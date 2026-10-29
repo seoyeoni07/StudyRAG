@@ -23,7 +23,7 @@ export function Avatar({ name = "?", online, size = 22 }) {
 export default function GroupHome({
   group, docs, notes, online, me, realtime,
   uploading, onUpload, onOpenDoc, onOpenNote, onNewNote, onDeleteDoc, onLeave,
-  quiz, onJoinQuiz, onReload,
+  quiz, onJoinQuiz, onReload, onOpenPlanner,
 }) {
   const [copied, setCopied] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
@@ -77,6 +77,9 @@ const [editingAnn, setEditingAnn] = useState(false);
     <div className="group-home">
       <div className="page-icon">👥</div>
       <h1 className="page-title">{group.name}</h1>
+      {onOpenPlanner && (
+        <button className="btn-secondary btn-sm group-planner-btn" onClick={onOpenPlanner}>📅 스터디 플래너 열기</button>
+      )}
 
       {/* 공지사항 */}
       {(group.announcement || group.my_role === "owner") && (

@@ -13,6 +13,7 @@ from .api.notes import router as notes_router
 from .api.groups import router as groups_router
 from .api.users import router as users_router
 from .api.chat import router as chat_router
+from .api.planner import router as planner_router
 from .db.models import Base  # noqa: F401
 from .db.session import engine
 
@@ -181,6 +182,7 @@ app.include_router(notes_router)
 app.include_router(groups_router)
 app.include_router(users_router)
 app.include_router(chat_router)
+app.include_router(planner_router)
 
 
 @app.get("/health")

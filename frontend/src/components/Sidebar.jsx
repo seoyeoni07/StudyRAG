@@ -80,6 +80,9 @@ export default function Sidebar({
           <button className={`sb-item ${view.type === "home" ? "active" : ""}`} onClick={() => go({ type: "home" })}>
             <span className="sb-icon">🏠</span><span className="sb-label">홈</span>
           </button>
+          <button className={`sb-item ${view.type === "planner" && !view.groupId ? "active" : ""}`} onClick={() => go({ type: "planner" })}>
+            <span className="sb-icon">📅</span><span className="sb-label">플래너</span>
+          </button>
           <button className={`sb-item ${view.type === "stats" ? "active" : ""}`} onClick={() => go({ type: "stats" })}>
             <span className="sb-icon">📊</span><span className="sb-label">학습 통계</span>
           </button>
@@ -136,6 +139,10 @@ export default function Sidebar({
                   </button>
                   {isGroupOpen(g.id) && (
                     <div className="sb-children">
+                      <button className={`sb-item sb-child ${view.type === "planner" && view.groupId === g.id ? "active" : ""}`}
+                        onClick={() => go({ type: "planner", groupId: g.id })}>
+                        <span className="sb-icon">📅</span><span className="sb-label">스터디 플래너</span>
+                      </button>
                       {(data.docs || []).map(d => {
                         const active = view.type === "doc" && view.docId === d.doc_id;
                         return (

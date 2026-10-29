@@ -24,6 +24,7 @@ import "./App.css";
 // 블록 에디터(BlockNote)는 무거워서 공동 노트를 열 때만 불러온다
 const GroupNotePage = lazy(() => import("./components/GroupNotePage"));
 const NotePage = lazy(() => import("./components/NotePage"));
+const PlannerPage = lazy(() => import("./components/planner/PlannerPage"));
 
 // 같은 파일명이 여러 번 업로드된 경우 가장 최신 1개만 유지
 const dedupDocs = (docs) => {
@@ -325,6 +326,19 @@ export default function App() {
     } catch (err) { setError(err.message); }
   }
 
+  // 플래너 할 일에 연결된 자료·노트 열기
+  function openPlannerLink(t) {
+    const gid = view.type === "planner" ? view.groupId : null;
+    if (t.link_type === "doc") {
+      if (gid) setView({ type: "doc", docId: t.link_id, filename: t.link_label, groupId: gid, tab: "summary" });
+      else selectDoc(t.link_id, t.link_label, "summary");
+    } else if (t.link_type === "gnote") {
+      setView({ type: "gnote", groupId: gid || Object.keys(groupData).find(g => groupData[g]?.notes?.some(n => n.id === t.link_id)), noteId: t.link_id });
+    } else if (t.link_type === "note") {
+      setView({ type: "note", noteId: t.link_id });
+    }
+  }
+
   function selectDoc(id, name, targetTab = "summary") {
     setPreJoined(null);
     setView({ type: "doc", docId: id, filename: name, tab: targetTab });
@@ -470,6 +484,7 @@ export default function App() {
   const groupCrumb = group ? [["👥", group.detail.name]] : [];
   const crumbs = view.type === "home" ? [["🏠", "홈"]]
     : view.type === "stats" ? [["📊", "학습 통계"]]
+    : view.type === "planner" ? (view.groupId ? [...groupCrumb, ["📅", "스터디 플래너"]] : [["📅", "개인 플래너"]])
     : view.type === "settings" ? [["⚙️", "설정"]]
     : view.type === "group-start" ? [["👥", "그룹 스터디"]]
     : view.type === "group" ? groupCrumb
@@ -577,7 +592,7 @@ export default function App() {
           />
         )}
 
-        <div className="page" style={view.type === "chat" ? { display: "none" } : undefined}>
+        <div className={`page ${view.type === "planner" ? "page--wide" : ""}`} style={view.type === "chat" ? { display: "none" } : undefined}>
           {serverWaking && (
             <div className="callout callout--amber">
               <div className="spinner spinner-sm" />
@@ -643,6 +658,18 @@ export default function App() {
             </>
           )}
 
+          {view.type === "planner" && (
+            <Suspense fallback={<div className="loading-wrap"><div className="spinner" /></div>}>
+              <PlannerPage
+                key={view.groupId || "mine"}
+                user={user}
+                groupId={view.groupId || null}
+                groupName={view.groupId ? group?.detail?.name : null}
+                onOpenLink={openPlannerLink}
+              />
+            </Suspense>
+          )}
+
           {view.type === "stats" && (
             <>
               <div className="page-icon">📊</div>
@@ -681,6 +708,7 @@ export default function App() {
               quiz={groupQuiz[groupId]}
               onJoinQuiz={(info) => joinGroupQuiz(groupId, info)}
               onReload={() => loadGroup(groupId)}
+              onOpenPlanner={() => setView({ type: "planner", groupId })}
             />
           ) : <div className="loading-wrap"><div className="spinner" /></div>)}
 
