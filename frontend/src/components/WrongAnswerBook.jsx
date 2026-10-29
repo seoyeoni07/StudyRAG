@@ -164,11 +164,6 @@ export default function WrongAnswerBook({ docId, refreshKey = 0, onCountLoaded, 
                     {explaining === item.id ? "AI 해설 생성 중…" : "🤖 AI 해설 받기"}
                   </button>
               }
-              {item.reviewed && item.next_review && (
-                <p className="next-review">
-                  다음 복습일: {new Date(item.next_review).toLocaleDateString("ko-KR")}
-                </p>
-              )}
             </div>
           ));
       })()}
