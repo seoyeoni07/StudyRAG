@@ -172,6 +172,44 @@ def get_session_detail(session_id: str, db: Session = Depends(get_db)):
     ]
 
 
+@router.post("/wrong-answers/{item_id}/explain")
+async def explain_wrong_answer(item_id: int, db: Session = Depends(get_db)):
+    """RAG + LLM으로 오답 해설 생성 후 저장."""
+    item = db.get(WrongAnswer, item_id)
+    if not item:
+        raise HTTPException(404, "항목을 찾을 수 없습니다.")
+
+    from ..core.rag import get_vectorstore, _llm
+    from langchain_core.output_parsers import StrOutputParser
+
+    # 관련 컨텍스트 검색
+    context = ""
+    try:
+        vs = get_vectorstore(item.doc_id)
+        docs = vs.as_retriever(search_kwargs={"k": 3}).invoke(item.question)
+        context = "\n".join(d.page_content[:400] for d in docs)
+    except Exception:
+        pass
+
+    prompt = (
+        f"문제: {item.question}\n"
+        f"정답: {item.correct_answer}\n"
+        f"학생 답변: {item.user_answer or '(미입력)'}\n"
+        + (f"참고 자료:\n{context[:1200]}\n" if context else "")
+        + "\n학생이 왜 틀렸는지 설명하고 올바른 개념을 3~4문장으로 친절하게 한국어로 해설해주세요."
+    )
+
+    try:
+        result = await asyncio.to_thread(_llm().invoke, prompt)
+        explanation = result.content.strip()
+    except Exception:
+        explanation = f"정답은 '{item.correct_answer}'입니다. 관련 내용을 다시 복습해보세요."
+
+    item.explanation = explanation
+    db.commit()
+    return {"explanation": explanation}
+
+
 @router.patch("/wrong-answers/{item_id}/reviewed")
 def toggle_reviewed(item_id: int, db: Session = Depends(get_db)):
     item = db.get(WrongAnswer, item_id)

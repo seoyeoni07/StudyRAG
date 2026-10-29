@@ -14,6 +14,7 @@ export default function WrongAnswerBook({ docId, onCountLoaded, onGoToQuiz }) {
   const [expandedSession, setExpandedSession] = useState(null);
   const [sessionDetail, setSessionDetail] = useState({});
   const [detailLoading, setDetailLoading] = useState(false);
+  const [explaining, setExplaining] = useState(null); // item id
 
   useEffect(() => {
     Promise.all([
@@ -52,6 +53,15 @@ export default function WrongAnswerBook({ docId, onCountLoaded, onGoToQuiz }) {
       );
     }
     return result;
+  }
+
+  async function aiExplain(item) {
+    setExplaining(item.id);
+    try {
+      const data = await apiFetch(`/quiz/wrong-answers/${item.id}/explain`, { method: "POST" });
+      setItems(prev => prev.map(it => it.id === item.id ? { ...it, explanation: data.explanation } : it));
+    } catch (err) { setError(err.message); }
+    finally { setExplaining(null); }
   }
 
   async function toggleSession(session_id) {
@@ -145,7 +155,14 @@ export default function WrongAnswerBook({ docId, onCountLoaded, onGoToQuiz }) {
               </div>
               <p className="wrong-ans">내 답변: {item.user_answer || "(미입력)"}</p>
               <p className="correct-ans">정답: {item.correct_answer}</p>
-              <p className="explanation">{item.explanation}</p>
+              {item.explanation
+                ? <p className="explanation">{item.explanation}</p>
+                : <button className="btn-secondary btn-sm" style={{ marginTop: 4, fontSize: 12 }}
+                    disabled={explaining === item.id}
+                    onClick={() => aiExplain(item)}>
+                    {explaining === item.id ? "AI 해설 생성 중…" : "🤖 AI 해설 받기"}
+                  </button>
+              }
               {item.reviewed && item.next_review && (
                 <p className="next-review">
                   다음 복습일: {new Date(item.next_review).toLocaleDateString("ko-KR")}
