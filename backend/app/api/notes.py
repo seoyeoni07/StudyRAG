@@ -205,6 +205,49 @@ def get_image(image_id: str, db: Session = Depends(get_db)):
                     headers={"Cache-Control": "public, max-age=31536000, immutable"})
 
 
+_MAX_FILE_BYTES = 10 * 1024 * 1024
+# 브라우저에서 바로 열어도 안전한 형식만 inline — 나머지(HTML, SVG 등)는 스크립트 실행을 막기 위해 다운로드로
+_INLINE_PREFIXES = ("image/png", "image/jpeg", "image/gif", "image/webp", "application/pdf", "audio/", "video/", "text/plain")
+
+
+@router.post("/files")
+async def upload_file(
+    file: UploadFile = File(...),
+    x_user_id: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    """노트 블록 에디터의 파일·이미지·영상·오디오 첨부. 10MB까지."""
+    user_id = _require_user(x_user_id)
+    data = await file.read(_MAX_FILE_BYTES + 1)
+    if len(data) > _MAX_FILE_BYTES:
+        raise HTTPException(413, "첨부파일은 10MB 이하만 올릴 수 있습니다.")
+    if not data:
+        raise HTTPException(400, "빈 파일입니다.")
+    ct = (file.content_type or "application/octet-stream")[:128]
+    name = (file.filename or "file")[:256]
+    f = NoteImage(id=str(uuid.uuid4()), user_id=user_id, content_type=ct, filename=name, data=data)
+    db.add(f)
+    db.commit()
+    return {"id": f.id, "url": f"/notes/files/{f.id}", "name": name, "content_type": ct, "size": len(data)}
+
+
+@router.get("/files/{file_id}")
+def get_file(file_id: str, db: Session = Depends(get_db)):
+    # <a>/<img> 태그는 헤더를 못 보내므로 추측 불가능한 UUID 주소로만 보호한다
+    f = db.query(NoteImage).filter(NoteImage.id == file_id).first()
+    if not f:
+        raise HTTPException(404, "파일을 찾을 수 없습니다.")
+    from urllib.parse import quote
+    inline = f.content_type.startswith(_INLINE_PREFIXES)
+    name = quote(f.filename or "file")
+    return Response(content=f.data, media_type=f.content_type if inline else "application/octet-stream",
+                    headers={
+                        "Content-Disposition": f"{'inline' if inline else 'attachment'}; filename*=UTF-8''{name}",
+                        "X-Content-Type-Options": "nosniff",
+                        "Cache-Control": "public, max-age=31536000, immutable",
+                    })
+
+
 @router.get("/search")
 def search_notes(q: str = "", x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
     user_id = _require_user(x_user_id)
@@ -364,6 +407,7 @@ def unshare_note(note_id: str, target_uid: str, x_user_id: str | None = Header(d
 class YdocSave(BaseModel):
     update: str              # base64 Yjs 상태 (Y.encodeStateAsUpdate)
     title: str | None = None
+    content: str | None = None  # 에디터 내용을 마크다운으로 — 노트 검색·미리보기용
 
 
 @router.get("/{note_id}/ydoc")
@@ -373,7 +417,9 @@ def get_ydoc(
     db: Session = Depends(get_db),
 ):
     note = _get_owned(db, note_id, _require_user(x_user_id))
-    return {**_to_dict(note, with_content=False), "group_id": note.group_id, "user_id": note.user_id, "ydoc": note.ydoc}
+    return {**_to_dict(note, with_content=False), "group_id": note.group_id, "user_id": note.user_id, "ydoc": note.ydoc,
+            # 아직 블록 에디터로 옮기기 전인 예전 마크다운 노트 — 에디터가 처음 열 때 블록으로 변환한다
+            "legacy_markdown": note.content if not note.ydoc else None}
 
 
 @router.put("/{note_id}/ydoc")
@@ -391,11 +437,13 @@ def save_ydoc(
         raise HTTPException(400, f"노트 상태를 합칠 수 없습니다: {e}")
     if body.title is not None:
         note.title = body.title[:256]
+    if body.content is not None:
+        note.content = body.content
     note.last_edited_by = user_id
     note.updated_at = datetime.utcnow()
     _maybe_save_version(db, note, user_id)
     db.commit()
-    return {"ok": True, "updated_at": note.updated_at.isoformat()}
+    return {"ok": True, "updated_at": note.updated_at.isoformat(), **_to_dict(note, with_content=False)}
 
 
 @router.get("/{note_id}/versions")
@@ -411,6 +459,19 @@ def list_versions(note_id: str, x_user_id: str | None = Header(default=None), db
         .all()
     )
     return [{"id": r.id, "title": r.title, "user_id": r.user_id, "created_at": r.created_at.isoformat()} for r in rows]
+
+
+@router.get("/{note_id}/versions/{version_id}")
+def get_version(note_id: str, version_id: int, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    user_id = _require_user(x_user_id)
+    note = _get_owned(db, note_id, user_id)
+    if not _can_see_versions(note, user_id, db):
+        raise HTTPException(403, "버전 기록을 볼 권한이 없습니다.")
+    ver = db.query(NoteVersion).filter(NoteVersion.id == version_id, NoteVersion.note_id == note_id).first()
+    if not ver:
+        raise HTTPException(404, "버전을 찾을 수 없습니다.")
+    return {"id": ver.id, "title": ver.title, "content": ver.content, "ydoc": ver.ydoc,
+            "created_at": ver.created_at.isoformat()}
 
 
 @router.post("/{note_id}/versions/{version_id}/restore")

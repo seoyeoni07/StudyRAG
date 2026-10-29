@@ -13,7 +13,6 @@ import StatsSection from "./components/StatsSection";
 import SettingsPage from "./components/SettingsPage";
 import LoginPage from "./components/LoginPage";
 import Sidebar, { tabsFor } from "./components/Sidebar";
-import NotePage from "./components/NotePage";
 import GroupHome, { GroupStart, timeAgo as groupTimeAgo } from "./components/GroupHome";
 import ChatApp from "./components/ChatApp";
 import { useGroupChannels } from "./realtime/useGroupChannels";
@@ -22,6 +21,7 @@ import "./App.css";
 
 // 블록 에디터(BlockNote)는 무거워서 공동 노트를 열 때만 불러온다
 const GroupNotePage = lazy(() => import("./components/GroupNotePage"));
+const NotePage = lazy(() => import("./components/NotePage"));
 
 // 같은 파일명이 여러 번 업로드된 경우 가장 최신 1개만 유지
 const dedupDocs = (docs) => {
@@ -634,15 +634,23 @@ export default function App() {
           )}
 
           {view.type === "note" && (
+            <Suspense fallback={<div className="loading-wrap"><div className="spinner" /></div>}>
             <NotePage
               key={view.noteId}
               noteId={view.noteId}
               user={user}
               pastDocs={pastDocs}
-              onChanged={(saved) => setNotes(prev => [{ ...saved, content: undefined }, ...prev.filter(n => n.id !== saved.id)])}
+              onChanged={(saved) => {
+                // 내 노트 목록만 갱신 (공유받은 노트가 내 목록에 끼어들지 않게)
+                if (saved?.id && saved.user_id === user.uid) {
+                  const { ok: _ok, content: _c, ...meta } = saved;
+                  setNotes(prev => [meta, ...prev.filter(n => n.id !== saved.id)]);
+                }
+              }}
               onDeleted={(id) => { setNotes(prev => prev.filter(n => n.id !== id)); setView({ type: "home" }); }}
               onOpenDoc={(id, name) => selectDoc(id, name, "summary")}
             />
+            </Suspense>
           )}
 
           {view.type === "doc" && (

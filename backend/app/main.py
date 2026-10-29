@@ -38,6 +38,8 @@ async def startup():
         "ALTER TABLE documents ADD COLUMN IF NOT EXISTS group_id VARCHAR(36)",
         "ALTER TABLE documents ADD COLUMN IF NOT EXISTS status VARCHAR(16) NOT NULL DEFAULT 'done'",
         "ALTER TABLE documents ADD COLUMN IF NOT EXISTS error TEXT",
+        "ALTER TABLE note_images ADD COLUMN IF NOT EXISTS filename VARCHAR(256)",
+        "ALTER TABLE note_images ALTER COLUMN content_type TYPE VARCHAR(128)",
         # 재시작으로 끊긴 백그라운드 인식은 실패로 돌려서 '다시 시도'할 수 있게 한다
         "UPDATE documents SET status = 'failed', error = '서버가 다시 시작되어 인식이 중단됐어요. 다시 시도해주세요.' WHERE status = 'processing'",
         "ALTER TABLE notes ADD COLUMN IF NOT EXISTS group_id VARCHAR(36)",

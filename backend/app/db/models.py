@@ -205,11 +205,12 @@ class NoteShare(Base):
 
 
 class NoteImage(Base):
-    """노트에 넣은 이미지. Render 디스크는 재배포 때 지워지므로 DB에 저장한다."""
+    """노트에 넣은 이미지·첨부파일. Render 디스크는 재배포 때 지워지므로 DB에 저장한다."""
     __tablename__ = "note_images"
     id = Column(String(36), primary_key=True)
     user_id = Column(String(128), nullable=False, index=True)
-    content_type = Column(String(64), nullable=False)
+    content_type = Column(String(128), nullable=False)
+    filename = Column(String(256), nullable=True)
     data = Column(LargeBinary, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
