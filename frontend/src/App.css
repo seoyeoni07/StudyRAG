@@ -151,6 +151,12 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 .chatapp-list-header .sb-add { opacity: 1; }
 .sb-add:hover { background: var(--hover-strong); color: var(--text-2); }
 .sb-empty { font-size: 13px; color: var(--text-4); padding: 4px 10px; }
+.sb-badge {
+  margin-left: auto; min-width: 18px; height: 18px; border-radius: 9px;
+  background: #e53e3e; color: #fff; font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; padding: 0 5px;
+}
+.sb-streak { font-size: 12px; color: var(--text-3); white-space: nowrap; }
 
 .sb-footer {
   display: flex; align-items: center; gap: 8px;
@@ -1450,6 +1456,24 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 .quiz-hist-rank { width: 18px; color: var(--text-4); font-size: 12px; text-align: right; }
 .quiz-hist-nick { flex: 1; color: var(--text-1); }
 .quiz-hist-score { font-size: 12px; color: var(--text-3); }
+
+/* ── 연속 학습일 배너 ─────────────────────────────────────────── */
+.streak-banner {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; margin-bottom: 20px;
+  background: linear-gradient(135deg, #fff7ed, #fef3c7);
+  border: 1px solid #fcd34d; border-radius: 12px;
+  font-size: 15px; color: var(--text-1);
+}
+@media (prefers-color-scheme: dark) {
+  .streak-banner { background: linear-gradient(135deg, #2d1a00, #2d2500); border-color: #92400e; }
+}
+.streak-fire { font-size: 24px; }
+.streak-badge {
+  margin-left: auto; padding: 2px 10px; border-radius: 12px;
+  background: #f59e0b; color: #fff; font-size: 12px; font-weight: 700;
+}
+.streak-badge--gold { background: #b45309; }
 
 /* ── ChatApp ──────────────────────────────────────────────────── */
 .chatapp {

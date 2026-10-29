@@ -27,6 +27,7 @@ export default function Sidebar({
   onNewNote, onUpload, uploading, onLogout, open, onClose,
   groups = [], groupData = {}, online = {}, onNewGroupNote,
   sharedNotes = [], onOpenSharedNote,
+  dmUnread = 0, streak = 0,
 }) {
   const [expanded, setExpanded] = useState({});
   const [docsOpen, setDocsOpen] = useState(true);
@@ -84,6 +85,7 @@ export default function Sidebar({
           </button>
           <button className={`sb-item ${view.type === "chat" ? "active" : ""}`} onClick={() => go({ type: "chat" })}>
             <span className="sb-icon">💬</span><span className="sb-label">채팅</span>
+            {dmUnread > 0 && <span className="sb-badge">{dmUnread > 99 ? "99+" : dmUnread}</span>}
           </button>
           <button className={`sb-item ${view.type === "settings" ? "active" : ""}`} onClick={() => go({ type: "settings" })}>
             <span className="sb-icon">⚙️</span><span className="sb-label">설정</span>
@@ -303,6 +305,7 @@ export default function Sidebar({
         </nav>
 
         <div className="sb-footer">
+          {streak > 0 && <span className="sb-streak" title="연속 학습일">🔥 {streak}일</span>}
           <span className="sb-user" title={user.email}>{user.email || name}</span>
           <button className="sb-logout" onClick={onLogout}>로그아웃</button>
         </div>

@@ -56,6 +56,13 @@ function DmChat({ roomId, other, me, onBack }) {
       });
       setMessages(prev => prev ? [...prev, saved] : [saved]);
       channelRef.current?.send({ type: "broadcast", event: "dm-msg", payload: saved }).catch(() => {});
+      // 상대방 inbox 알림
+      if (supabase && other?.uid) {
+        supabase.channel(`inbox:${other.uid}`).send({
+          type: "broadcast", event: "dm-notif",
+          payload: { from: myName, content, room_id: roomId },
+        }).catch(() => {});
+      }
     } catch { setText(content); }
     finally { setSending(false); }
   }

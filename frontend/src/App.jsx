@@ -17,6 +17,7 @@ import NotePage from "./components/NotePage";
 import GroupHome, { GroupStart, timeAgo as groupTimeAgo } from "./components/GroupHome";
 import ChatApp from "./components/ChatApp";
 import { useGroupChannels } from "./realtime/useGroupChannels";
+import { supabase } from "./supabase";
 import "./App.css";
 
 // 블록 에디터(BlockNote)는 무거워서 공동 노트를 열 때만 불러온다
@@ -60,6 +61,8 @@ export default function App() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [reviewDue, setReviewDue] = useState(0);
   const [sharedNotes, setSharedNotes] = useState([]);
+  const [dmUnread, setDmUnread] = useState(0);
+  const [streak, setStreak] = useState(0);
 
   const loadGroup = useCallback(async (id) => {
     try {
@@ -110,6 +113,28 @@ export default function App() {
   useEffect(() => {
     groups.forEach(g => refreshName(g.id));
   }, [groupData, groups, refreshName]);
+
+  // 전역 DM inbox 구독 — 채팅창 밖에서도 새 메시지 알림
+  useEffect(() => {
+    if (!supabase || !user?.uid) return;
+    const ch = supabase.channel(`inbox:${user.uid}`, { config: { broadcast: { self: false } } });
+    ch.on("broadcast", { event: "dm-notif" }, ({ payload }) => {
+      setDmUnread(n => n + 1);
+      setToast(`💬 ${payload.from}: ${payload.content.slice(0, 40)}`);
+    }).subscribe();
+    return () => supabase.removeChannel(ch);
+  }, [user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 채팅 뷰 진입 시 미읽음 초기화
+  useEffect(() => {
+    if (view.type === "chat") setDmUnread(0);
+  }, [view.type]);
+
+  // 연속 학습일 로드
+  useEffect(() => {
+    if (!user?.uid) return;
+    apiFetch("/users/streak").then(d => setStreak(d.streak ?? 0)).catch(() => {});
+  }, [user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 알림창: 열 때가 아니라 닫을 때 읽음 처리 — 열자마자 지우면 어떤 게 새 알림인지 안 보인다
   const closeNotif = () => {
@@ -413,6 +438,8 @@ export default function App() {
         onNewGroupNote={createGroupNote}
         sharedNotes={sharedNotes}
         onOpenSharedNote={(noteId) => setView({ type: "note", noteId })}
+        dmUnread={dmUnread}
+        streak={streak}
       />
 
       <div className="main">
@@ -504,6 +531,15 @@ export default function App() {
             <>
               <div className="page-icon">🏠</div>
               <h1 className="page-title">{greeting}{displayName ? `, ${displayName}님` : ""}</h1>
+
+              {streak > 0 && (
+                <div className="streak-banner">
+                  <span className="streak-fire">🔥</span>
+                  <span><strong>{streak}일</strong> 연속 학습 중!</span>
+                  {streak >= 7 && <span className="streak-badge">주간 달성</span>}
+                  {streak >= 30 && <span className="streak-badge streak-badge--gold">월간 달성</span>}
+                </div>
+              )}
 
               <DashboardHome
                 onFileAccepted={handleFilesAccepted}

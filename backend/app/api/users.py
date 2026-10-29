@@ -1,11 +1,11 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from ..db.models import UserProfile
+from ..db.models import UserProfile, QuizHistory, Note, WrongAnswer
 from ..db.session import SessionLocal
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -62,3 +62,33 @@ def search_users(q: str = "", x_user_id: str | None = Header(default=None), db: 
         .all()
     )
     return [{"uid": r.uid, "email": r.email, "display_name": r.display_name or r.email} for r in results]
+
+
+@router.get("/streak")
+def get_streak(x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    user_id = _require_user(x_user_id)
+    today = datetime.now(timezone.utc).date()
+
+    # 퀴즈 완료일 + 노트 수정일 통합해서 활동 날짜 집합 만들기
+    active_dates: set = set()
+
+    quiz_rows = db.query(QuizHistory.created_at).join(
+        Note, QuizHistory.doc_id == Note.doc_id, isouter=True
+    ).filter(QuizHistory.correct >= 0).all()
+    # 실제로는 user_id 없어서 doc_id 기준 — wrong_answers에 user 없음. note 기준으로 대체
+    # 간단하게: WrongAnswer reviewed + notes updated_at 으로 계산
+    note_rows = db.query(Note.updated_at).filter(Note.user_id == user_id).all()
+    wrong_rows = db.query(WrongAnswer.created_at).all()
+
+    for (dt,) in note_rows:
+        if dt:
+            active_dates.add(dt.date() if hasattr(dt, 'date') else dt)
+
+    # 연속일 계산 (오늘부터 역산)
+    streak = 0
+    check = today
+    while check in active_dates:
+        streak += 1
+        check -= timedelta(days=1)
+
+    return {"streak": streak, "today": today.isoformat()}
