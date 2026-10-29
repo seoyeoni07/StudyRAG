@@ -37,6 +37,7 @@ export default function Sidebar({
   const searchTimer = useRef(null);
   const [docSearch, setDocSearch] = useState("");
   const [tagFilter, setTagFilter] = useState("");
+  const [groupSearch, setGroupSearch] = useState("");
   const inGroup = (id) => view.groupId === id;
   const isGroupOpen = (id) => expanded[`g:${id}`] ?? inGroup(id);
   const name = user.displayName || user.email?.split("@")[0] || "나";
@@ -100,7 +101,50 @@ export default function Sidebar({
               <button className={`sb-item sb-muted ${view.type === "group-start" ? "active" : ""}`} onClick={() => go({ type: "group-start" })}>
                 <span className="sb-icon">＋</span><span className="sb-label">그룹 만들기·참가</span>
               </button>
-            ) : groups.map(g => {
+            ) : (
+              <>
+                <div className="sb-search-wrap">
+                  <input className="sb-search-input" value={groupSearch} placeholder="그룹 자료·노트 검색…"
+                    onChange={e => setGroupSearch(e.target.value)} />
+                  {groupSearch && <button className="sb-search-clear" onClick={() => setGroupSearch("")}>×</button>}
+                </div>
+                {groupSearch ? (() => {
+                  const q = groupSearch.toLowerCase();
+                  const hits = [];
+                  groups.forEach(g => {
+                    const data = groupData[g.id] || {};
+                    (data.docs || []).forEach(d => {
+                      if (d.filename.toLowerCase().includes(q))
+                        hits.push({ kind: "doc", g, d });
+                    });
+                    (data.notes || []).forEach(n => {
+                      if ((n.title || "").toLowerCase().includes(q))
+                        hits.push({ kind: "note", g, n });
+                    });
+                  });
+                  return hits.length === 0
+                    ? <p className="sb-empty">검색 결과 없음</p>
+                    : hits.map(h => h.kind === "doc" ? (
+                        <button key={`d:${h.d.doc_id}`}
+                          className={`sb-item ${view.type === "doc" && view.docId === h.d.doc_id ? "active" : ""}`}
+                          title={`${h.d.filename} · ${h.g.name}`}
+                          onClick={() => go({ type: "doc", docId: h.d.doc_id, filename: h.d.filename, groupId: h.g.id, tab: "summary" })}>
+                          <span className="sb-icon">{h.d.status === "processing" ? "⏳" : h.d.status === "failed" ? "⚠️" : "📄"}</span>
+                          <span className="sb-label">{h.d.filename.replace(/\.pdf$/i, "")}</span>
+                          <span className="sb-online">{h.g.name}</span>
+                        </button>
+                      ) : (
+                        <button key={`n:${h.n.id}`}
+                          className={`sb-item ${view.type === "gnote" && view.noteId === h.n.id ? "active" : ""}`}
+                          title={`${h.n.title || "제목 없음"} · ${h.g.name}`}
+                          onClick={() => go({ type: "gnote", groupId: h.g.id, noteId: h.n.id })}>
+                          <span className="sb-icon">{h.n.icon || "📄"}</span>
+                          <span className="sb-label">{h.n.title || "제목 없음"}</span>
+                          <span className="sb-online">{h.g.name}</span>
+                        </button>
+                      )
+                    );
+                })() : groups.map(g => {
               const data = groupData[g.id] || {};
               // 지금 접속 중인 인원 (나 포함) — 그룹 화면의 "접속 n/m"과 같은 기준
               const onlineIds = new Set((online[g.id] || []).map(o => o.user_id));
@@ -141,7 +185,9 @@ export default function Sidebar({
                   )}
                 </div>
               );
-            }))}
+            })}
+              </>
+            ))}
           </div>
 
           {/* ── 노트 ── */}
