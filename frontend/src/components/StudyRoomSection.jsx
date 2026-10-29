@@ -175,22 +175,28 @@ export default function StudyRoomSection({ docId, userId, groupId, preJoined, de
             <p className="room-block-desc">현재 강의자료로 친구들과 함께 퀴즈를 풀어보세요.</p>
             <button className="btn-primary" onClick={handleCreate} disabled={!nickname.trim()}>방 만들기</button>
           </div>
-          <div className="room-divider" />
-          <div className="room-join-block">
-            <h4 className="room-block-title">방 참가</h4>
-            {groupId && groupRooms.length > 0 ? (
+          {groupId ? (
+            groupRooms.length > 0 && (
               <>
-                <p className="room-block-desc">그룹 내 열려 있는 방에 바로 참가하세요.</p>
-                {groupRooms.map(r => (
-                  <button key={r.room_id} className="btn-secondary" style={{ marginBottom: 6, width: "100%" }}
-                    onClick={() => handleJoinById(r.room_id)} disabled={!nickname.trim()}>
-                    {r.status === "active" ? "🟢 진행 중" : "⏳ 대기 중"} — 바로 참가하기
-                  </button>
-                ))}
+                <div className="room-divider" />
+                <div className="room-join-block">
+                  <h4 className="room-block-title">열린 방 참가</h4>
+                  <p className="room-block-desc">그룹 내 열려 있는 방에 바로 참가하세요.</p>
+                  {groupRooms.map(r => (
+                    <button key={r.room_id} className="btn-secondary" style={{ marginBottom: 6, width: "100%" }}
+                      onClick={() => handleJoinById(r.room_id)} disabled={!nickname.trim()}>
+                      {r.status === "active" ? "🟢 진행 중" : "⏳ 대기 중"} — 바로 참가하기
+                    </button>
+                  ))}
+                </div>
               </>
-            ) : (
-              <>
-                <p className="room-block-desc">{groupId ? "아직 열린 방이 없어요. 코드로 참가하거나 방을 만드세요." : "친구에게 받은 6자리 코드를 입력하세요."}</p>
+            )
+          ) : (
+            <>
+              <div className="room-divider" />
+              <div className="room-join-block">
+                <h4 className="room-block-title">방 참가</h4>
+                <p className="room-block-desc">친구에게 받은 6자리 코드를 입력하세요.</p>
                 <input
                   className="input" placeholder="방 코드 (예: AB12CD)" value={joinCode}
                   onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
@@ -199,9 +205,9 @@ export default function StudyRoomSection({ docId, userId, groupId, preJoined, de
                 <button className="btn-secondary" onClick={handleJoin} disabled={!nickname.trim() || joinCode.length < 4}>
                   참가하기
                 </button>
-              </>
-            )}
-          </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     );
