@@ -13,6 +13,7 @@ import StatsSection from "./components/StatsSection";
 import SettingsPage from "./components/SettingsPage";
 import LoginPage from "./components/LoginPage";
 import Sidebar, { tabsFor } from "./components/Sidebar";
+import { ancestorsOf } from "./components/NoteTree";
 import GroupHome, { GroupStart, timeAgo as groupTimeAgo } from "./components/GroupHome";
 import ChatApp from "./components/ChatApp";
 import ChatWidget from "./components/chat/ChatWidget";
@@ -361,12 +362,12 @@ export default function App() {
     }
   }
 
-  async function createNote({ title = "", content = "", doc_id = null } = {}, open = true) {
+  async function createNote({ title = "", content = "", doc_id = null, parent_id = null } = {}, open = true) {
     try {
       const n = await apiFetch("/notes/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, content, doc_id, icon: "📝" }),
+        body: JSON.stringify({ title, content, doc_id, parent_id, icon: "📝" }),
       });
       setNotes(prev => [n, ...prev]);
       if (open) setView({ type: "note", noteId: n.id });
@@ -449,15 +450,55 @@ export default function App() {
     } catch (err) { setError(err.message); }
   }
 
-  async function createGroupNote(id) {
+  async function createGroupNote(id, parent_id = null) {
     try {
       const n = await apiFetch(`/groups/${id}/notes`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: "" }),
+        body: JSON.stringify({ title: "", parent_id }),
       });
       setGroupData(d => ({ ...d, [id]: { ...d[id], notes: [n, ...(d[id]?.notes || [])] } }));
       notify(id, "note-added", { note_id: n.id });
       setView({ type: "gnote", groupId: id, noteId: n.id });
+    } catch (err) { setError(err.message); }
+  }
+
+  // 사이드바 노트 ⋯ 메뉴: 하위 페이지·이름 바꾸기·즐겨찾기·복제·옮기기·삭제
+  async function noteAction(kind, n, extra) {
+    const gid = n.group_id || null;
+    if (kind === "add-child") return gid ? createGroupNote(gid, n.id) : createNote({ parent_id: n.id });
+    const patch = (fields) => apiFetch(`/notes/${n.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(fields),
+    });
+    const keepMeta = (saved) => {   // 목록 순서는 그대로 두고 내용만 바꾼다
+      const { ok: _ok, content: _c, ...meta } = saved;
+      setNotes(prev => prev.map(x => (x.id === n.id ? { ...x, ...meta } : x)));
+    };
+    try {
+      if (kind === "rename") {
+        const saved = await patch({ title: extra });
+        if (!gid) keepMeta(saved);
+        // 열려 있는 에디터 제목도 바로 바꾼다 (제목은 에디터의 공동 문서에 있음)
+        window.dispatchEvent(new CustomEvent("studyrag:note-title", { detail: { id: n.id, title: extra } }));
+      } else if (kind === "pin") {
+        keepMeta(await patch({ pinned: !n.pinned }));
+      } else if (kind === "move") {
+        const saved = await patch({ parent_id: extra });
+        if (!gid) keepMeta(saved);
+        setToast(extra ? "페이지를 옮겼어요" : "맨 위로 옮겼어요");
+      } else if (kind === "duplicate") {
+        const d = await apiFetch(`/notes/${n.id}/duplicate`, { method: "POST" });
+        if (!gid) setNotes(prev => [d, ...prev]);
+        setView(gid ? { type: "gnote", groupId: gid, noteId: d.id } : { type: "note", noteId: d.id });
+      } else if (kind === "delete") {
+        const r = await apiFetch(`/notes/${n.id}`, { method: "DELETE" });
+        const gone = new Set(r?.deleted || [n.id]);
+        if (!gid) setNotes(prev => prev.filter(x => !gone.has(x.id)));
+        if ((view.type === "note" || view.type === "gnote") && gone.has(view.noteId)) {
+          setView(gid ? { type: "group", groupId: gid } : { type: "home" });
+        }
+        setToast(gone.size > 1 ? `노트와 하위 페이지 ${gone.size - 1}개를 삭제했어요` : "노트를 삭제했어요");
+      }
+      if (gid) { await loadGroup(gid); notify(gid, "notes-changed"); }
     } catch (err) { setError(err.message); }
   }
 
@@ -471,7 +512,9 @@ export default function App() {
   const groupDoc = docId && groupId ? group?.docs?.find(d => d.doc_id === docId) : null;
   const currentDoc = docId ? (groupDoc || pastDocs.find(d => d.doc_id === docId) || { doc_id: docId, filename: view.filename }) : null;
   const groupNote = view.type === "gnote" ? group?.notes?.find(n => n.id === view.noteId) : null;
-  const currentNote = view.type === "note" ? notes.find(n => n.id === view.noteId) : null;
+  const currentNote = view.type === "note"
+    ? notes.find(n => n.id === view.noteId) || sharedNotes.find(n => n.id === view.noteId) : null;
+  const ownNote = view.type === "note" && notes.some(n => n.id === view.noteId);
   const docTabs = tabsFor(!!groupId);
   const currentTab = view.type === "doc" ? (docTabs.find(([k]) => k === view.tab) || docTabs[0]) : null;
   const myGroupName = group?.detail?.members?.find(m => m.user_id === user.uid)?.display_name || displayName;
@@ -489,12 +532,17 @@ export default function App() {
     : view.type === "settings" ? [["⚙️", "설정"]]
     : view.type === "group-start" ? [["👥", "그룹 스터디"]]
     : view.type === "group" ? groupCrumb
-    : view.type === "gnote" ? [...groupCrumb, [groupNote?.icon || "📄", groupNote?.title || "제목 없음"]]
+    : view.type === "gnote" ? [
+        ...groupCrumb.map(c => [...c, { type: "group", groupId }]),
+        ...ancestorsOf(view.noteId, group?.notes || []).map(a => [a.icon || "📄", a.title || "제목 없음", { type: "gnote", groupId, noteId: a.id }]),
+        [groupNote?.icon || "📄", groupNote?.title || "제목 없음"],
+      ]
     : view.type === "doc" ? [...(groupId ? groupCrumb : []), ["📄", currentDoc?.filename?.replace(/\.pdf$/i, "")], [currentTab?.[3], currentTab?.[1]]]
     : (() => {
         const linked = currentNote?.doc_id && pastDocs.find(d => d.doc_id === currentNote.doc_id);
         return [
-          ...(linked ? [["📄", linked.filename.replace(/\.pdf$/i, "")]] : [["📝", "내 노트"]]),
+          ...(linked ? [["📄", linked.filename.replace(/\.pdf$/i, ""), { type: "doc", docId: linked.doc_id, filename: linked.filename, tab: "summary" }]] : [["📝", "내 노트"]]),
+          ...ancestorsOf(view.noteId, notes).map(a => [a.icon || "📝", a.title || "제목 없음", { type: "note", noteId: a.id }]),
           [currentNote?.icon || "📝", currentNote?.title || "제목 없음"],
         ];
       })();
@@ -515,6 +563,7 @@ export default function App() {
         onOpenSharedNote={(noteId) => setView({ type: "note", noteId })}
         dmUnread={dmUnread}
         streak={streak}
+        onNoteAction={noteAction}
       />
 
       <div className="main">
@@ -530,11 +579,20 @@ export default function App() {
             </svg>
           </button>
           <nav className="breadcrumb" aria-label="현재 위치">
-            {crumbs.map(([icon, label], i) => (
+            {crumbs.map(([icon, label, to], i) => (
               <span key={i} className="crumb">
                 {i > 0 && <span className="crumb-sep">/</span>}
-                <span className="crumb-icon">{icon}</span>
-                <span className="crumb-label">{label}</span>
+                {to ? (
+                  <button className="crumb-link" onClick={() => setView(to)}>
+                    <span className="crumb-icon">{icon}</span>
+                    <span className="crumb-label">{label}</span>
+                  </button>
+                ) : (
+                  <>
+                    <span className="crumb-icon">{icon}</span>
+                    <span className="crumb-label">{label}</span>
+                  </>
+                )}
               </span>
             ))}
           </nav>
@@ -731,8 +789,12 @@ export default function App() {
               noteId={view.noteId}
               user={user}
               group={group?.detail}
+              subpages={(group?.notes || []).filter(n => n.parent_id === view.noteId)
+                .sort((a, b) => (a.created_at || "").localeCompare(b.created_at || ""))}
+              onOpenNote={(id) => setView({ type: "gnote", groupId, noteId: id })}
+              onAddSubpage={() => createGroupNote(groupId, view.noteId)}
               onSaved={() => loadGroup(groupId)}
-              onDeleted={() => { loadGroup(groupId); setView({ type: "group", groupId }); }}
+              onDeleted={() => { loadGroup(groupId); notify(groupId, "notes-changed"); setView({ type: "group", groupId }); }}
             />
             </Suspense>
           )}
@@ -751,7 +813,11 @@ export default function App() {
                   setNotes(prev => [meta, ...prev.filter(n => n.id !== saved.id)]);
                 }
               }}
-              onDeleted={(id) => { setNotes(prev => prev.filter(n => n.id !== id)); setView({ type: "home" }); }}
+              onDeleted={(id, ids) => { const gone = new Set(ids || [id]); setNotes(prev => prev.filter(n => !gone.has(n.id))); setView({ type: "home" }); }}
+              subpages={ownNote ? notes.filter(n => n.parent_id === view.noteId)
+                .sort((a, b) => (a.created_at || "").localeCompare(b.created_at || "")) : undefined}
+              onOpenNote={(id) => setView({ type: "note", noteId: id })}
+              onAddSubpage={() => createNote({ parent_id: view.noteId })}
               onOpenDoc={(id, name) => selectDoc(id, name, "summary")}
             />
             </Suspense>

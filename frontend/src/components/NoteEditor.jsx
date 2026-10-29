@@ -175,6 +175,13 @@ export default function NoteEditor({
     });
   }, [editor, doc, migrateMarkdown]);
 
+  // 사이드바에서 이름을 바꾸면 열려 있는 에디터 제목도 바꾼다 (같이 보는 사람에게도 전달됨)
+  useEffect(() => {
+    const fn = (e) => { if (e.detail?.id === noteId) doc.getMap("meta").set("title", e.detail.title); };
+    window.addEventListener("studyrag:note-title", fn);
+    return () => window.removeEventListener("studyrag:note-title", fn);
+  }, [doc, noteId]);
+
   // 제목: Y.Map("meta")로 공유
   useEffect(() => {
     const m = doc.getMap("meta");

@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../api";
 import NoteEditor, { useCollabDoc } from "./NoteEditor";
+import { SubPages } from "./NoteTree";
 
-export default function GroupNotePage({ noteId, user, group, onSaved, onDeleted }) {
+export default function GroupNotePage({ noteId, user, group, onSaved, onDeleted, subpages, onOpenNote, onAddSubpage }) {
   const { state, error } = useCollabDoc(noteId);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [delError, setDelError] = useState("");
@@ -51,6 +52,8 @@ export default function GroupNotePage({ noteId, user, group, onSaved, onDeleted 
         showVersions={showVersions && canSeeVersions} canRestore={canManage}
         onCloseVersions={() => setShowVersions(false)} />
 
+      <SubPages items={subpages || []} defaultIcon="📄" onOpen={id => onOpenNote?.(id)} onAdd={() => onAddSubpage?.()} />
+
       {delError && <div className="error-banner"><span>{delError}</span></div>}
       <div className="note-footer">
         {canSeeVersions && (
@@ -65,7 +68,9 @@ export default function GroupNotePage({ noteId, user, group, onSaved, onDeleted 
         {canManage && (
           confirmDelete ? (
             <>
-              <span className="note-footer-text">그룹 멤버 모두에게서 이 노트가 삭제돼요. 삭제할까요?</span>
+              <span className="note-footer-text">
+                그룹 멤버 모두에게서 이 노트{subpages?.length ? "와 하위 페이지가" : "가"} 삭제돼요. 삭제할까요?
+              </span>
               <button className="btn-danger" onClick={handleDelete}>삭제</button>
               <button className="btn-ghost" onClick={() => setConfirmDelete(false)}>취소</button>
             </>

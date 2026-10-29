@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { apiFetch } from "../api.js";
+import NoteTree, { isRoot } from "./NoteTree";
 
 export const DOC_TABS = [
   ["summary", "요약",       "AI가 강의 전체를 핵심만 정리해드립니다", "📋"],
@@ -27,7 +28,7 @@ export default function Sidebar({
   onNewNote, onUpload, uploading, onLogout, open, onClose, collapsed = false,
   groups = [], groupData = {}, online = {}, onNewGroupNote,
   sharedNotes = [], onOpenSharedNote,
-  dmUnread = 0, streak = 0,
+  dmUnread = 0, streak = 0, onNoteAction,
 }) {
   const [expanded, setExpanded] = useState({});
   const [docsOpen, setDocsOpen] = useState(true);
@@ -48,6 +49,12 @@ export default function Sidebar({
   const go = (v) => { onNavigate(v); onClose?.(); };
 
   const looseNotes = notes.filter(n => !n.doc_id || !pastDocs.some(d => d.doc_id === n.doc_id));
+  // 최상위 개인 노트 (하위 페이지는 상위 노트 아래에 보인다)
+  const rootNotes = looseNotes.filter(n => isRoot(n, notes));
+  const pinned = notes.filter(n => n.pinned);
+  const noteId = view.type === "note" ? view.noteId : null;
+  const openNote = (n) => go({ type: "note", noteId: n.id });
+  const treeProps = { expanded, setExpanded, onAction: (...a) => { onNoteAction?.(...a); }, allowPin: true };
 
   // 전체 태그 목록 (중복 제거)
   const allTags = [...new Set(looseNotes.flatMap(n => n.tags || []))];
@@ -98,6 +105,14 @@ export default function Sidebar({
               onChange={e => { if (e.target.files?.[0]) { onUpload([e.target.files[0]]); e.target.value = ""; onClose?.(); } }} />
             <span className="sb-icon">⬆️</span><span className="sb-label">{uploading ? "분석 중…" : "PDF 업로드"}</span>
           </label>
+
+          {/* ── 즐겨찾기 ── */}
+          {pinned.length > 0 && (
+            <div className="sb-section">
+              <div className="sb-section-head"><span className="sb-section-title">즐겨찾기</span></div>
+              <NoteTree {...treeProps} prefix="fav:" roots={pinned} all={notes} activeId={noteId} onOpen={openNote} />
+            </div>
+          )}
 
           {/* ── 그룹 스터디 ── */}
           <div className="sb-section">
@@ -153,13 +168,12 @@ export default function Sidebar({
                           </button>
                         );
                       })}
-                      {(data.notes || []).map(n => (
-                        <button key={n.id} className={`sb-item sb-child ${view.type === "gnote" && view.noteId === n.id ? "active" : ""}`}
-                          onClick={() => go({ type: "gnote", groupId: g.id, noteId: n.id })}>
-                          <span className="sb-icon">{n.icon || "📄"}</span>
-                          <span className="sb-label">{n.title || "제목 없음"}</span>
-                        </button>
-                      ))}
+                      <NoteTree prefix={`g:${g.id}:`} expanded={expanded} setExpanded={setExpanded} child defaultIcon="📄"
+                        roots={(data.notes || []).filter(n => isRoot(n, data.notes))} all={data.notes || []}
+                        activeId={view.type === "gnote" ? view.noteId : null}
+                        onOpen={(n) => go({ type: "gnote", groupId: g.id, noteId: n.id })}
+                        onAction={(kind, n, extra) => onNoteAction?.(kind, { ...n, group_id: g.id }, extra)}
+                        canDelete={(n) => n.created_by === user.uid || data.detail?.my_role === "owner"} />
                       <button className="sb-item sb-child sb-muted" onClick={() => { onNewGroupNote?.(g.id); onClose?.(); }}>
                         <span className="sb-icon">＋</span><span className="sb-label">공동 노트 추가</span>
                       </button>
@@ -197,7 +211,8 @@ export default function Sidebar({
                   </div>
                 )}
                 {(() => {
-                  const base = searchResults !== null ? searchResults : looseNotes;
+                  const searching = searchResults !== null || !!tagFilter;
+                  const base = searchResults !== null ? searchResults : searching ? looseNotes : rootNotes;
                   const list = tagFilter ? base.filter(n => (n.tags || []).includes(tagFilter)) : base;
                   if (list.length === 0 && !noteSearch) return (
                     <button className="sb-item sb-muted" onClick={() => { onNewNote(); onClose?.(); }}>
@@ -205,13 +220,8 @@ export default function Sidebar({
                     </button>
                   );
                   if (list.length === 0) return <p className="sb-empty">검색 결과 없음</p>;
-                  return list.map(n => (
-                    <button key={n.id} className={`sb-item ${view.type === "note" && view.noteId === n.id ? "active" : ""}`}
-                      onClick={() => go({ type: "note", noteId: n.id })}>
-                      <span className="sb-icon">{n.icon || "📝"}</span>
-                      <span className="sb-label">{n.title || "제목 없음"}</span>
-                    </button>
-                  ));
+                  // 검색·태그 필터 중엔 평평한 목록, 아니면 하위 페이지를 펼치는 트리
+                  return <NoteTree {...treeProps} roots={list} all={notes} flat={searching} activeId={noteId} onOpen={openNote} />;
                 })()}
               </>
             )}
@@ -290,13 +300,8 @@ export default function Sidebar({
                                 {key === "wrong" && !active && reviewDue > 0 && <span className="sb-badge sb-badge-due">{reviewDue}</span>}
                               </button>
                             ))}
-                            {docNotes.map(n => (
-                              <button key={n.id} className={`sb-item sb-child ${view.type === "note" && view.noteId === n.id ? "active" : ""}`}
-                                onClick={() => go({ type: "note", noteId: n.id })}>
-                                <span className="sb-icon">{n.icon || "📝"}</span>
-                                <span className="sb-label">{n.title || "제목 없음"}</span>
-                              </button>
-                            ))}
+                            <NoteTree {...treeProps} child roots={docNotes.filter(n => isRoot(n, notes))} all={notes}
+                              activeId={noteId} onOpen={openNote} />
                             <button className="sb-item sb-child sb-muted" onClick={() => { onNewNote(d.doc_id); onClose?.(); }}>
                               <span className="sb-icon">＋</span><span className="sb-label">이 자료에 노트 추가</span>
                             </button>

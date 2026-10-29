@@ -285,11 +285,12 @@ class GroupNoteCreate(BaseModel):
     title: str = ""
     icon: str | None = None
     doc_id: str | None = None
+    parent_id: str | None = None
 
 
 def group_note_dict(n: Note, names: dict[str, str]) -> dict:
     return {
-        "id": n.id, "group_id": n.group_id, "doc_id": n.doc_id,
+        "id": n.id, "group_id": n.group_id, "doc_id": n.doc_id, "parent_id": n.parent_id,
         "title": n.title, "icon": n.icon,
         "created_by": n.user_id, "creator_name": names.get(n.user_id, "나간 멤버"),
         "last_edited_by": n.last_edited_by,
@@ -415,9 +416,11 @@ def create_group_note(
 ):
     user_id = _require_user(x_user_id)
     require_member(db, group_id, user_id)
+    if body.parent_id and not db.query(Note).filter(Note.id == body.parent_id, Note.group_id == group_id).first():
+        raise HTTPException(400, "상위 페이지를 찾을 수 없습니다.")
     now = datetime.utcnow()
     n = Note(
-        id=str(uuid.uuid4()), user_id=user_id, group_id=group_id, doc_id=body.doc_id,
+        id=str(uuid.uuid4()), user_id=user_id, group_id=group_id, doc_id=body.doc_id, parent_id=body.parent_id,
         title=body.title[:256], icon=body.icon or "📄", content="",
         last_edited_by=user_id, created_at=now, updated_at=now,
     )

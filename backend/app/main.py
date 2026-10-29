@@ -97,6 +97,9 @@ async def startup():
         "ALTER TABLE study_groups ADD COLUMN IF NOT EXISTS announcement TEXT",
         "ALTER TABLE study_groups ADD COLUMN IF NOT EXISTS announcement_at TIMESTAMP",
         "ALTER TABLE notes ADD COLUMN IF NOT EXISTS tags TEXT",
+        "ALTER TABLE notes ADD COLUMN IF NOT EXISTS parent_id VARCHAR(36)",
+        "ALTER TABLE notes ADD COLUMN IF NOT EXISTS pinned BOOLEAN NOT NULL DEFAULT false",
+        "CREATE INDEX IF NOT EXISTS ix_notes_parent_id ON notes(parent_id)",
         "ALTER TABLE study_rooms ADD COLUMN IF NOT EXISTS group_id VARCHAR(36)",
         "CREATE INDEX IF NOT EXISTS ix_study_rooms_group_id ON study_rooms(group_id)",
         """CREATE TABLE IF NOT EXISTS dm_rooms (

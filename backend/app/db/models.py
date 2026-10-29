@@ -137,6 +137,8 @@ class Note(Base):
     ydoc = Column(Text, nullable=True)                         # 공동 노트의 Yjs 상태 (base64)
     last_edited_by = Column(String(128), nullable=True)
     versions_public = Column(Boolean, nullable=False, default=False, server_default="false")
+    parent_id = Column(String(36), nullable=True, index=True)  # 하위 페이지면 상위 노트 id
+    pinned = Column(Boolean, nullable=False, default=False, server_default="false")  # 즐겨찾기 (개인 노트)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
 

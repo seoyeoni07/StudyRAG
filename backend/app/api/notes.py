@@ -86,9 +86,55 @@ def _get_owned(db: Session, note_id: str, user_id: str) -> Note:
         return note
     if note.group_id and _is_member(db, note.group_id, user_id):
         return note
-    if not note.group_id and db.query(NoteShare).filter(NoteShare.note_id == note_id, NoteShare.shared_with == user_id).first():
+    if not note.group_id and _shared_via_ancestors(db, note, user_id):
         return note
     raise HTTPException(404, "노트를 찾을 수 없습니다.")
+
+
+def _shared_via_ancestors(db: Session, note: Note, user_id: str) -> bool:
+    """이 노트나 상위 페이지 중 하나라도 공유받았으면 볼 수 있다 (노션처럼 하위 페이지까지 공유)."""
+    cur, seen = note, set()
+    while cur and cur.id not in seen and len(seen) < 32:
+        seen.add(cur.id)
+        if db.query(NoteShare).filter(NoteShare.note_id == cur.id, NoteShare.shared_with == user_id).first():
+            return True
+        cur = db.query(Note).filter(Note.id == cur.parent_id).first() if cur.parent_id else None
+    return False
+
+
+def _descendant_ids(db: Session, note_id: str) -> list[str]:
+    """하위 페이지 전부 (자기 자신 제외)."""
+    out, frontier = [], [note_id]
+    while frontier and len(out) < 2000:
+        rows = [r.id for r in db.query(Note.id).filter(Note.parent_id.in_(frontier)).all()]
+        rows = [r for r in rows if r not in out and r != note_id]
+        out += rows
+        frontier = rows
+    return out
+
+
+def _check_parent(db: Session, note: Note | None, parent_id: str, user_id: str, group_id: str | None) -> Note:
+    """상위 페이지로 둘 수 있는지 — 같은 공간(같은 그룹 / 내 개인 노트)이고 자기 자신·하위 페이지가 아니어야 한다."""
+    parent = db.query(Note).filter(Note.id == parent_id).first()
+    if not parent or parent.group_id != group_id:
+        raise HTTPException(400, "상위 페이지를 찾을 수 없습니다.")
+    if not group_id and parent.user_id != user_id:
+        raise HTTPException(403, "내 노트 아래에만 하위 페이지를 둘 수 있습니다.")
+    if note and (parent.id == note.id or parent.id in _descendant_ids(db, note.id)):
+        raise HTTPException(400, "자기 자신이나 하위 페이지 안으로는 옮길 수 없습니다.")
+    return parent
+
+
+def _set_ydoc_title(stored_b64: str | None, title: str) -> str | None:
+    """에디터 제목은 Yjs 문서(meta.title)에 있으므로 사이드바에서 이름을 바꾸면 거기도 바꿔준다."""
+    if not stored_b64:
+        return stored_b64
+    from pycrdt import Doc, Map
+
+    doc = Doc()
+    doc.apply_update(base64.b64decode(stored_b64))
+    doc.get("meta", type=Map)["title"] = title
+    return base64.b64encode(doc.get_update()).decode()
 
 
 def _merge_ydoc(stored_b64: str | None, incoming_b64: str) -> str:
@@ -117,6 +163,9 @@ def _to_dict(n: Note, with_content: bool = True) -> dict:
         "title": n.title,
         "icon": n.icon,
         "tags": tags,
+        "parent_id": n.parent_id,
+        "group_id": n.group_id,
+        "pinned": bool(n.pinned),
         "versions_public": bool(n.versions_public),
         "created_at": n.created_at.isoformat() if n.created_at else None,
         "updated_at": n.updated_at.isoformat() if n.updated_at else None,
@@ -131,6 +180,7 @@ class NoteCreate(BaseModel):
     content: str = ""
     icon: str | None = None
     doc_id: str | None = None
+    parent_id: str | None = None
 
 
 class NoteUpdate(BaseModel):
@@ -140,6 +190,8 @@ class NoteUpdate(BaseModel):
     doc_id: str | None = None
     versions_public: bool | None = None
     tags: list[str] | None = None
+    parent_id: str | None = None   # null이면 최상위로
+    pinned: bool | None = None
 
 
 @router.get("/")
@@ -162,9 +214,11 @@ def create_note(
     db: Session = Depends(get_db),
 ):
     user_id = _require_user(x_user_id)
+    if body.parent_id:
+        _check_parent(db, None, body.parent_id, user_id, None)
     now = datetime.utcnow()
     note = Note(
-        id=str(uuid.uuid4()), user_id=user_id, doc_id=body.doc_id,
+        id=str(uuid.uuid4()), user_id=user_id, doc_id=body.doc_id, parent_id=body.parent_id,
         title=body.title[:256], content=body.content, icon=body.icon,
         created_at=now, updated_at=now,
     )
@@ -300,6 +354,17 @@ def update_note(
     content_changed = False
     if "title" in fields:
         note.title = (fields["title"] or "")[:256]
+        note.ydoc = _set_ydoc_title(note.ydoc, note.title)
+    if "parent_id" in fields:
+        if not note.group_id and note.user_id != user_id:
+            raise HTTPException(403, "본인 노트만 옮길 수 있습니다.")
+        if fields["parent_id"]:
+            _check_parent(db, note, fields["parent_id"], note.user_id, note.group_id)
+        note.parent_id = fields["parent_id"] or None
+    if "pinned" in fields and fields["pinned"] is not None:
+        if note.user_id != user_id:
+            raise HTTPException(403, "본인 노트만 즐겨찾기할 수 있습니다.")
+        note.pinned = fields["pinned"]
     if "content" in fields:
         note.content = fields["content"] or ""
         content_changed = True
@@ -347,9 +412,39 @@ def delete_note(
         # 개인 노트: 소유자만 삭제
         if note.user_id != user_id:
             raise HTTPException(403, "본인 노트만 삭제할 수 있습니다.")
-    db.delete(note)
+    # 하위 페이지도 함께 삭제
+    ids = [note.id, *_descendant_ids(db, note.id)]
+    db.query(NoteShare).filter(NoteShare.note_id.in_(ids)).delete(synchronize_session=False)
+    db.query(Note).filter(Note.id.in_(ids)).delete(synchronize_session=False)
     db.commit()
-    return {"ok": True}
+    return {"ok": True, "deleted": ids}
+
+
+@router.get("/{note_id}/children")
+def list_children(note_id: str, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    """하위 페이지 목록 (공유받은 노트의 하위 페이지도 볼 수 있다)."""
+    note = _get_owned(db, note_id, _require_user(x_user_id))
+    rows = db.query(Note).filter(Note.parent_id == note.id).order_by(Note.created_at).all()
+    return [_to_dict(n, with_content=False) for n in rows]
+
+
+@router.post("/{note_id}/duplicate")
+def duplicate_note(note_id: str, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    """노트 복제 — 같은 위치(같은 상위 페이지·그룹)에 '(사본)'으로. 하위 페이지는 복제하지 않는다."""
+    user_id = _require_user(x_user_id)
+    src = _get_owned(db, note_id, user_id)
+    if not src.group_id and src.user_id != user_id:
+        raise HTTPException(403, "본인 노트만 복제할 수 있습니다.")
+    now = datetime.utcnow()
+    title = f"{src.title or '제목 없음'} (사본)"[:256]
+    n = Note(
+        id=str(uuid.uuid4()), user_id=user_id, group_id=src.group_id, doc_id=src.doc_id, parent_id=src.parent_id,
+        title=title, icon=src.icon, content=src.content or "", tags=src.tags,
+        ydoc=_set_ydoc_title(src.ydoc, title), last_edited_by=user_id, created_at=now, updated_at=now,
+    )
+    db.add(n)
+    db.commit()
+    return _to_dict(n, with_content=False)
 
 
 # ── 노트 공유 ────────────────────────────────────────────
