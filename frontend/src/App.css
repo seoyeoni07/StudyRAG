@@ -1,49 +1,49 @@
 /* ─────────────────────────────────────────────
-   StudyRAG — Notion-style workspace
+   StudyRAG — Ink wash palette
    ───────────────────────────────────────────── */
 
 /* ── Tokens ───────────────────────────────── */
 :root {
-  --text-1:  #111827;
-  --text-2:  #374151;
-  --text-3:  #6b7280;
-  --text-4:  #9ca3af;
+  --text-1:  #4A4A4A;
+  --text-2:  #5e5e5e;
+  --text-3:  #8a8a8a;
+  --text-4:  #CBCBCB;
 
-  --primary:        #2563eb;
-  --primary-dark:   #1d4ed8;
-  --primary-deeper: #1e40af;
-  --primary-light:  rgba(37, 99, 235, .08);
-  --primary-muted:  rgba(37, 99, 235, .30);
+  --primary:        #6D8196;
+  --primary-dark:   #5c6e82;
+  --primary-deeper: #4d5e70;
+  --primary-light:  rgba(109, 129, 150, .12);
+  --primary-muted:  rgba(109, 129, 150, .35);
   --accent:         var(--primary);
 
-  --green:          #059669;
-  --green-bg:       #d1fae5;
-  --green-border:   rgba(5, 150, 105, .25);
-  --amber:          #d97706;
-  --amber-bg:       #fef3c7;
-  --amber-border:   rgba(217, 119, 6, .3);
-  --red:            #dc2626;
-  --red-bg:         #fee2e2;
-  --red-border:     rgba(220, 38, 38, .25);
-  --orange:         #ea580c;
-  --orange-bg:      #ffedd5;
+  --green:          #4a8c6a;
+  --green-bg:       #e6f4ee;
+  --green-border:   rgba(74, 140, 106, .25);
+  --amber:          #a07830;
+  --amber-bg:       #faf3e0;
+  --amber-border:   rgba(160, 120, 48, .30);
+  --red:            #b04a4a;
+  --red-bg:         #faeaea;
+  --red-border:     rgba(176, 74, 74, .25);
+  --orange:         #b06030;
+  --orange-bg:      #faeee6;
 
-  --border:         #e5e7eb;
-  --border-strong:  #d1d5db;
-  --border-focus:   #2563eb;
-  --hover:          rgba(17, 24, 39, .04);
-  --hover-strong:   rgba(17, 24, 39, .07);
+  --border:         #CBCBCB;
+  --border-strong:  #ababab;
+  --border-focus:   #6D8196;
+  --hover:          rgba(74, 74, 74, .05);
+  --hover-strong:   rgba(74, 74, 74, .09);
 
   --bg:             #ffffff;
-  --bg-page:        #f3f4f6;
+  --bg-page:        #FFFFE3;
   --bg-card:        #ffffff;
-  --bg-subtle:      #f9fafb;
+  --bg-subtle:      #fefee8;
   --bg-sidebar:     #ffffff;
-  --bg-callout:     #f3f4f6;
+  --bg-callout:     #fffff0;
 
-  --shadow-sm: 0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04);
-  --shadow-md: 0 4px 16px rgba(0,0,0,.08), 0 1px 4px rgba(0,0,0,.04);
-  --shadow-lg: 0 10px 40px rgba(0,0,0,.10), 0 2px 8px rgba(0,0,0,.05);
+  --shadow-sm: 0 1px 3px rgba(74,74,74,.10), 0 1px 2px rgba(74,74,74,.06);
+  --shadow-md: 0 4px 16px rgba(74,74,74,.12), 0 1px 4px rgba(74,74,74,.07);
+  --shadow-lg: 0 10px 40px rgba(74,74,74,.14), 0 2px 8px rgba(74,74,74,.08);
 
   --r-sm:   6px;
   --r-md:   8px;
@@ -436,7 +436,7 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
   box-shadow: 0 1px 3px rgba(37,99,235,.3);
   transition: background .15s, box-shadow .15s;
 }
-.btn-primary:hover:not(:disabled)  { background: var(--primary-dark); box-shadow: 0 2px 6px rgba(37,99,235,.35); }
+.btn-primary:hover:not(:disabled)  { background: var(--primary-dark); box-shadow: 0 2px 6px rgba(109,129,150,.40); }
 .btn-primary:active:not(:disabled) { background: var(--primary-deeper); }
 .btn-primary:disabled { opacity: .4; cursor: not-allowed; }
 
