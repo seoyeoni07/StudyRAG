@@ -168,16 +168,21 @@ def download_file(
     if x_user_id and doc.user_id != x_user_id and not doc.group_id:
         raise HTTPException(403, "권한이 없습니다.")
 
+    from urllib.parse import quote
+    encoded = quote(doc.filename, safe="")
+    disposition = f"attachment; filename*=UTF-8''{encoded}"
+
     # PDF: 디스크에 있음
     pdf_path = f"{UPLOAD_DIR}/{doc_id}.pdf"
     if os.path.exists(pdf_path):
-        return FileResponse(pdf_path, media_type="application/pdf", filename=doc.filename)
+        return FileResponse(pdf_path, media_type="application/pdf",
+                            headers={"Content-Disposition": disposition})
 
     # 이미지: DB에 있음
     src = db.query(DocumentFile).filter(DocumentFile.doc_id == doc_id).first()
     if src:
         return Response(content=src.data, media_type=src.content_type,
-                        headers={"Content-Disposition": f'attachment; filename="{doc.filename}"'})
+                        headers={"Content-Disposition": disposition})
 
     raise HTTPException(404, "원본 파일을 찾을 수 없습니다.")
 
