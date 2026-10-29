@@ -20,7 +20,7 @@ export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc
 
   useEffect(() => {
     apiFetch("/documents/dashboard").then(setStats).catch(() => {});
-    apiFetch("/planner/today-summary").then(setPlanner).catch(() => {});
+    apiFetch("/planner/today-summary").then(setPlanner).catch(() => setPlanner({ tasks: [], goal: null, color_map: {} }));
   }, [pastDocs.length]);
 
   useEffect(() => {
@@ -238,7 +238,7 @@ export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc
         <div className="dash-body-side">
 
           {/* 오늘 할 일 */}
-          {planner && (planner.tasks.length > 0 || planner.goal) && (() => {
+          {planner && (() => {
             const done = planner.tasks.filter(t => t.done).length;
             const total = planner.tasks.length;
             const pctDone = total ? Math.round(done / total * 100) : 0;
@@ -251,7 +251,7 @@ export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc
                 {planner.goal && (
                   <div className="dash-planner-goal">{planner.goal}</div>
                 )}
-                {total > 0 && (
+                {total > 0 ? (
                   <>
                     <div className="dash-planner-progress">
                       <div className="dash-planner-progress-bar" style={{ width: `${pctDone}%` }} />
@@ -272,6 +272,10 @@ export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc
                       {pctDone === 100 && <span className="dash-planner-all-done">오늘 목표 달성!</span>}
                     </div>
                   </>
+                ) : (
+                  <button className="dash-planner-empty" onClick={onOpenPlanner}>
+                    오늘 할 일을 추가해보세요
+                  </button>
                 )}
               </div>
             );
