@@ -148,6 +148,8 @@ export default function NoteEditor({
   const [saveState, setSaveState] = useState("saved");
   const saveTimer = useRef(null);
   const dirty = useRef(false);
+  // 예전 마크다운(강의 요약 등)을 블록으로 바꾸기 전엔 저장하지 않는다 — 빈 문서로 덮어쓰는 것 방지
+  const pendingMigrate = useRef(!!migrateMarkdown?.trim());
   const onSavedRef = useRef(onSaved);
   useEffect(() => { onSavedRef.current = onSaved; });
 
@@ -166,13 +168,18 @@ export default function NoteEditor({
   useEffect(() => {
     if (!migrateMarkdown?.trim()) return;
     const meta = doc.getMap("meta");
-    return editor.onMount(() => {
-      setTimeout(() => {
+    let timer;
+    const migrate = () => {
+      timer = setTimeout(() => {
         if (meta.get("migrated")) return;
         meta.set("migrated", true);
         editor.replaceBlocks(editor.document, editor.tryParseMarkdownToBlocks(migrateMarkdown));
       }, 0);
-    });
+    };
+    // 에디터가 이미 화면에 붙은 뒤면 onMount가 다시 오지 않으므로 바로 변환한다
+    if (!editor.headless) { migrate(); return () => clearTimeout(timer); }
+    const off = editor.onMount(migrate);
+    return () => { off?.(); clearTimeout(timer); };
   }, [editor, doc, migrateMarkdown]);
 
   // 사이드바에서 이름을 바꾸면 열려 있는 에디터 제목도 바꾼다 (같이 보는 사람에게도 전달됨)
@@ -210,6 +217,7 @@ export default function NoteEditor({
     async function save() {
       clearTimeout(saveTimer.current);
       if (!dirty.current) return;
+      if (pendingMigrate.current && !doc.getMap("meta").get("migrated")) return;
       dirty.current = false;
       setSaveState("saving");
       let content;

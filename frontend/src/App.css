@@ -1988,3 +1988,7 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
   .nt-actions { display: inline-flex; }
 }
 @media print { .subpages { display: none; } }
+
+/* 그룹 사이드바: 자료·노트 묶음 */
+.sb-folder .sb-label { font-weight: 500; }
+.sb-count { margin-left: auto; font-size: 11.5px; color: var(--text-4); padding: 0 4px; }

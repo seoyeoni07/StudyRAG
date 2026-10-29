@@ -526,6 +526,9 @@ def save_ydoc(
 ):
     user_id = _require_user(x_user_id)
     note = _get_owned(db, note_id, user_id)
+    if not note.ydoc and (note.content or "").strip() and not (body.content or "").strip():
+        # 마크다운 노트(강의 요약 저장 등)를 블록으로 바꾸기 전에 온 빈 저장 — 내용이 지워지지 않게 무시
+        return {"ok": True, "skipped": True, **_to_dict(note, with_content=False)}
     try:
         note.ydoc = _merge_ydoc(note.ydoc, body.update)
     except Exception as e:

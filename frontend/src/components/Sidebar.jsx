@@ -158,25 +158,56 @@ export default function Sidebar({
                         onClick={() => go({ type: "planner", groupId: g.id })}>
                         <span className="sb-icon">📅</span><span className="sb-label">스터디 플래너</span>
                       </button>
-                      {(data.docs || []).map(d => {
-                        const active = view.type === "doc" && view.docId === d.doc_id;
+                      {(() => {
+                        // 자료끼리, 노트끼리 묶어서 펼치기 — 지금 보고 있는 쪽은 자동으로 펼친다
+                        const docsKey = `gd:${g.id}`, notesKey = `gn:${g.id}`;
+                        const docsOpenG = expanded[docsKey] ?? (view.type === "doc" && inGroup(g.id));
+                        const notesOpenG = expanded[notesKey] ?? (view.type === "gnote" && inGroup(g.id));
+                        const flip = (k, cur) => setExpanded(e => ({ ...e, [k]: !cur }));
+                        const docs = data.docs || [], gnotes = data.notes || [];
                         return (
-                          <button key={d.doc_id} className={`sb-item sb-child ${active ? "active" : ""}`} title={`${d.filename} · ${d.uploader_name}`}
-                            onClick={() => go({ type: "doc", docId: d.doc_id, filename: d.filename, groupId: g.id, tab: active ? view.tab : "summary" })}>
-                            <span className="sb-icon">{(d.status === "processing" ? "⏳" : d.status === "failed" ? "⚠️" : "📄")}</span>
-                            <span className="sb-label">{d.filename.replace(/\.pdf$/i, "")}</span>
-                          </button>
+                          <>
+                            <button className="sb-item sb-child sb-folder" onClick={() => flip(docsKey, docsOpenG)}>
+                              <Caret open={docsOpenG} onClick={() => flip(docsKey, docsOpenG)} />
+                              <span className="sb-icon">📁</span><span className="sb-label">자료</span>
+                              <span className="sb-count">{docs.length}</span>
+                            </button>
+                            {docsOpenG && (
+                              <div className="sb-children">
+                                {docs.length === 0 && <p className="sb-empty">아직 자료가 없어요</p>}
+                                {docs.map(d => {
+                                  const active = view.type === "doc" && view.docId === d.doc_id;
+                                  return (
+                                    <button key={d.doc_id} className={`sb-item sb-child ${active ? "active" : ""}`} title={`${d.filename} · ${d.uploader_name}`}
+                                      onClick={() => go({ type: "doc", docId: d.doc_id, filename: d.filename, groupId: g.id, tab: active ? view.tab : "summary" })}>
+                                      <span className="sb-icon">{(d.status === "processing" ? "⏳" : d.status === "failed" ? "⚠️" : "📄")}</span>
+                                      <span className="sb-label">{d.filename.replace(/\.pdf$/i, "")}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                            <button className="sb-item sb-child sb-folder" onClick={() => flip(notesKey, notesOpenG)}>
+                              <Caret open={notesOpenG} onClick={() => flip(notesKey, notesOpenG)} />
+                              <span className="sb-icon">🗂️</span><span className="sb-label">공동 노트</span>
+                              <span className="sb-count">{gnotes.length}</span>
+                            </button>
+                            {notesOpenG && (
+                              <div className="sb-children">
+                                <NoteTree prefix={`g:${g.id}:`} expanded={expanded} setExpanded={setExpanded} child defaultIcon="📄"
+                                  roots={gnotes.filter(n => isRoot(n, gnotes))} all={gnotes}
+                                  activeId={view.type === "gnote" ? view.noteId : null}
+                                  onOpen={(n) => go({ type: "gnote", groupId: g.id, noteId: n.id })}
+                                  onAction={(kind, n, extra) => onNoteAction?.(kind, { ...n, group_id: g.id }, extra)}
+                                  canDelete={(n) => n.created_by === user.uid || data.detail?.my_role === "owner"} />
+                                <button className="sb-item sb-child sb-muted" onClick={() => { onNewGroupNote?.(g.id); onClose?.(); }}>
+                                  <span className="sb-icon">＋</span><span className="sb-label">공동 노트 추가</span>
+                                </button>
+                              </div>
+                            )}
+                          </>
                         );
-                      })}
-                      <NoteTree prefix={`g:${g.id}:`} expanded={expanded} setExpanded={setExpanded} child defaultIcon="📄"
-                        roots={(data.notes || []).filter(n => isRoot(n, data.notes))} all={data.notes || []}
-                        activeId={view.type === "gnote" ? view.noteId : null}
-                        onOpen={(n) => go({ type: "gnote", groupId: g.id, noteId: n.id })}
-                        onAction={(kind, n, extra) => onNoteAction?.(kind, { ...n, group_id: g.id }, extra)}
-                        canDelete={(n) => n.created_by === user.uid || data.detail?.my_role === "owner"} />
-                      <button className="sb-item sb-child sb-muted" onClick={() => { onNewGroupNote?.(g.id); onClose?.(); }}>
-                        <span className="sb-icon">＋</span><span className="sb-label">공동 노트 추가</span>
-                      </button>
+                      })()}
                     </div>
                   )}
                 </div>
