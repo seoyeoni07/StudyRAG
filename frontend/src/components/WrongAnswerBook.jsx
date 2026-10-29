@@ -28,12 +28,23 @@ export default function WrongAnswerBook({ docId, refreshKey = 0, onCountLoaded, 
   }, [docId, refreshKey]);
 
   async function toggleReviewed(item) {
+    // 낙관적 업데이트: 즉시 UI 반영
+    const nextReviewed = !item.reviewed;
+    setItems(prev => prev.map(it =>
+      it.id === item.id ? { ...it, reviewed: nextReviewed } : it
+    ));
     try {
       const data = await apiFetch(`/quiz/wrong-answers/${item.id}/reviewed`, { method: "PATCH" });
       setItems(prev => prev.map(it =>
         it.id === item.id ? { ...it, reviewed: data.reviewed, next_review: data.next_review } : it
       ));
-    } catch (err) { setError(err.message); }
+    } catch (err) {
+      // 실패 시 롤백
+      setItems(prev => prev.map(it =>
+        it.id === item.id ? { ...it, reviewed: item.reviewed } : it
+      ));
+      setError(err.message);
+    }
   }
 
   function filteredItems() {

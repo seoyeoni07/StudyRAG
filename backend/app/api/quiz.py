@@ -142,6 +142,9 @@ def get_wrong_answers(doc_id: str, db: Session = Depends(get_db)):
             "correct_answer": r.correct_answer,
             "user_answer": r.user_answer,
             "explanation": r.explanation,
+            "reviewed": r.reviewed,
+            "next_review": r.next_review.isoformat() if r.next_review else None,
+            "review_count": r.review_count or 0,
             "created_at": r.created_at.isoformat(),
         }
         for r in rows
