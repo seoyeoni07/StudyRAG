@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as Y from "yjs";
-import { useCreateBlockNote } from "@blocknote/react";
+import { useCreateBlockNote, SuggestionMenuController, getDefaultReactSlashMenuItems } from "@blocknote/react";
+import { filterSuggestionItems } from "@blocknote/core";
 import { BlockNoteView } from "@blocknote/mantine";
 import { withCollaboration, yXmlFragmentToBlocks } from "@blocknote/core/yjs";
 import { ko } from "@blocknote/core/locales";
@@ -9,6 +10,7 @@ import "@blocknote/mantine/style.css";
 import { apiFetch, BASE } from "../api";
 import { supabase } from "../supabase";
 import { SupabaseYjsProvider, OfflineProvider, toB64 } from "../realtime/SupabaseYjsProvider";
+import { noteSchema, notePageSlashItem, setNotePageActions } from "./NotePageBlock";
 
 /*
  * 개인 노트와 그룹 노트가 같이 쓰는 블록 에디터 (노션 방식).
@@ -140,6 +142,7 @@ function VersionPanel({ noteId, canRestore, onRestore, onClose }) {
 export default function NoteEditor({
   noteId, doc, provider, user, onSaved,
   migrateMarkdown, showVersions, canRestore, onCloseVersions, children,
+  pages, // { create(): Promise<note>, open(id), lookup(id) → note | null(삭제됨) | undefined(모름) }
 }) {
   const name = user.displayName || user.email?.split("@")[0] || "멤버";
   const [title, setTitle] = useState(() => doc.getMap("meta").get("title") || "");
@@ -154,6 +157,7 @@ export default function NoteEditor({
   useEffect(() => { onSavedRef.current = onSaved; });
 
   const editor = useCreateBlockNote(withCollaboration({
+    schema: noteSchema,
     dictionary: ko,
     uploadFile: uploadNoteFile,
     collaboration: {
@@ -188,6 +192,14 @@ export default function NoteEditor({
     window.addEventListener("studyrag:note-title", fn);
     return () => window.removeEventListener("studyrag:note-title", fn);
   }, [doc, noteId]);
+
+  // 노트 블록(노트 안의 노트)이 이동·제목 조회에 쓰는 동작
+  const pagesRef = useRef(pages);
+  useEffect(() => { pagesRef.current = pages; });
+  useEffect(() => {
+    if (!pages) return;
+    setNotePageActions({ open: pages.open, lookup: pages.lookup });
+  }, [pages]);
 
   // 제목: Y.Map("meta")로 공유
   useEffect(() => {
@@ -298,7 +310,13 @@ export default function NoteEditor({
       {children}
 
       <div className="collab-editor">
-        <BlockNoteView editor={editor} theme="light" />
+        <BlockNoteView editor={editor} theme="light" slashMenu={false}>
+          <SuggestionMenuController triggerCharacter="/"
+            getItems={async (query) => filterSuggestionItems([
+              ...(pages?.create ? [notePageSlashItem(editor, () => pagesRef.current.create())] : []),
+              ...getDefaultReactSlashMenuItems(editor),
+            ], query)} />
+        </BlockNoteView>
       </div>
 
       {showVersions && (

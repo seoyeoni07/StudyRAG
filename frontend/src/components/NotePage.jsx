@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { apiFetch } from "../api";
 import NoteEditor, { useCollabDoc } from "./NoteEditor";
-import { SubPages } from "./NoteTree";
 import { sendBroadcast } from "../realtime/chatBus";
 
 const ICONS = ["📝", "📒", "📘", "📗", "📙", "💡", "⭐", "🔖", "🧠", "📌", "✏️", "🎯"];
@@ -95,7 +94,7 @@ function ShareModal({ noteId, getTitle, getIcon, me, onClose }) {
   );
 }
 
-export default function NotePage({ noteId, user, pastDocs, onChanged, onDeleted, onOpenDoc, subpages, onOpenNote, onAddSubpage }) {
+export default function NotePage({ noteId, user, pastDocs, onChanged, onDeleted, onOpenDoc, pages }) {
   const { state, error: loadError } = useCollabDoc(noteId);
   const [props, setProps] = useState(null); // 아이콘·연결된 자료·태그 등 (본문·제목은 에디터가 관리)
   const [error, setError] = useState("");
@@ -103,17 +102,10 @@ export default function NotePage({ noteId, user, pastDocs, onChanged, onDeleted,
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showVersions, setShowVersions] = useState(false);
   const [showShare, setShowShare] = useState(false);
-  const [fetchedKids, setFetchedKids] = useState(null); // 공유받은 노트의 하위 페이지
-  const needFetch = subpages === undefined;
 
   useEffect(() => {
     if (state?.meta) setProps(state.meta);
   }, [state?.meta]);
-
-  useEffect(() => {
-    if (!needFetch) return;
-    apiFetch(`/notes/${noteId}/children`).then(setFetchedKids).catch(() => setFetchedKids([]));
-  }, [noteId, needFetch]);
 
   // 아이콘·연결된 자료·태그는 바로 저장
   async function update(fields) {
@@ -159,6 +151,7 @@ export default function NotePage({ noteId, user, pastDocs, onChanged, onDeleted,
 
       <NoteEditor noteId={noteId} doc={state.doc} provider={state.provider} user={user}
         onSaved={saved => onChanged?.(saved)}
+        pages={isOwner ? pages : pages && { ...pages, create: null }}
         migrateMarkdown={isOwner ? state.meta.legacy_markdown : null}
         showVersions={showVersions} canRestore={isOwner}
         onCloseVersions={() => setShowVersions(false)}>
@@ -197,9 +190,6 @@ export default function NotePage({ noteId, user, pastDocs, onChanged, onDeleted,
         </div>
       </NoteEditor>
 
-      <SubPages items={needFetch ? fetchedKids : subpages} canAdd={isOwner}
-        onOpen={id => onOpenNote?.(id)} onAdd={() => onAddSubpage?.()} />
-
       {error && <div className="error-banner"><span>{error}</span></div>}
       {showShare && (
         <ShareModal noteId={noteId} me={user}
@@ -215,7 +205,7 @@ export default function NotePage({ noteId, user, pastDocs, onChanged, onDeleted,
         {isOwner && (confirmDelete ? (
           <>
             <span className="note-footer-text">
-              {(needFetch ? fetchedKids : subpages)?.length ? "이 노트와 하위 페이지를 모두 삭제할까요?" : "이 노트를 삭제할까요?"}
+              이 노트를 삭제할까요? 안에 넣은 하위 노트도 함께 삭제돼요.
             </span>
             <button className="btn-danger" onClick={handleDelete}>삭제</button>
             <button className="btn-ghost" onClick={() => setConfirmDelete(false)}>취소</button>

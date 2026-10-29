@@ -91,7 +91,7 @@ function NoteMenu({ note, anchor, all, allowPin, canDelete, onAction, onRename, 
         </div>
       ) : (
         <>
-          <button role="menuitem" onClick={act(() => onAction("add-child", note))}><span>＋</span>하위 페이지 추가</button>
+          <button role="menuitem" onClick={act(() => onAction("add-child", note))}><span>＋</span>하위 노트 추가</button>
           <button role="menuitem" onClick={act(onRename)}><span>✏️</span>이름 바꾸기</button>
           {allowPin && (
             <button role="menuitem" onClick={act(() => onAction("pin", note))}>
@@ -213,7 +213,7 @@ export default function NoteTree({
             <span className="nt-actions">
               <button className="nt-btn" title="메뉴 (삭제·이름 바꾸기·옮기기 등)" aria-label="노트 메뉴"
                 onClick={e => { e.stopPropagation(); const a = e.currentTarget; setMenu(m => (m?.note.id === n.id ? null : { note: n, anchor: a })); }}>⋯</button>
-              <button className="nt-btn" title="하위 페이지 추가" aria-label="하위 페이지 추가"
+              <button className="nt-btn" title="하위 노트 추가" aria-label="하위 노트 추가"
                 onClick={e => { e.stopPropagation(); onAction("add-child", n); }}>＋</button>
             </span>
           )}
@@ -241,28 +241,5 @@ export default function NoteTree({
           onPick={(pid) => { setMoving(null); onAction("move", moving, pid); if (pid) setExpanded(e => ({ ...e, [`${prefix}n:${pid}`]: true })); }} />
       )}
     </>
-  );
-}
-
-/** 노트 페이지 아래 '하위 페이지' 목록 */
-export function SubPages({ items, onOpen, onAdd, canAdd = true, defaultIcon = "📝" }) {
-  if (!items) return null;
-  if (!items.length && !canAdd) return null;
-  return (
-    <section className="subpages">
-      <div className="subpages-head">하위 페이지{items.length > 0 && <span> {items.length}</span>}</div>
-      {items.map(n => (
-        <button key={n.id} className="subpage-row" onClick={() => onOpen(n.id)}>
-          <span className="subpage-icon">{n.icon || defaultIcon}</span>
-          <span className="subpage-title">{n.title || "제목 없음"}</span>
-          <span className="subpage-arrow">↗</span>
-        </button>
-      ))}
-      {canAdd && (
-        <button className="subpage-row subpage-add" onClick={onAdd}>
-          <span className="subpage-icon">＋</span><span className="subpage-title">하위 페이지 추가</span>
-        </button>
-      )}
-    </section>
   );
 }

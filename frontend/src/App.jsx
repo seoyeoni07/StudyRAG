@@ -450,7 +450,7 @@ export default function App() {
     } catch (err) { setError(err.message); }
   }
 
-  async function createGroupNote(id, parent_id = null) {
+  async function createGroupNote(id, parent_id = null, open = true) {
     try {
       const n = await apiFetch(`/groups/${id}/notes`, {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -458,7 +458,8 @@ export default function App() {
       });
       setGroupData(d => ({ ...d, [id]: { ...d[id], notes: [n, ...(d[id]?.notes || [])] } }));
       notify(id, "note-added", { note_id: n.id });
-      setView({ type: "gnote", groupId: id, noteId: n.id });
+      if (open) setView({ type: "gnote", groupId: id, noteId: n.id });
+      return n;
     } catch (err) { setError(err.message); }
   }
 
@@ -789,10 +790,12 @@ export default function App() {
               noteId={view.noteId}
               user={user}
               group={group?.detail}
-              subpages={(group?.notes || []).filter(n => n.parent_id === view.noteId)
-                .sort((a, b) => (a.created_at || "").localeCompare(b.created_at || ""))}
-              onOpenNote={(id) => setView({ type: "gnote", groupId, noteId: id })}
-              onAddSubpage={() => createGroupNote(groupId, view.noteId)}
+              pages={{
+                // 본문에서 "/노트" → 이 노트 안에 하위 노트
+                create: () => createGroupNote(groupId, view.noteId, false),
+                open: (id) => setView({ type: "gnote", groupId, noteId: id }),
+                lookup: (id) => (group?.notes ? group.notes.find(n => n.id === id) || null : undefined),
+              }}
               onSaved={() => loadGroup(groupId)}
               onDeleted={() => { loadGroup(groupId); notify(groupId, "notes-changed"); setView({ type: "group", groupId }); }}
             />
@@ -814,10 +817,12 @@ export default function App() {
                 }
               }}
               onDeleted={(id, ids) => { const gone = new Set(ids || [id]); setNotes(prev => prev.filter(n => !gone.has(n.id))); setView({ type: "home" }); }}
-              subpages={ownNote ? notes.filter(n => n.parent_id === view.noteId)
-                .sort((a, b) => (a.created_at || "").localeCompare(b.created_at || "")) : undefined}
-              onOpenNote={(id) => setView({ type: "note", noteId: id })}
-              onAddSubpage={() => createNote({ parent_id: view.noteId })}
+              pages={{
+                create: () => createNote({ parent_id: view.noteId }, false),
+                open: (id) => setView({ type: "note", noteId: id }),
+                // 내 노트 안의 노트가 목록에 없으면 삭제된 것, 공유받은 노트면 모름(undefined)
+                lookup: (id) => notes.find(n => n.id === id) || sharedNotes.find(n => n.id === id) || (ownNote ? null : undefined),
+              }}
               onOpenDoc={(id, name) => selectDoc(id, name, "summary")}
             />
             </Suspense>
