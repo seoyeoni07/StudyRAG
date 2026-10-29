@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { apiFetch } from "../api.js";
+import { ChatPanel } from "./GroupHome.jsx";
 
 export const DOC_TABS = [
   ["summary", "요약",       "AI가 강의 전체를 핵심만 정리해드립니다", "📋"],
@@ -27,6 +28,7 @@ export default function Sidebar({
   onNewNote, onUpload, uploading, onLogout, open, onClose,
   groups = [], groupData = {}, online = {}, onNewGroupNote,
   sharedNotes = [], onOpenSharedNote,
+  chatGroup = null,
 }) {
   const [expanded, setExpanded] = useState({});
   const [docsOpen, setDocsOpen] = useState(true);
@@ -104,47 +106,17 @@ export default function Sidebar({
             ) : (
               <>
                 <div className="sb-search-wrap">
-                  <input className="sb-search-input" value={groupSearch} placeholder="그룹 자료·노트 검색…"
+                  <input className="sb-search-input" value={groupSearch} placeholder="그룹 검색…"
                     onChange={e => setGroupSearch(e.target.value)} />
                   {groupSearch && <button className="sb-search-clear" onClick={() => setGroupSearch("")}>×</button>}
                 </div>
-                {groupSearch ? (() => {
-                  const q = groupSearch.toLowerCase();
-                  const hits = [];
-                  groups.forEach(g => {
-                    const data = groupData[g.id] || {};
-                    (data.docs || []).forEach(d => {
-                      if (d.filename.toLowerCase().includes(q))
-                        hits.push({ kind: "doc", g, d });
-                    });
-                    (data.notes || []).forEach(n => {
-                      if ((n.title || "").toLowerCase().includes(q))
-                        hits.push({ kind: "note", g, n });
-                    });
-                  });
-                  return hits.length === 0
-                    ? <p className="sb-empty">검색 결과 없음</p>
-                    : hits.map(h => h.kind === "doc" ? (
-                        <button key={`d:${h.d.doc_id}`}
-                          className={`sb-item ${view.type === "doc" && view.docId === h.d.doc_id ? "active" : ""}`}
-                          title={`${h.d.filename} · ${h.g.name}`}
-                          onClick={() => go({ type: "doc", docId: h.d.doc_id, filename: h.d.filename, groupId: h.g.id, tab: "summary" })}>
-                          <span className="sb-icon">{h.d.status === "processing" ? "⏳" : h.d.status === "failed" ? "⚠️" : "📄"}</span>
-                          <span className="sb-label">{h.d.filename.replace(/\.pdf$/i, "")}</span>
-                          <span className="sb-online">{h.g.name}</span>
-                        </button>
-                      ) : (
-                        <button key={`n:${h.n.id}`}
-                          className={`sb-item ${view.type === "gnote" && view.noteId === h.n.id ? "active" : ""}`}
-                          title={`${h.n.title || "제목 없음"} · ${h.g.name}`}
-                          onClick={() => go({ type: "gnote", groupId: h.g.id, noteId: h.n.id })}>
-                          <span className="sb-icon">{h.n.icon || "📄"}</span>
-                          <span className="sb-label">{h.n.title || "제목 없음"}</span>
-                          <span className="sb-online">{h.g.name}</span>
-                        </button>
-                      )
-                    );
-                })() : groups.map(g => {
+                {(() => {
+                  const visibleGroups = groupSearch
+                    ? groups.filter(g => g.name.toLowerCase().includes(groupSearch.toLowerCase()))
+                    : groups;
+                  if (groupSearch && visibleGroups.length === 0)
+                    return <p className="sb-empty">검색 결과 없음</p>;
+                  return visibleGroups.map(g => {
               const data = groupData[g.id] || {};
               // 지금 접속 중인 인원 (나 포함) — 그룹 화면의 "접속 n/m"과 같은 기준
               const onlineIds = new Set((online[g.id] || []).map(o => o.user_id));
@@ -185,7 +157,8 @@ export default function Sidebar({
                   )}
                 </div>
               );
-            })}
+            });
+                })()}
               </>
             ))}
           </div>
@@ -327,6 +300,15 @@ export default function Sidebar({
             )}
           </div>
         </nav>
+
+        {chatGroup && (
+          <div className="sb-chat-section">
+            <div className="sb-section-head" style={{ padding: "8px 12px 4px" }}>
+              <span className="sb-section-title">채팅 · {chatGroup.name}</span>
+            </div>
+            <ChatPanel group={chatGroup} me={user} />
+          </div>
+        )}
 
         <div className="sb-footer">
           <span className="sb-user" title={user.email}>{user.email || name}</span>

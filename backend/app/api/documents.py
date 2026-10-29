@@ -20,6 +20,9 @@ log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
+_progress: dict[str, int] = {}       # doc_id → 0-100
+_cancel_requested: set[str] = set()  # doc_ids to cancel
+
 UPLOAD_DIR = "./uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -41,10 +44,9 @@ def upload_status(doc_id: str, db: Session = Depends(get_db)):
         raise HTTPException(404, "문서를 찾을 수 없습니다.")
     status, error = doc.status or "done", doc.error
     if status == "done" and not doc.chunks:
-        # 예전 버전에서 인식이 조용히 실패해 내용 0개로 남은 자료
         status = "failed"
         error = error or "이 자료에서 인식된 내용이 없어요."
-    return {"status": status, "error": error, "chunks": doc.chunks}
+    return {"status": status, "error": error, "chunks": doc.chunks, "progress": _progress.get(doc_id, 100 if status == "done" else 0)}
 
 
 def _file_kind(file: UploadFile) -> tuple[str, str, str]:
@@ -116,6 +118,7 @@ async def upload_document(
 
 def _bg_image_ocr(doc_id: str):
     """이미지 글자 인식 + 임베딩. 결과는 Document.status/error에 남긴다."""
+    _progress[doc_id] = 5
     db = SessionLocal()
     try:
         doc = db.query(Document).filter(Document.id == doc_id).first()
@@ -124,10 +127,17 @@ def _bg_image_ocr(doc_id: str):
             return
         try:
             text = extract_text_from_image(src.data, src.content_type)
+            _progress[doc_id] = 60
+            if doc_id in _cancel_requested:
+                _cancel_requested.discard(doc_id)
+                doc.status, doc.error = "failed", "분석이 취소됐습니다."
+                db.commit()
+                return
             if not text.strip():
                 raise ValueError("이미지에서 글자를 찾지 못했습니다.")
             chunks = chunk_text(text) or [text]
             metas = [{"doc_id": doc_id, "chunk_idx": i, "page": 1} for i in range(len(chunks))]
+            _progress[doc_id] = 80
             try:
                 from ..core.rag import get_vectorstore
                 get_vectorstore(doc_id).delete_collection()  # 재시도 시 이전 조각 제거
@@ -141,6 +151,8 @@ def _bg_image_ocr(doc_id: str):
             doc.status, doc.error = "failed", str(e)[:500]
         db.commit()
     finally:
+        _progress.pop(doc_id, None)
+        _cancel_requested.discard(doc_id)
         db.close()
 
 
@@ -198,6 +210,21 @@ def reprocess_document(
     return {"status": "processing"}
 
 
+@router.post("/{doc_id}/cancel")
+def cancel_analysis(
+    doc_id: str,
+    x_user_id: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    doc = db.query(Document).filter(Document.id == doc_id).first()
+    if not doc:
+        raise HTTPException(404, "문서를 찾을 수 없습니다.")
+    if doc.status != "processing":
+        return {"status": doc.status}
+    _cancel_requested.add(doc_id)
+    doc.status, doc.error = "failed", "분석이 취소됐습니다."
+    db.commit()
+    return {"status": "failed"}
 
 
 @router.delete("/{doc_id}")

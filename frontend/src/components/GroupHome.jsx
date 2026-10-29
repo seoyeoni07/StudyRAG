@@ -21,7 +21,7 @@ export function Avatar({ name = "?", online, size = 22 }) {
   );
 }
 
-function ChatPanel({ group, me }) {
+export function ChatPanel({ group, me }) {
   const [messages, setMessages] = useState(null); // null = loading
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -106,8 +106,7 @@ export default function GroupHome({
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [confirmDel, setConfirmDel] = useState(null);
   const [activity, setActivity] = useState([]);
-  const [chatOpen, setChatOpen] = useState(false);
-  const [editingAnn, setEditingAnn] = useState(false);
+const [editingAnn, setEditingAnn] = useState(false);
   const [annText, setAnnText] = useState(group.announcement || "");
   const [annBusy, setAnnBusy] = useState(false);
   const [quizHistory, setQuizHistory] = useState([]);
@@ -386,14 +385,6 @@ export default function GroupHome({
         )}
       </section>
 
-      {/* 그룹 채팅 */}
-      <section className="dash-section">
-        <div className="dash-section-header">
-          <p className="dash-section-title">그룹 채팅</p>
-          <button className="btn-ghost" onClick={() => setChatOpen(o => !o)}>{chatOpen ? "접기" : "열기"}</button>
-        </div>
-        {chatOpen && <ChatPanel group={group} me={me} />}
-      </section>
 
       <div className="note-footer">
         {group.my_role === "owner" ? (confirmLeave ? (

@@ -152,8 +152,9 @@ export default function App() {
   const groupId = view.groupId || null;
 
   // 이미지 자료는 글자 인식이 끝나야 요약·Q&A를 쓸 수 있다 — 상태를 확인하고 처리 중이면 3초마다 다시 본다
-  const [docStatus, setDocStatus] = useState(null); // { docId, status, error }
+  const [docStatus, setDocStatus] = useState(null); // { docId, status, error, progress }
   const docStatusValue = docStatus?.docId === docId ? docStatus.status : null;
+  const docProgress = docStatus?.docId === docId ? (docStatus.progress ?? 0) : 0;
   useEffect(() => {
     if (!docId) return;
     let alive = true;
@@ -162,7 +163,7 @@ export default function App() {
       try {
         const s = await apiFetch(`/documents/upload-status/${docId}`);
         if (!alive) return;
-        setDocStatus({ docId, status: s.status, error: s.error });
+        setDocStatus({ docId, status: s.status, error: s.error, progress: s.progress ?? 0 });
         if (s.status === "processing") timer = setTimeout(check, 3000);
         else {
           const patchStatus = d => d.doc_id === docId ? { ...d, status: s.status } : d;
@@ -229,7 +230,14 @@ export default function App() {
   async function retryRecognition() {
     try {
       await apiFetch(`/documents/${docId}/reprocess`, { method: "POST" });
-      setDocStatus({ docId, status: "processing", error: null });
+      setDocStatus({ docId, status: "processing", error: null, progress: 0 });
+    } catch (err) { setError(err.message); }
+  }
+
+  async function cancelAnalysis() {
+    try {
+      await apiFetch(`/documents/${docId}/cancel`, { method: "POST" });
+      setDocStatus({ docId, status: "failed", error: "분석이 취소됐습니다.", progress: 0 });
     } catch (err) { setError(err.message); }
   }
 
@@ -404,6 +412,7 @@ export default function App() {
         onNewGroupNote={createGroupNote}
         sharedNotes={sharedNotes}
         onOpenSharedNote={(noteId) => setView({ type: "note", noteId })}
+        chatGroup={groupId && group?.detail ? group.detail : null}
       />
 
       <div className="main">
@@ -636,9 +645,17 @@ export default function App() {
               </p>
 
               {docStatusValue === "processing" && (
-                <div className="callout">
-                  <div className="spinner spinner-sm" />
-                  <span>이미지에서 글자를 인식하는 중이에요. 무료 AI가 붐비면 1~2분 걸릴 수 있어요. 끝나면 자동으로 열려요.</span>
+                <div className="callout" style={{ flexDirection: "column", gap: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div className="spinner spinner-sm" />
+                    <span style={{ flex: 1 }}>이미지에서 글자를 인식하는 중이에요. 무료 AI가 붐비면 1~2분 걸릴 수 있어요.</span>
+                    <button className="btn-ghost btn-sm" onClick={cancelAnalysis}>취소</button>
+                  </div>
+                  {docProgress > 0 && (
+                    <div style={{ width: "100%", height: 6, background: "var(--border)", borderRadius: 3 }}>
+                      <div style={{ height: "100%", width: `${docProgress}%`, background: "var(--accent)", borderRadius: 3, transition: "width .5s" }} />
+                    </div>
+                  )}
                 </div>
               )}
               {docStatusValue === "failed" && (
