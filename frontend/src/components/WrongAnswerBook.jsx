@@ -35,10 +35,15 @@ export default function WrongAnswerBook({ docId, onCountLoaded, onGoToQuiz }) {
   }
 
   function filteredItems() {
-    const today = new Date().toISOString().split("T")[0];
+    const todayLocal = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD 로컬 기준
+    const nowMs = Date.now();
     let result = items;
     if (filter === "pending") result = result.filter(it => !it.reviewed);
-    else if (filter === "today") result = result.filter(it => it.next_review && it.next_review.startsWith(today));
+    else if (filter === "today") result = result.filter(it => {
+      if (!it.next_review) return false;
+      const d = new Date(it.next_review + (it.next_review.endsWith("Z") ? "" : "Z"));
+      return d.toLocaleDateString("en-CA") <= todayLocal && d.getTime() <= nowMs + 86400000;
+    });
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter(it =>

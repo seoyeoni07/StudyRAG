@@ -291,11 +291,19 @@ def delete_note(
     db: Session = Depends(get_db),
 ):
     user_id = _require_user(x_user_id)
-    note = _get_owned(db, note_id, user_id)
-    if note.group_id and note.user_id != user_id:
+    note = db.query(Note).filter(Note.id == note_id).first()
+    if not note:
+        raise HTTPException(404, "노트를 찾을 수 없습니다.")
+    if note.group_id:
+        # 그룹 노트: 작성자 또는 그룹장만 삭제
+        _is_member(db, note.group_id, user_id)  # 멤버인지 확인
         group = db.query(StudyGroup).filter(StudyGroup.id == note.group_id).first()
-        if not group or group.owner_id != user_id:
+        if note.user_id != user_id and (not group or group.owner_id != user_id):
             raise HTTPException(403, "작성자나 그룹장만 삭제할 수 있습니다.")
+    else:
+        # 개인 노트: 소유자만 삭제
+        if note.user_id != user_id:
+            raise HTTPException(403, "본인 노트만 삭제할 수 있습니다.")
     db.delete(note)
     db.commit()
     return {"ok": True}
