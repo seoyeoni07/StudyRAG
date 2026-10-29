@@ -212,3 +212,22 @@ class NoteImage(Base):
     content_type = Column(String(64), nullable=False)
     data = Column(LargeBinary, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class DmRoom(Base):
+    """1:1 DM 방. user1_id < user2_id 로 항상 정렬해 중복 방지."""
+    __tablename__ = "dm_rooms"
+    id = Column(String(36), primary_key=True)
+    user1_id = Column(String(128), nullable=False, index=True)
+    user2_id = Column(String(128), nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class DmMessage(Base):
+    __tablename__ = "dm_messages"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    room_id = Column(String(36), nullable=False, index=True)
+    user_id = Column(String(128), nullable=False)
+    display_name = Column(String(64), nullable=False, default="나")
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)

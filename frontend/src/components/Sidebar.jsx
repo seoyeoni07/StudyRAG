@@ -1,6 +1,5 @@
 import { useState, useRef } from "react";
 import { apiFetch } from "../api.js";
-import { ChatPanel } from "./GroupHome.jsx";
 
 export const DOC_TABS = [
   ["summary", "요약",       "AI가 강의 전체를 핵심만 정리해드립니다", "📋"],
@@ -28,7 +27,6 @@ export default function Sidebar({
   onNewNote, onUpload, uploading, onLogout, open, onClose,
   groups = [], groupData = {}, online = {}, onNewGroupNote,
   sharedNotes = [], onOpenSharedNote,
-  chatGroup = null,
 }) {
   const [expanded, setExpanded] = useState({});
   const [docsOpen, setDocsOpen] = useState(true);
@@ -83,6 +81,9 @@ export default function Sidebar({
           </button>
           <button className={`sb-item ${view.type === "stats" ? "active" : ""}`} onClick={() => go({ type: "stats" })}>
             <span className="sb-icon">📊</span><span className="sb-label">학습 통계</span>
+          </button>
+          <button className={`sb-item ${view.type === "chat" ? "active" : ""}`} onClick={() => go({ type: "chat" })}>
+            <span className="sb-icon">💬</span><span className="sb-label">채팅</span>
           </button>
           <button className={`sb-item ${view.type === "settings" ? "active" : ""}`} onClick={() => go({ type: "settings" })}>
             <span className="sb-icon">⚙️</span><span className="sb-label">설정</span>
@@ -300,15 +301,6 @@ export default function Sidebar({
             )}
           </div>
         </nav>
-
-        {chatGroup && (
-          <div className="sb-chat-section">
-            <div className="sb-section-head" style={{ padding: "8px 12px 4px" }}>
-              <span className="sb-section-title">채팅 · {chatGroup.name}</span>
-            </div>
-            <ChatPanel group={chatGroup} me={user} />
-          </div>
-        )}
 
         <div className="sb-footer">
           <span className="sb-user" title={user.email}>{user.email || name}</span>

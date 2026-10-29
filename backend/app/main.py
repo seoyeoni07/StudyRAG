@@ -12,6 +12,7 @@ from .api.rooms import router as rooms_router
 from .api.notes import router as notes_router
 from .api.groups import router as groups_router
 from .api.users import router as users_router
+from .api.chat import router as chat_router
 from .db.models import Base  # noqa: F401
 from .db.session import engine
 
@@ -87,6 +88,23 @@ async def startup():
         "ALTER TABLE notes ADD COLUMN IF NOT EXISTS tags TEXT",
         "ALTER TABLE study_rooms ADD COLUMN IF NOT EXISTS group_id VARCHAR(36)",
         "CREATE INDEX IF NOT EXISTS ix_study_rooms_group_id ON study_rooms(group_id)",
+        """CREATE TABLE IF NOT EXISTS dm_rooms (
+            id VARCHAR(36) PRIMARY KEY,
+            user1_id VARCHAR(128) NOT NULL,
+            user2_id VARCHAR(128) NOT NULL,
+            created_at TIMESTAMP DEFAULT NOW()
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_dm_rooms_user1 ON dm_rooms(user1_id)",
+        "CREATE INDEX IF NOT EXISTS ix_dm_rooms_user2 ON dm_rooms(user2_id)",
+        """CREATE TABLE IF NOT EXISTS dm_messages (
+            id SERIAL PRIMARY KEY,
+            room_id VARCHAR(36) NOT NULL,
+            user_id VARCHAR(128) NOT NULL,
+            display_name VARCHAR(64) NOT NULL DEFAULT '나',
+            content TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT NOW()
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_dm_messages_room_id ON dm_messages(room_id)",
         """CREATE TABLE IF NOT EXISTS tutor_threads (
             id SERIAL PRIMARY KEY,
             doc_id VARCHAR(36) NOT NULL,
@@ -152,6 +170,7 @@ app.include_router(rooms_router)
 app.include_router(notes_router)
 app.include_router(groups_router)
 app.include_router(users_router)
+app.include_router(chat_router)
 
 
 @app.get("/health")

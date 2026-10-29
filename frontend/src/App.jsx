@@ -15,6 +15,7 @@ import LoginPage from "./components/LoginPage";
 import Sidebar, { tabsFor } from "./components/Sidebar";
 import NotePage from "./components/NotePage";
 import GroupHome, { GroupStart, timeAgo as groupTimeAgo } from "./components/GroupHome";
+import ChatApp from "./components/ChatApp";
 import { useGroupChannels } from "./realtime/useGroupChannels";
 import "./App.css";
 
@@ -412,7 +413,6 @@ export default function App() {
         onNewGroupNote={createGroupNote}
         sharedNotes={sharedNotes}
         onOpenSharedNote={(noteId) => setView({ type: "note", noteId })}
-        chatGroup={groupId && group?.detail ? group.detail : null}
       />
 
       <div className="main">
@@ -553,6 +553,16 @@ export default function App() {
 
           {view.type === "group-start" && (
             <GroupStart me={user} onCreate={createGroup} onJoin={joinGroup} onJoinPublic={joinPublicGroup} />
+          )}
+
+          {view.type === "chat" && (
+            <ChatApp
+              me={user}
+              groups={groups}
+              groupDetails={Object.fromEntries(
+                Object.entries(groupData).filter(([, v]) => v?.detail).map(([k, v]) => [k, v.detail])
+              )}
+            />
           )}
 
           {view.type === "group" && (group ? (
