@@ -12,7 +12,6 @@ import DashboardHome from "./components/DashboardHome";
 import LandingPage from "./components/LandingPage";
 import PublicNotePage from "./components/PublicNotePage";
 import StatsSection from "./components/StatsSection";
-import TechIntroPage from "./components/TechIntroPage";
 import SettingsPage from "./components/SettingsPage";
 import LoginPage from "./components/LoginPage";
 import Sidebar, { tabsFor } from "./components/Sidebar";
@@ -35,7 +34,6 @@ function viewToHash(v) {
     case "planner":     return v.groupId ? `#group/${v.groupId}/planner` : "#planner";
     case "stats":       return "#stats";
     case "settings":    return "#settings";
-    case "tech":        return "#tech";
     case "chat":        return "#chat";
     case "group-start": return "#group-start";
     case "group":       return `#group/${v.groupId}`;
@@ -56,7 +54,6 @@ function hashToView(hash) {
     case "planner":     return { type: "planner" };
     case "stats":       return { type: "stats" };
     case "settings":    return { type: "settings" };
-    case "tech":        return { type: "tech" };
     case "chat":        return { type: "chat" };
     case "group-start": return { type: "group-start" };
     case "note":        return p[1] ? { type: "note", noteId: p[1] } : { type: "home" };
@@ -711,7 +708,6 @@ export default function App() {
     : view.type === "stats" ? [["", "학습 통계"]]
     : view.type === "planner" ? (view.groupId ? [...groupCrumb, ["", "스터디 플래너"]] : [["", "개인 플래너"]])
     : view.type === "settings" ? [["", "설정"]]
-    : view.type === "tech" ? [["", "AI 기술 소개"]]
     : view.type === "group-start" ? [["", "그룹 스터디"]]
     : view.type === "group" ? groupCrumb
     : view.type === "gnote" ? [
@@ -922,13 +918,6 @@ export default function App() {
                 user={user}
                 onUserRefresh={() => setUser({ ...auth.currentUser })}
               />
-            </>
-          )}
-
-          {view.type === "tech" && (
-            <>
-              <h1 className="page-title">AI 기술 소개</h1>
-              <TechIntroPage />
             </>
           )}
 

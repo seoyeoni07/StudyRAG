@@ -968,6 +968,24 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 .lp-step-title { font-size: 15px; font-weight: 600; color: var(--text-1); margin-bottom: 3px; }
 .lp-step-desc  { font-size: 13px; color: var(--text-3); line-height: 1.65; }
 
+/* AI 기술 소개 섹션 */
+.lp-tech-section {
+  padding: 72px 48px; max-width: 1120px; margin: 0 auto; box-sizing: border-box;
+}
+.lp-tech-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px; margin-top: 32px;
+}
+.lp-tech-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 24px 20px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.lp-tech-icon { font-size: 24px; line-height: 1; }
+.lp-tech-title { font-size: 15px; font-weight: 700; color: var(--text-1); }
+.lp-tech-desc { font-size: 13.5px; color: var(--text-3); line-height: 1.65; margin: 0; }
+@media (max-width: 640px) { .lp-tech-section { padding: 56px 20px; } }
+
 /* 비교 섹션 */
 .lp-compare-section {
   padding: 72px 48px; max-width: 1120px; margin: 0 auto; box-sizing: border-box;

@@ -107,9 +107,6 @@ export default function Sidebar({
               onChange={e => { if (e.target.files?.[0]) { onUpload([e.target.files[0]]); e.target.value = ""; onClose?.(); } }} />
             <span className="sb-icon"><UploadIcon size="1em" /></span><span className="sb-label">{uploading ? "분석 중…" : "PDF 업로드"}</span>
           </label>
-          <button className={`sb-item ${view.type === "tech" ? "active" : ""}`} onClick={() => go({ type: "tech" })}>
-            <span className="sb-icon"><SparkleIcon size="1em" /></span><span className="sb-label">AI 기술 소개</span>
-          </button>
 
           {/* ── 즐겨찾기 ── */}
           {pinned.length > 0 && (
