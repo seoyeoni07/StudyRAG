@@ -1,7 +1,7 @@
 ﻿import { useState, useRef } from "react";
 import { apiFetch } from "../api.js";
 import NoteTree, { isRoot } from "./NoteTree";
-import { DocIcon, NoteIcon, WarningIcon, renderNoteIcon } from "./Icons.jsx";
+import { DocIcon, NoteIcon, WarningIcon, renderNoteIcon, HomeIcon, CalendarIcon, BarChartIcon, ChatIcon, SettingsIcon, UploadIcon } from "./Icons.jsx";
 
 export const DOC_TABS = [
   ["summary", "요약",       "AI가 강의 전체를 핵심만 정리해드립니다", ""],
@@ -86,25 +86,25 @@ export default function Sidebar({
 
         <nav className="sb-scroll">
           <button className={`sb-item ${view.type === "home" ? "active" : ""}`} onClick={() => go({ type: "home" })}>
-            <span className="sb-icon"></span><span className="sb-label">홈</span>
+            <span className="sb-icon"><HomeIcon size="1em" /></span><span className="sb-label">홈</span>
           </button>
           <button className={`sb-item ${view.type === "planner" && !view.groupId ? "active" : ""}`} onClick={() => go({ type: "planner" })}>
-            <span className="sb-icon"></span><span className="sb-label">플래너</span>
+            <span className="sb-icon"><CalendarIcon size="1em" /></span><span className="sb-label">플래너</span>
           </button>
           <button className={`sb-item ${view.type === "stats" ? "active" : ""}`} onClick={() => go({ type: "stats" })}>
-            <span className="sb-icon"></span><span className="sb-label">학습 통계</span>
+            <span className="sb-icon"><BarChartIcon size="1em" /></span><span className="sb-label">학습 통계</span>
           </button>
           <button className={`sb-item ${view.type === "chat" ? "active" : ""}`} onClick={() => go({ type: "chat" })}>
-            <span className="sb-icon"></span><span className="sb-label">채팅</span>
+            <span className="sb-icon"><ChatIcon size="1em" /></span><span className="sb-label">채팅</span>
             {dmUnread > 0 && <span className="sb-badge">{dmUnread > 99 ? "99+" : dmUnread}</span>}
           </button>
           <button className={`sb-item ${view.type === "settings" ? "active" : ""}`} onClick={() => go({ type: "settings" })}>
-            <span className="sb-icon"></span><span className="sb-label">설정</span>
+            <span className="sb-icon"><SettingsIcon size="1em" /></span><span className="sb-label">설정</span>
           </button>
           <label className="sb-item">
             <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.gif" hidden disabled={uploading}
               onChange={e => { if (e.target.files?.[0]) { onUpload([e.target.files[0]]); e.target.value = ""; onClose?.(); } }} />
-            <span className="sb-icon"></span><span className="sb-label">{uploading ? "분석 중…" : "PDF 업로드"}</span>
+            <span className="sb-icon"><UploadIcon size="1em" /></span><span className="sb-label">{uploading ? "분석 중…" : "PDF 업로드"}</span>
           </label>
 
           {/* ── 즐겨찾기 ── */}
@@ -157,7 +157,7 @@ export default function Sidebar({
                     <div className="sb-children">
                       <button className={`sb-item sb-child ${view.type === "planner" && view.groupId === g.id ? "active" : ""}`}
                         onClick={() => go({ type: "planner", groupId: g.id })}>
-                        <span className="sb-icon"></span><span className="sb-label">스터디 플래너</span>
+                        <span className="sb-icon"><CalendarIcon size="0.9em" /></span><span className="sb-label">스터디 플래너</span>
                       </button>
                       {(() => {
                         // 자료끼리, 노트끼리 묶어서 펼치기 — 지금 보고 있는 쪽은 자동으로 펼친다
