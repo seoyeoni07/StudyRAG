@@ -773,6 +773,33 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 .tutor-form .input { box-shadow: none; background: transparent; }
 .tutor-form .input:focus { box-shadow: none; }
 
+/* ── Public Note Viewer ──────────────────────── */
+.pub-note-root { min-height: 100vh; background: var(--bg); }
+.pub-note-body { max-width: 720px; margin: 0 auto; padding: 48px 32px 80px; }
+.pub-note-title {
+  font-size: clamp(24px, 4vw, 36px); font-weight: 700;
+  letter-spacing: -.025em; color: var(--text-1); margin: 0 0 32px;
+  line-height: 1.25;
+}
+.pub-note-content {
+  font-size: 15px; color: var(--text-1); line-height: 1.8;
+}
+.pub-note-content p { margin: 0 0 12px; }
+.pub-note-content h1, .pub-note-content h2, .pub-note-content h3 {
+  font-weight: 700; color: var(--text-1); margin: 28px 0 8px; letter-spacing: -.02em;
+}
+.pub-note-content ul, .pub-note-content ol { padding-left: 20px; margin: 0 0 12px; }
+.pub-note-content li { margin-bottom: 4px; }
+.pub-note-content code {
+  font-size: 13px; background: var(--bg-callout); border-radius: 4px; padding: 1px 5px;
+}
+.pub-note-content pre {
+  background: var(--bg-callout); border-radius: 8px; padding: 14px 16px; overflow-x: auto; margin: 0 0 16px;
+}
+.pub-note-content pre code { background: none; padding: 0; }
+.pub-note-empty { text-align: center; padding: 64px 0; color: var(--text-3); font-size: 15px; }
+@media (max-width: 640px) { .pub-note-body { padding: 24px 16px 48px; } }
+
 /* ── Landing Page ───────────────────────────── */
 .lp-root {
   min-height: 100vh; background: var(--bg);

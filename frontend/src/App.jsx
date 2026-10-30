@@ -10,6 +10,7 @@ import SummarySection from "./components/SummarySection";
 import StudyRoomSection from "./components/StudyRoomSection";
 import DashboardHome from "./components/DashboardHome";
 import LandingPage from "./components/LandingPage";
+import PublicNotePage from "./components/PublicNotePage";
 import StatsSection from "./components/StatsSection";
 import SettingsPage from "./components/SettingsPage";
 import LoginPage from "./components/LoginPage";
@@ -123,6 +124,15 @@ export default function App() {
   const [preAuthView, setPreAuthView] = useState(() =>
     window.location.hash === "#login" ? "login" : "landing"
   );
+  // 비로그인 상태에서 공개 노트 URL 진입 시 확인
+  const [publicNote, setPublicNote] = useState(() => {
+    const h = window.location.hash;
+    if (h.startsWith("#note/")) {
+      const id = h.slice(6);
+      return id ? { id, status: "loading", data: null } : null;
+    }
+    return null;
+  });
 
   const loadGroup = useCallback(async (id) => {
     try {
@@ -251,6 +261,19 @@ export default function App() {
     apiFetch("/users/streak").then(d => setStreak(d.streak ?? 0)).catch(() => {});
   }, [user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── 공개 노트 URL 비로그인 진입 처리 ────────────────────────────────
+  useEffect(() => {
+    if (user !== null) { setPublicNote(null); return; } // 로그인 상태면 앱에서 처리
+    const h = window.location.hash;
+    if (!h.startsWith("#note/")) { setPublicNote(null); return; }
+    const id = h.slice(6);
+    if (!id) { setPublicNote(null); return; }
+    setPublicNote(prev => prev?.id === id && prev.status !== "loading" ? prev : { id, status: "loading", data: null });
+    apiFetch(`/notes/${id}`)
+      .then(data => setPublicNote({ id, status: data.visibility === "public" ? "ready" : "denied", data }))
+      .catch(() => setPublicNote(prev => ({ ...prev, status: "denied" })));
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── 해시 라우팅 ──────────────────────────────────────────────────────
   // 뒤로가기/앞으로가기 시 hash 변화를 view에 반영
   useEffect(() => {
@@ -267,6 +290,8 @@ export default function App() {
   // 비로그인 시 #landing/#login, 로그인 시 view에 맞게 hash 동기화
   useEffect(() => {
     if (user === null) {
+      // 공개 노트 URL은 확인이 끝날 때까지, 그리고 공개면 계속 유지
+      if (publicNote && publicNote.status !== "denied") return;
       const target = preAuthView === "login" ? "#login" : "#landing";
       if (window.location.hash !== target) window.history.replaceState(null, "", target);
       return;
@@ -274,7 +299,7 @@ export default function App() {
     if (user === undefined) return;
     const next = viewToHash(view);
     if (window.location.hash !== next) window.history.pushState(null, "", next);
-  }, [view, user, preAuthView]);
+  }, [view, user, preAuthView, publicNote]);
 
   // hash에 docId만 있고 filename이 없을 때 (북마크·공유 링크 진입) pastDocs에서 채워넣기
   useEffect(() => {
@@ -380,6 +405,16 @@ export default function App() {
 
   if (user === undefined) return null;
   if (!user) {
+    // 공개 노트 확인 중 → 잠깐 빈 화면
+    if (publicNote?.status === "loading") return null;
+    // 공개 노트 → 로그인 없이 바로 표시
+    if (publicNote?.status === "ready") {
+      return <PublicNotePage note={publicNote.data} onLogin={() => {
+        setPublicNote(null);
+        setPreAuthView("login");
+        window.history.pushState(null, "", "#login");
+      }} />;
+    }
     if (preAuthView === "login") return <LoginPage />;
     return <LandingPage onStart={() => {
       setPreAuthView("login");
