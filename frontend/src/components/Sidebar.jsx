@@ -1,7 +1,7 @@
 ﻿import { useState, useRef } from "react";
 import { apiFetch } from "../api.js";
 import NoteTree, { isRoot } from "./NoteTree";
-import { DocIcon, NoteIcon, WarningIcon, renderNoteIcon, HomeIcon, CalendarIcon, BarChartIcon, ChatIcon, SettingsIcon, UploadIcon, UsersIcon } from "./Icons.jsx";
+import { DocIcon, NoteIcon, WarningIcon, renderNoteIcon, HomeIcon, CalendarIcon, BarChartIcon, ChatIcon, SettingsIcon, UploadIcon, UsersIcon, GlobeIcon } from "./Icons.jsx";
 
 export const DOC_TABS = [
   ["summary", "요약",       "AI가 강의 전체를 핵심만 정리해드립니다", ""],
@@ -98,6 +98,9 @@ export default function Sidebar({
           <button className={`sb-item ${view.type === "chat" ? "active" : ""}`} onClick={() => go({ type: "chat" })}>
             <span className="sb-icon"><ChatIcon size="1em" /></span><span className="sb-label">채팅</span>
             {dmUnread > 0 && <span className="sb-badge">{dmUnread > 99 ? "99+" : dmUnread}</span>}
+          </button>
+          <button className={`sb-item ${(view.type === "feed" || view.type === "profile") ? "active" : ""}`} onClick={() => go({ type: "feed" })}>
+            <span className="sb-icon"><GlobeIcon size="1em" /></span><span className="sb-label">커뮤니티</span>
           </button>
           <button className={`sb-item ${view.type === "settings" ? "active" : ""}`} onClick={() => go({ type: "settings" })}>
             <span className="sb-icon"><SettingsIcon size="1em" /></span><span className="sb-label">설정</span>

@@ -161,7 +161,7 @@ export default function LandingPage({ onStart }) {
 
       {/* ── 푸터 ── */}
       <footer className="lp-footer">
-        <span>© 2025 StudyRAG</span>
+        <span>© 2026 StudyRAG</span>
         <div className="lp-footer-links">
           <button className="lp-footer-link" onClick={() => setLegal("terms")}>이용약관</button>
           <button className="lp-footer-link" onClick={() => setLegal("privacy")}>개인정보처리방침</button>
