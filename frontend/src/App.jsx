@@ -218,6 +218,12 @@ export default function App() {
       }
       refreshDmRooms();
       setToast(`💬 ${payload.from}: ${(payload.content || "").slice(0, 40)}`);
+    }).on("broadcast", { event: "note-access-request" }, ({ payload }) => {
+      pushNotif(
+        `🔑 ${payload.from}님이 "${payload.title}" 노트 접근을 요청했어요`,
+        null,
+        { type: "note", noteId: payload.note_id },
+      );
     }).on("broadcast", { event: "note-shared" }, ({ payload }) => {
       // 새로고침 없이 사이드바 '공유받은 노트'에 추가하고 🔔 알림에 기록
       syncShared({ [payload.note_id]: payload.from });

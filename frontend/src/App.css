@@ -773,6 +773,22 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 .tutor-form .input { box-shadow: none; background: transparent; }
 .tutor-form .input:focus { box-shadow: none; }
 
+/* ── Note Access Request ─────────────────────── */
+.access-req-root {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; text-align: center;
+  padding: 80px 32px; gap: 12px;
+}
+.access-req-lock { opacity: .4; margin-bottom: 4px; }
+.access-req-title { font-size: 20px; font-weight: 700; color: var(--text-1); margin: 0; }
+.access-req-desc { font-size: 14px; color: var(--text-3); margin: 0 0 8px; }
+.access-req-btn { padding: 9px 24px; font-size: 14px; }
+.access-req-sending { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-3); }
+.access-req-done {
+  font-size: 14px; color: var(--green); background: var(--green-bg);
+  border: 1px solid var(--green-border); border-radius: 8px; padding: 10px 20px;
+}
+
 /* ── Public Note Viewer ──────────────────────── */
 .pub-note-root { min-height: 100vh; background: var(--bg); }
 .pub-note-body { max-width: 720px; margin: 0 auto; padding: 48px 32px 80px; }

@@ -88,7 +88,7 @@ def _get_owned(db: Session, note_id: str, user_id: str) -> Note:
         return note
     if not note.group_id and _shared_via_ancestors(db, note, user_id):
         return note
-    raise HTTPException(404, "노트를 찾을 수 없습니다.")
+    raise HTTPException(403, "접근 권한이 없습니다.")
 
 
 def _shared_via_ancestors(db: Session, note: Note, user_id: str) -> bool:
@@ -345,6 +345,24 @@ def get_note(
     if getattr(note, "visibility", "private") == "public":
         return _to_dict(note)
     return _to_dict(_get_owned(db, note_id, _require_user(x_user_id)))
+
+
+@router.post("/{note_id}/request-access")
+def request_access(
+    note_id: str,
+    x_user_id: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    """비공개 노트에 접근 권한을 요청한다. 프론트엔드가 소유자 inbox에 알림을 보내기 위해 owner_id를 반환."""
+    user_id = _require_user(x_user_id)
+    note = db.query(Note).filter(Note.id == note_id).first()
+    if not note:
+        raise HTTPException(404, "노트를 찾을 수 없습니다.")
+    if note.user_id == user_id:
+        raise HTTPException(400, "본인 노트입니다.")
+    if _shared_via_ancestors(db, note, user_id) or (note.group_id and _is_member(db, note.group_id, user_id)):
+        raise HTTPException(400, "이미 접근 권한이 있습니다.")
+    return {"owner_id": note.user_id, "title": note.title or "제목 없음"}
 
 
 @router.patch("/{note_id}")

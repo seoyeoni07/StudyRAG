@@ -3,6 +3,7 @@ import { apiFetch } from "../api";
 import NoteEditor, { useCollabDoc } from "./NoteEditor";
 import { sendBroadcast } from "../realtime/chatBus";
 import { NoteIcon, ICON_DEFS, renderNoteIcon } from "./Icons.jsx";
+import NoteAccessRequest from "./NoteAccessRequest";
 
 function ShareModal({ noteId, getTitle, getIcon, me, onClose }) {
   const [q, setQ] = useState("");
@@ -180,6 +181,7 @@ export default function NotePage({ noteId, user, pastDocs, onChanged, onDeleted,
     } catch (err) { setError(err.message); }
   }
 
+  if (loadError === "접근 권한이 없습니다.") return <NoteAccessRequest noteId={noteId} user={user} />;
   if (loadError) return <div className="error-banner"><span>{loadError}</span></div>;
   if (!state || !props) return <div className="loading-wrap"><div className="spinner" /></div>;
 
