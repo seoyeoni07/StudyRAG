@@ -257,7 +257,7 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
   display: flex; align-items: center; gap: 8px;
   padding: 0 20px;
   position: sticky; top: 0; z-index: 50;
-  background: #fff;
+  background: var(--bg-card);
   border-bottom: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
 }
@@ -1531,7 +1531,7 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 /* ── 오답 복습 알림 ─────────────────────────── */
 .dash-review-alert {
   display: flex; align-items: center; gap: 10px;
-  background: #fff8f0; border: 1px solid #f5c07a; border-radius: var(--r-sm);
+  background: var(--amber-bg); border: 1px solid var(--amber-border); border-radius: var(--r-sm);
   padding: 10px 14px; font-size: 14px; margin-bottom: 8px;
 }
 .dash-review-alert-icon { font-size: 18px; }
