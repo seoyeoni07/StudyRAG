@@ -1,7 +1,7 @@
 ﻿import { useState, useRef } from "react";
 import { apiFetch } from "../api.js";
 import NoteTree, { isRoot } from "./NoteTree";
-import { DocIcon, NoteIcon, WarningIcon, renderNoteIcon, HomeIcon, CalendarIcon, BarChartIcon, ChatIcon, SettingsIcon, UploadIcon, UsersIcon } from "./Icons.jsx";
+import { DocIcon, NoteIcon, WarningIcon, renderNoteIcon, HomeIcon, CalendarIcon, BarChartIcon, ChatIcon, SettingsIcon, UploadIcon, UsersIcon, SparkleIcon } from "./Icons.jsx";
 
 export const DOC_TABS = [
   ["summary", "요약",       "AI가 강의 전체를 핵심만 정리해드립니다", ""],
