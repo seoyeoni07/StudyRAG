@@ -12,8 +12,6 @@ _OPENROUTER_VISION_MODELS = [
     "google/gemma-3-27b-it:free",
     "meta-llama/llama-4-scout:free",
 ]
-_RETRIABLE_VISION = ("overload", "503", "temporarily", "unavailable", "404")
-
 
 def _image_to_b64_jpeg(image, max_px=768, quality=80) -> str:
     """PIL Image → JPEG base64 (크기/용량 최소화)"""

@@ -129,16 +129,19 @@ export default function DashboardHome({
               <div key={d.doc_id} className="launcher-doc-card" onClick={() => onSelectDoc(d.doc_id, d.filename)}>
                 <div className="launcher-doc-card-top">
                   <span className="launcher-doc-name" title={d.filename}>
-                    {d.filename.replace(/\.pdf$/i, "")}
+                    {d.filename.replace(/\.(pdf|jpe?g|png|webp|gif)$/i, "")}
                   </span>
                   <button className="launcher-doc-del" title="삭제"
-                    onClick={e => { e.stopPropagation(); onDeleteDoc(d.doc_id); }}>×</button>
+                    onClick={e => { e.stopPropagation(); if (window.confirm(`"${d.filename.replace(/\.(pdf|jpe?g|png|webp|gif)$/i, "")}" 자료를 삭제할까요?`)) onDeleteDoc(d.doc_id); }}>×</button>
                 </div>
                 <span className="launcher-doc-date">{timeAgo(d.created_at)}</span>
                 {d.status === "processing" && (
                   <span className="launcher-doc-processing">처리 중…</span>
                 )}
-                {d.tags?.length > 0 && (
+                {d.status === "failed" && (
+                  <span className="launcher-doc-processing" style={{ color: "var(--error, #e53)" }}>인식 실패 · 클릭해서 재시도</span>
+                )}
+                {d.tags?.length > 0 && d.status !== "failed" && (
                   <div className="launcher-doc-chips" onClick={e => e.stopPropagation()}>
                     {d.tags.map((tag, i) => (
                       <span key={i} className="launcher-tag">{tag}</span>
