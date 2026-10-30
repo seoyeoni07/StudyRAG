@@ -1,5 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 import { apiFetch } from "../api";
+
+const Md = ({ children }) => (
+  <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+    {children || ""}
+  </ReactMarkdown>
+);
 
 const POLL_INTERVAL = 3000;
 
@@ -216,14 +226,16 @@ export default function StudyRoomSection({ docId, userId, groupId, preJoined, de
   if (view === "lobby") {
     return (
       <div className="room-lobby">
-        <div className="room-code-display">
-          <span className="room-code-label">방 코드</span>
-          <span className="room-code">{room?.code}</span>
-          <button className="room-code-copy" onClick={() => {
-            navigator.clipboard.writeText(room?.code || "");
-          }} title="코드 복사">복사</button>
-          <span className="room-code-hint">친구에게 이 코드를 알려주세요</span>
-        </div>
+        {!groupId && (
+          <div className="room-code-display">
+            <span className="room-code-label">방 코드</span>
+            <span className="room-code">{room?.code}</span>
+            <button className="room-code-copy" onClick={() => {
+              navigator.clipboard.writeText(room?.code || "");
+            }} title="코드 복사">복사</button>
+            <span className="room-code-hint">친구에게 이 코드를 알려주세요</span>
+          </div>
+        )}
 
         {error && <div className="error-banner"><span className="error-icon">⚠️</span><span>{error}</span></div>}
 
@@ -281,7 +293,7 @@ export default function StudyRoomSection({ docId, userId, groupId, preJoined, de
         {room.questions.map((q) => (
           <div key={q.id} className="question-item" style={{ opacity: submitted ? 0.65 : 1 }}>
             <div className="q-num">문제 {q.id}</div>
-            <p className="q-text">{q.question}</p>
+            <div className="q-text"><Md>{q.question}</Md></div>
             {q.type === "multiple_choice" ? (
               <div className="options">
                 {q.options.map((opt) => {
