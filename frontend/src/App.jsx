@@ -254,11 +254,16 @@ export default function App() {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
-  // view가 바뀔 때마다 URL hash 업데이트 (popstate에서 온 변경은 이미 URL에 반영됐으므로 중복 pushState 방지)
+  // 비로그인 시 #login, 로그인 시 view에 맞게 hash 동기화
   useEffect(() => {
+    if (user === null) {
+      if (window.location.hash !== "#login") window.history.replaceState(null, "", "#login");
+      return;
+    }
+    if (user === undefined) return;
     const next = viewToHash(view);
     if (window.location.hash !== next) window.history.pushState(null, "", next);
-  }, [view]);
+  }, [view, user]);
 
   // hash에 docId만 있고 filename이 없을 때 (북마크·공유 링크 진입) pastDocs에서 채워넣기
   useEffect(() => {

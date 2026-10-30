@@ -16,6 +16,14 @@ function firebaseMsg(err) {
   return ERROR_MAP[code] || err?.message || "오류가 발생했습니다.";
 }
 
+const FEATURES = [
+  { icon: "🔍", color: "blue",  title: "문서 Q&A",     desc: "강의자료 어디에서든 바로 답을 찾아줘요" },
+  { icon: "🤖", color: "teal",  title: "AI 튜터",       desc: "답이 아닌 이해, 소크라테스식 1:1 대화" },
+  { icon: "✏️", color: "amber", title: "자동 퀴즈 생성", desc: "간격 반복으로 오답을 완전히 없애줘요" },
+  { icon: "👥", color: "pink",  title: "그룹 스터디",    desc: "함께 자료를 보고, 같이 퀴즈를 풀어요" },
+  { icon: "📝", color: "green", title: "스마트 노트",    desc: "자료와 연결된 노트, 팀과 실시간 공유" },
+];
+
 export default function LoginPage() {
   const [tab, setTab] = useState("google");     // google | email
   const [mode, setMode] = useState("login");    // login | signup
@@ -45,36 +53,47 @@ export default function LoginPage() {
 
   return (
     <div className="login-root">
+      {/* ── 왼쪽 히어로 패널 ── */}
       <div className="login-left">
         <div className="login-left-brand">
           <div className="login-logo">SR</div>
           <span className="login-brand-name">StudyRAG</span>
         </div>
-        <p className="login-left-tagline">강의자료를<br />더 깊이, 더 빠르게.</p>
-        <div className="login-left-features">
-          <div className="lf-row">
-            <span className="lf-label">Q&A</span>
-            <span className="lf-desc">궁금한 부분을 문서에서 바로 찾아드려요</span>
-          </div>
-          <div className="lf-row">
-            <span className="lf-label">AI 튜터</span>
-            <span className="lf-desc">답 대신 이해할 때까지 함께 풀어드려요</span>
-          </div>
-          <div className="lf-row">
-            <span className="lf-label">퀴즈</span>
-            <span className="lf-desc">자동 생성 문제와 간격 반복 오답 복습</span>
-          </div>
+
+        <h2 className="login-left-headline">
+          강의자료를<br /><span>더 깊이, 더 빠르게.</span>
+        </h2>
+        <p className="login-left-sub">
+          PDF·이미지 강의자료를 올리면 AI가 요약하고, 질문에 답하고,
+          퀴즈를 만들고, 오답을 추적해요. 혼자도, 팀도.
+        </p>
+
+        <div className="login-features">
+          {FEATURES.map(f => (
+            <div className="login-feat" key={f.title}>
+              <div className={`login-feat-icon login-feat-icon--${f.color}`}>{f.icon}</div>
+              <div>
+                <div className="login-feat-title">{f.title}</div>
+                <div className="login-feat-desc">{f.desc}</div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
+      {/* ── 오른쪽 로그인 폼 ── */}
       <div className="login-right">
         <div className="login-card">
-          <div className="login-card-heading">
-            <h1 className="login-card-title">로그인</h1>
-            <p className="login-card-sub">StudyRAG를 시작하세요.</p>
+          <div className="login-card-logo">
+            <div className="login-card-logo-mark">SR</div>
+            <span className="login-card-logo-name">StudyRAG</span>
           </div>
 
-          {/* 탭 */}
+          <div className="login-card-heading">
+            <h1 className="login-card-title">{mode === "signup" ? "회원가입" : "시작하기"}</h1>
+            <p className="login-card-sub">강의자료를 AI로 완전히 소화하세요.</p>
+          </div>
+
           <div className="login-tabs">
             <button className={`login-tab ${tab === "google" ? "active" : ""}`} onClick={() => { setTab("google"); setError(""); }}>
               Google
