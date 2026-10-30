@@ -80,7 +80,6 @@ export default function SummarySection({ docId, onSaveNote }) {
 
       {summary.study_tip && (
         <div className="summary-tip">
-          <span className="summary-tip-icon">💡</span>
           <span>{summary.study_tip}</span>
         </div>
       )}
@@ -91,7 +90,7 @@ export default function SummarySection({ docId, onSaveNote }) {
             "## 강의 개요", summary.overview || "",
             "", "## 핵심 개념", ...(summary.key_concepts || []).map((c, i) => `${i + 1}. ${c}`),
             "", "## 키워드", (summary.keywords || []).map(k => `\`${k}\``).join(" "),
-            ...(summary.study_tip ? ["", `> 💡 ${summary.study_tip}`] : []),
+            ...(summary.study_tip ? ["", `> ${summary.study_tip}`] : []),
           ].join("\n"))}>
             노트로 저장
           </button>

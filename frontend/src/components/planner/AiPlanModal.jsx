@@ -91,7 +91,7 @@ export default function AiPlanModal({ planner, startDate, onClose, onApplied, on
     <div className="pl-modal-overlay" onClick={onClose}>
       <div className="pl-modal" onClick={e => e.stopPropagation()}>
         <div className="pl-modal-head">
-          <span>✨ AI로 공부 계획 세우기</span>
+          <span>AI로 공부 계획 세우기</span>
           <button className="btn-ghost" onClick={onClose}>닫기</button>
         </div>
         {error && <div className="error-banner"><span>{error}</span></div>}

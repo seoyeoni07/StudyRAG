@@ -28,7 +28,7 @@ export default function WeekView({ start, days, tasks, colorOf, onPickDay, onTog
                 <span className="pl-week-d">{fromKey(k).getDate()}</span>
                 {days[k]?.stickers?.length > 0 && <span className="pl-week-stk">{days[k].stickers.slice(0, 3).join("")}</span>}
               </button>
-              {days[k]?.goal && <p className="pl-week-goal">🎯 {days[k].goal}</p>}
+              {days[k]?.goal && <p className="pl-week-goal">{days[k].goal}</p>}
               <ul className="pl-week-tasks">
                 {list.map(t => (
                   <li key={t.id} className={t.done ? "done" : ""}>

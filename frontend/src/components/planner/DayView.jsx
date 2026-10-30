@@ -77,7 +77,7 @@ function TaskList({ date, tasks, subjects, colorOf, api, plannerId, onOpenLink }
             onLink={() => setLinking(t)}
             onOpenLink={onOpenLink} />
         ))}
-        {tasks.length === 0 && <li className="pl-empty">할 일을 추가하거나 ✨ AI로 계획을 세워보세요</li>}
+        {tasks.length === 0 && <li className="pl-empty">할 일을 추가하거나 AI로 계획을 세워보세요</li>}
       </ul>
       <div className="pl-add-task">
         <select value={subject} onChange={e => setSubject(e.target.value)} aria-label="과목">

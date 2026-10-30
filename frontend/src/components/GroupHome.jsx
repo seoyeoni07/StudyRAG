@@ -107,7 +107,6 @@ export default function GroupHome({
       {/* 퀴즈 알림 */}
       {quiz && quiz.by !== me.uid && (
         <div className="callout callout--quiz">
-          <span>🏆</span>
           <span style={{ flex: 1 }}>
             <strong>{quiz.by_name}</strong>님이 "{quiz.filename?.replace(/\.pdf$/i, "")}" 그룹 퀴즈를 열었어요 · 코드 <code className="group-code">{quiz.code}</code>
           </span>
