@@ -255,6 +255,7 @@ export default function App() {
         "key",
       );
     }).on("broadcast", { event: "note-access-granted" }, ({ payload }) => {
+      syncShared();
       setToast(`"${payload.title}" 노트 접근이 허락됐어요`);
       pushNotif(`"${payload.title}" 노트 접근이 허락됐어요`, null, { type: "note", noteId: payload.note_id }, "share");
     }).on("broadcast", { event: "note-access-denied" }, ({ payload }) => {
