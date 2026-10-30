@@ -59,6 +59,7 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [toast, setToast] = useState("");
+  const [theme, setTheme] = useState(() => { try { return localStorage.getItem("theme") || "auto"; } catch { return "auto"; } });
   const [groups, setGroups] = useState([]);
   const [groupData, setGroupData] = useState({}); // { [groupId]: { detail, docs, notes } }
   const [groupUploading, setGroupUploading] = useState(null);
@@ -284,6 +285,14 @@ export default function App() {
     const t = setTimeout(() => setToast(""), 2400);
     return () => clearTimeout(t);
   }, [toast]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === "dark") root.setAttribute("data-theme", "dark");
+    else if (theme === "light") root.setAttribute("data-theme", "light");
+    else root.removeAttribute("data-theme");
+    try { localStorage.setItem("theme", theme); } catch {}
+  }, [theme]);
 
   if (user === undefined) return null;
   if (!user) return <LoginPage />;
@@ -566,6 +575,7 @@ export default function App() {
         dmUnread={dmUnread}
         streak={streak}
         onNoteAction={noteAction}
+        theme={theme} onToggleTheme={() => setTheme(t => t === "dark" ? "auto" : "dark")}
       />
 
       <div className="main">
@@ -779,6 +789,7 @@ export default function App() {
               onJoinQuiz={(info) => joinGroupQuiz(groupId, info)}
               onReload={() => loadGroup(groupId)}
               onOpenPlanner={() => setView({ type: "planner", groupId })}
+              onToast={setToast}
             />
           ) : <div className="loading-wrap"><div className="spinner" /></div>)}
 

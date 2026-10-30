@@ -74,15 +74,15 @@ export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc
       <div className="dash-stats">
         <div className="dash-stat-card">
           <span className="dash-stat-label">오늘 복습</span>
-          <span className="dash-stat-value">{stats?.today_review ?? "—"}</span>
+          {stats === null ? <span className="skeleton skeleton-val" /> : <span className="dash-stat-value">{stats.today_review}</span>}
         </div>
         <div className="dash-stat-card">
           <span className="dash-stat-label">전체 오답</span>
-          <span className="dash-stat-value">{stats?.total_wrongs ?? "—"}</span>
+          {stats === null ? <span className="skeleton skeleton-val" /> : <span className="dash-stat-value">{stats.total_wrongs}</span>}
         </div>
         <div className="dash-stat-card">
           <span className="dash-stat-label">내 자료</span>
-          <span className="dash-stat-value">{stats?.total_docs ?? pastDocs.length}</span>
+          {stats === null ? <span className="skeleton skeleton-val" /> : <span className="dash-stat-value">{stats.total_docs ?? pastDocs.length}</span>}
         </div>
       </div>
 

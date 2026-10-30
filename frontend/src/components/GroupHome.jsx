@@ -26,7 +26,7 @@ export function Avatar({ name = "?", photo, online, size = 22 }) {
 export default function GroupHome({
   group, docs, notes, online, me, realtime,
   uploading, onUpload, onOpenDoc, onOpenNote, onNewNote, onDeleteDoc, onLeave,
-  quiz, onJoinQuiz, onReload, onOpenPlanner,
+  quiz, onJoinQuiz, onReload, onOpenPlanner, onToast,
 }) {
   const [tab, setTab] = useState("home");
   const [copied, setCopied] = useState(false);
@@ -72,6 +72,7 @@ export default function GroupHome({
       await navigator.clipboard.writeText(group.invite_code);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
+      onToast?.(`초대 코드 ${group.invite_code} 복사됨`);
     } catch { /* 코드는 화면에 보인다 */ }
   }
 
@@ -282,9 +283,11 @@ export default function GroupHome({
               <button className="btn-primary btn-sm" onClick={() => onNewNote()}>+ 새 노트</button>
             </div>
             {notes.length === 0 ? (
-              <button className="dash-planner-empty" onClick={() => onNewNote()}>
-                멤버 모두가 실시간으로 함께 편집할 수 있는 첫 노트를 만들어보세요.
-              </button>
+              <div className="empty-state" style={{ cursor: "pointer" }} onClick={() => onNewNote()} role="button" tabIndex={0}>
+                <NoteIcon size="2em" />
+                <span className="empty-state-title">공동 노트가 없어요</span>
+                <span className="empty-state-sub">클릭해서 멤버 모두가 함께 편집할 수 있는 첫 노트를 만들어보세요.</span>
+              </div>
             ) : (
               <div className="dash-doc-table">
                 <div className="group-row group-row--head" style={{ padding: "6px 16px" }}>
