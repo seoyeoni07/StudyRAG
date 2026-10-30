@@ -775,97 +775,44 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 
 /* ── Login ──────────────────────────────────── */
 .login-root {
-  min-height: 100vh; display: flex; background: var(--bg);
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: var(--bg); padding: 32px 20px; box-sizing: border-box;
+}
+.login-center {
+  width: 100%; max-width: 360px;
+  display: flex; flex-direction: column; gap: 0;
 }
 
-/* 왼쪽 히어로 패널 */
-.login-left {
-  display: none;
-  flex: 1; flex-direction: column; justify-content: center;
-  padding: 48px 56px;
-  background: linear-gradient(145deg, #1e2d5a 0%, #1a3a5c 40%, #0f2540 100%);
-  position: relative; overflow: hidden;
+/* 브랜드 */
+.login-brand {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 32px;
 }
-@media (min-width: 860px) { .login-left { display: flex; } }
-
-/* 배경 장식 원 */
-.login-left::before, .login-left::after {
-  content: ""; position: absolute; border-radius: 50%; pointer-events: none;
-}
-.login-left::before {
-  width: 420px; height: 420px; top: -120px; right: -100px;
-  background: radial-gradient(circle, rgba(99,131,255,.18) 0%, transparent 70%);
-}
-.login-left::after {
-  width: 300px; height: 300px; bottom: -80px; left: -60px;
-  background: radial-gradient(circle, rgba(56,189,248,.12) 0%, transparent 70%);
-}
-
-.login-left-brand {
-  display: flex; align-items: center; gap: 10px; margin-bottom: 48px;
-}
-.login-logo {
-  width: 36px; height: 36px; background: rgba(255,255,255,.15);
-  border: 1px solid rgba(255,255,255,.2); border-radius: 8px;
+.login-mark {
+  width: 30px; height: 30px; background: var(--primary); border-radius: 7px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 15px; font-weight: 800; color: #fff; letter-spacing: -.02em;
-  backdrop-filter: blur(4px);
+  font-size: 12px; font-weight: 800; color: #fff; letter-spacing: -.02em;
+  flex-shrink: 0;
 }
-.login-brand-name { font-size: 16px; font-weight: 700; color: rgba(255,255,255,.9); letter-spacing: .02em; }
+.login-mark-name { font-size: 15px; font-weight: 700; color: var(--text-1); }
 
-.login-left-headline {
-  font-size: clamp(28px, 3.5vw, 40px); font-weight: 800; color: #fff;
-  line-height: 1.25; letter-spacing: -.02em; margin-bottom: 14px;
+/* 소개 헤드라인 */
+.login-intro { margin-bottom: 28px; }
+.login-headline {
+  font-size: clamp(24px, 6vw, 30px); font-weight: 800;
+  line-height: 1.25; letter-spacing: -.03em;
+  color: var(--text-1); margin: 0 0 10px;
 }
-.login-left-headline span { color: #93c5fd; }
-.login-left-sub { font-size: 15px; color: rgba(255,255,255,.6); line-height: 1.7; margin-bottom: 44px; max-width: 360px; }
+.login-headline em {
+  font-style: normal; color: var(--primary);
+}
+.login-desc {
+  font-size: 14px; color: var(--text-3); line-height: 1.7; margin: 0;
+}
 
-.login-features { display: flex; flex-direction: column; gap: 16px; }
-.login-feat {
-  display: flex; align-items: flex-start; gap: 14px;
-  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);
-  border-radius: 12px; padding: 14px 16px;
-  backdrop-filter: blur(2px);
-}
-.login-feat-icon {
-  width: 36px; height: 36px; flex-shrink: 0; border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 17px;
-}
-.login-feat-icon--blue  { background: rgba(99,131,255,.2); }
-.login-feat-icon--teal  { background: rgba(20,184,166,.2); }
-.login-feat-icon--amber { background: rgba(251,191,36,.15); }
-.login-feat-icon--pink  { background: rgba(236,72,153,.15); }
-.login-feat-icon--green { background: rgba(34,197,94,.15); }
-.login-feat-title { font-size: 13px; font-weight: 600; color: rgba(255,255,255,.9); margin-bottom: 2px; }
-.login-feat-desc  { font-size: 12px; color: rgba(255,255,255,.5); line-height: 1.5; }
-
-/* 오른쪽 폼 */
-.login-right {
-  flex: 0 0 auto; width: 100%; max-width: 440px;
-  display: flex; align-items: center; justify-content: center;
-  padding: 48px 32px;
-}
-@media (max-width: 859px) {
-  .login-right { max-width: 100%; padding: 14vh 24px 48px; }
-}
-.login-card {
-  width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 16px;
-}
-.login-card-logo {
-  display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
-}
-.login-card-logo-mark {
-  width: 40px; height: 40px; background: var(--primary); border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px; font-weight: 800; color: #fff; letter-spacing: -.02em;
-  box-shadow: 0 4px 12px rgba(37,99,235,.35);
-}
-.login-card-logo-name { font-size: 18px; font-weight: 700; color: var(--text-1); letter-spacing: -.01em; }
-.login-card-heading { display: flex; flex-direction: column; gap: 4px; }
-.login-card-title { font-size: 24px; font-weight: 700; color: var(--text-1); letter-spacing: -.01em; }
-.login-card-sub { font-size: 14px; color: var(--text-4); }
-.login-error { font-size: 13px; color: var(--red); }
+/* 폼 영역 */
+.login-form-section { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.login-error { font-size: 13px; color: var(--red); margin: 0; }
 .login-google-btn {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   width: 100%; height: 42px; padding: 0 14px;
@@ -875,7 +822,7 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 }
 .login-google-btn:hover:not(:disabled) { background: var(--hover); }
 .login-google-btn:disabled { opacity: .5; cursor: not-allowed; }
-.login-terms { font-size: 12px; color: var(--text-4); text-align: center; line-height: 1.6; margin-top: 4px; }
+.login-terms { font-size: 12px; color: var(--text-4); line-height: 1.6; }
 .login-tabs { display: flex; gap: 2px; padding: 2px; background: var(--bg-callout); border-radius: var(--r-md); }
 .login-tab {
   flex: 1; padding: 6px 0; font-size: 13px; font-weight: 500;
@@ -886,15 +833,13 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 .login-tab:not(.active):hover { color: var(--text-1); }
 .login-email-form { display: flex; flex-direction: column; gap: 8px; }
 .login-email-form .input { height: 40px; }
-.login-submit-btn { width: 100%; height: 40px; margin-top: 4px; }
-.login-mode-toggle { font-size: 13px; color: var(--text-3); text-align: center; }
+.login-submit-btn { width: 100%; height: 40px; margin-top: 2px; }
+.login-mode-toggle { font-size: 13px; color: var(--text-3); }
 .login-mode-btn {
   background: none; border: none; color: var(--primary); font-weight: 500;
   cursor: pointer; font-size: 13px;
 }
 .login-mode-btn:hover { text-decoration: underline; }
-.login-divider { display: flex; align-items: center; gap: 10px; color: var(--text-4); font-size: 12px; }
-.login-divider::before, .login-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
 
 /* ── QA conversation layout ──────────────── */
 .qa-wrap { display: flex; flex-direction: column; }
