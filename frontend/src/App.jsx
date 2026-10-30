@@ -9,6 +9,7 @@ import TutorSection from "./components/TutorSection";
 import SummarySection from "./components/SummarySection";
 import StudyRoomSection from "./components/StudyRoomSection";
 import DashboardHome from "./components/DashboardHome";
+import LandingPage from "./components/LandingPage";
 import StatsSection from "./components/StatsSection";
 import SettingsPage from "./components/SettingsPage";
 import LoginPage from "./components/LoginPage";
@@ -118,6 +119,10 @@ export default function App() {
   const [streak, setStreak] = useState(0);
   const [wrongRefreshKey, setWrongRefreshKey] = useState(0);
   const [quizInitialSession, setQuizInitialSession] = useState(null);
+  // 비로그인 상태에서 랜딩/로그인 전환
+  const [preAuthView, setPreAuthView] = useState(() =>
+    window.location.hash === "#login" ? "login" : "landing"
+  );
 
   const loadGroup = useCallback(async (id) => {
     try {
@@ -249,21 +254,27 @@ export default function App() {
   // ── 해시 라우팅 ──────────────────────────────────────────────────────
   // 뒤로가기/앞으로가기 시 hash 변화를 view에 반영
   useEffect(() => {
-    const onPop = () => { try { setView(hashToView(window.location.hash)); } catch {} };
+    const onPop = () => {
+      try { setView(hashToView(window.location.hash)); } catch {}
+      const h = window.location.hash;
+      if (h === "#login") setPreAuthView("login");
+      else if (h === "#landing" || h === "" || h === "#") setPreAuthView("landing");
+    };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
-  // 비로그인 시 #login, 로그인 시 view에 맞게 hash 동기화
+  // 비로그인 시 #landing/#login, 로그인 시 view에 맞게 hash 동기화
   useEffect(() => {
     if (user === null) {
-      if (window.location.hash !== "#login") window.history.replaceState(null, "", "#login");
+      const target = preAuthView === "login" ? "#login" : "#landing";
+      if (window.location.hash !== target) window.history.replaceState(null, "", target);
       return;
     }
     if (user === undefined) return;
     const next = viewToHash(view);
     if (window.location.hash !== next) window.history.pushState(null, "", next);
-  }, [view, user]);
+  }, [view, user, preAuthView]);
 
   // hash에 docId만 있고 filename이 없을 때 (북마크·공유 링크 진입) pastDocs에서 채워넣기
   useEffect(() => {
@@ -368,7 +379,13 @@ export default function App() {
   }, [theme]);
 
   if (user === undefined) return null;
-  if (!user) return <LoginPage />;
+  if (!user) {
+    if (preAuthView === "login") return <LoginPage />;
+    return <LandingPage onStart={() => {
+      setPreAuthView("login");
+      window.history.pushState(null, "", "#login");
+    }} />;
+  }
 
   async function handleDeleteDoc(doc_id) {
     try {

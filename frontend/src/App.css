@@ -773,6 +773,155 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 .tutor-form .input { box-shadow: none; background: transparent; }
 .tutor-form .input:focus { box-shadow: none; }
 
+/* ── Landing Page ───────────────────────────── */
+.lp-root {
+  min-height: 100vh; background: var(--bg);
+  font-family: 'Pretendard Variable', 'Pretendard', -apple-system, sans-serif;
+}
+.lp-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 40px; border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: var(--bg); z-index: 50;
+}
+.lp-nav-brand { display: flex; align-items: center; gap: 8px; }
+.lp-brand-name { font-size: 15px; font-weight: 700; color: var(--text-1); }
+.lp-nav-btn { font-size: 13px; }
+
+/* 히어로 */
+.lp-hero {
+  max-width: 640px; margin: 0 auto;
+  padding: 80px 32px 64px; text-align: center;
+}
+.lp-eyebrow {
+  font-size: 12px; font-weight: 600; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--primary); margin: 0 0 20px;
+}
+.lp-headline {
+  font-size: clamp(36px, 6vw, 56px); font-weight: 800;
+  line-height: 1.18; letter-spacing: -.035em;
+  color: var(--text-1); margin: 0 0 22px;
+}
+.lp-headline span { color: var(--primary); }
+.lp-sub {
+  font-size: 16px; color: var(--text-3); line-height: 1.75;
+  margin: 0 0 32px; max-width: 480px; margin-left: auto; margin-right: auto;
+}
+.lp-cta-btn { font-size: 15px; padding: 11px 28px; }
+
+/* 앱 목업 */
+.lp-mockup-section {
+  padding: 0 32px 80px; display: flex; justify-content: center;
+}
+.lp-mockup {
+  width: 100%; max-width: 600px;
+  border: 1px solid var(--border); border-radius: 12px;
+  overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.07);
+  background: var(--bg-card);
+}
+.lp-mock-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; background: var(--bg); border-bottom: 1px solid var(--border);
+}
+.lp-mock-doc-name { font-size: 13px; font-weight: 500; color: var(--text-2); }
+.lp-mock-status {
+  font-size: 11px; font-weight: 600; color: var(--green);
+  background: var(--green-bg); border: 1px solid var(--green-border);
+  padding: 2px 8px; border-radius: 20px;
+}
+.lp-mock-tabs {
+  display: flex; gap: 0; border-bottom: 1px solid var(--border);
+  overflow-x: auto; padding: 0 16px;
+}
+.lp-mock-tab {
+  font-size: 13px; font-weight: 500; color: var(--text-3);
+  padding: 10px 14px; white-space: nowrap; cursor: default;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.lp-mock-tab--active {
+  color: var(--primary); border-bottom-color: var(--primary); font-weight: 600;
+}
+.lp-mock-body { padding: 20px 20px 16px; }
+.lp-mock-meta { font-size: 12px; color: var(--text-4); margin-bottom: 12px; }
+.lp-mock-question {
+  font-size: 15px; font-weight: 600; color: var(--text-1);
+  line-height: 1.5; margin-bottom: 16px;
+}
+.lp-mock-options { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
+.lp-mock-opt {
+  font-size: 13px; color: var(--text-2);
+  padding: 8px 12px; border-radius: 7px; border: 1px solid var(--border);
+  background: var(--bg);
+}
+.lp-mock-opt--correct {
+  color: var(--green); border-color: var(--green-border); background: var(--green-bg);
+  font-weight: 600;
+}
+.lp-mock-result {
+  font-size: 12px; color: var(--text-3);
+  display: flex; align-items: center; gap: 8px;
+}
+.lp-mock-correct-badge {
+  font-size: 11px; font-weight: 700; color: var(--green);
+  background: var(--green-bg); border: 1px solid var(--green-border);
+  padding: 2px 7px; border-radius: 20px; flex-shrink: 0;
+}
+
+/* 학습 루프 단계 */
+.lp-loop { padding: 64px 32px; max-width: 680px; margin: 0 auto; }
+.lp-section-title {
+  font-size: 22px; font-weight: 700; color: var(--text-1);
+  letter-spacing: -.02em; margin: 0 0 32px;
+}
+.lp-steps { display: flex; flex-direction: column; gap: 24px; }
+.lp-step { display: flex; align-items: flex-start; gap: 20px; }
+.lp-step-n {
+  font-size: 11px; font-weight: 700; color: var(--primary);
+  background: var(--primary-bg, #eff6ff); border: 1px solid var(--primary-border, #bfdbfe);
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.lp-step-title { font-size: 15px; font-weight: 600; color: var(--text-1); margin-bottom: 3px; }
+.lp-step-desc  { font-size: 13px; color: var(--text-3); line-height: 1.65; }
+
+/* 차별점 */
+.lp-diff {
+  padding: 0 32px 64px;
+  max-width: 680px; margin: 0 auto;
+}
+.lp-diff-inner {
+  border-left: 3px solid var(--primary); padding-left: 20px;
+}
+.lp-diff-label {
+  font-size: 11px; font-weight: 700; color: var(--primary);
+  text-transform: uppercase; letter-spacing: .06em; margin: 0 0 8px;
+}
+.lp-diff-text {
+  font-size: 15px; color: var(--text-2); line-height: 1.75; margin: 0;
+}
+
+/* 하단 CTA */
+.lp-bottom-cta {
+  background: var(--bg-callout); border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 72px 32px; text-align: center;
+}
+.lp-bottom-headline {
+  font-size: clamp(22px, 4vw, 30px); font-weight: 800;
+  letter-spacing: -.025em; color: var(--text-1); margin: 0 0 10px;
+}
+.lp-bottom-sub { font-size: 15px; color: var(--text-3); margin: 0 0 28px; }
+
+.lp-footer {
+  padding: 20px 40px; font-size: 12px; color: var(--text-4);
+}
+
+@media (max-width: 640px) {
+  .lp-nav { padding: 12px 16px; }
+  .lp-hero { padding: 48px 20px 40px; }
+  .lp-mockup-section { padding: 0 16px 56px; }
+  .lp-loop, .lp-diff, .lp-bottom-cta { padding-left: 20px; padding-right: 20px; }
+}
+
 /* ── Login ──────────────────────────────────── */
 .login-root {
   min-height: 100vh; display: flex; align-items: center; justify-content: center;
