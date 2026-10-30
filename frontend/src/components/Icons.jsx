@@ -118,6 +118,15 @@ export const HashIcon = svg(
 export const ClockIcon = svg(
   <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>
 );
+export const KeyIcon = svg(
+  <><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2l-9.6 9.6M15 3l3 3" /></>
+);
+export const MessageIcon = svg(
+  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+);
+export const ShareIcon = svg(
+  <><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></>
+);
 
 /** 노트 아이콘 픽커 옵션 목록 */
 export const ICON_DEFS = [

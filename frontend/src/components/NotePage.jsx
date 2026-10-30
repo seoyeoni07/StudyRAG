@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { apiFetch } from "../api";
 import NoteEditor, { useCollabDoc } from "./NoteEditor";
 import { sendBroadcast } from "../realtime/chatBus";
-import { NoteIcon, ICON_DEFS, renderNoteIcon } from "./Icons.jsx";
+import { NoteIcon, ICON_DEFS, renderNoteIcon, LockIcon, GlobeIcon } from "./Icons.jsx";
 import NoteAccessRequest from "./NoteAccessRequest";
 
 function ShareModal({ noteId, getTitle, getIcon, me, onClose }) {
@@ -98,12 +98,12 @@ function ShareModal({ noteId, getTitle, getIcon, me, onClose }) {
               className={`share-vis-btn ${visibility === "private" ? "share-vis-btn--active" : ""}`}
               onClick={() => visibility !== "private" && setVis("private")}
               disabled={visBusy || visibility === null}
-            >🔒 비공개</button>
+            ><LockIcon size="13px" /> 비공개</button>
             <button
               className={`share-vis-btn ${visibility === "public" ? "share-vis-btn--active" : ""}`}
               onClick={() => visibility !== "public" && setVis("public")}
               disabled={visBusy || visibility === null}
-            >🌐 공개 링크</button>
+            ><GlobeIcon size="13px" /> 공개 링크</button>
           </div>
           {visibility === "public" && (
             <div className="share-link-row">

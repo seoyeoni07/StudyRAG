@@ -16,11 +16,12 @@ import SettingsPage from "./components/SettingsPage";
 import LoginPage from "./components/LoginPage";
 import Sidebar, { tabsFor } from "./components/Sidebar";
 import { ancestorsOf } from "./components/NoteTree";
-import { NoteIcon, DocIcon, renderNoteIcon } from "./components/Icons.jsx";
+import { NoteIcon, DocIcon, renderNoteIcon, KeyIcon, ShareIcon, UsersIcon, SparkleIcon, MessageIcon } from "./components/Icons.jsx";
 import GroupHome, { GroupStart, timeAgo as groupTimeAgo } from "./components/GroupHome";
 import ChatApp from "./components/ChatApp";
 import ChatWidget from "./components/chat/ChatWidget";
 import { useDmRooms, refreshDmRooms, resetDmStore, isRoomOpen, touchDmRoom, badgeCount } from "./realtime/dmStore";
+import { sendBroadcast } from "./realtime/chatBus";
 import { useGroupChannels } from "./realtime/useGroupChannels";
 import { supabase } from "./supabase";
 import "./App.css";
@@ -152,11 +153,37 @@ export default function App() {
   }, [loadGroup]);
 
   // target: 알림을 눌렀을 때 열 화면 (자료·노트·그룹 홈)
-  const pushNotif = (text, groupId, target) =>
+  const pushNotif = (text, groupId, target, icon) =>
     setNotifications(prev => [{
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      text, groupId, target, time: new Date().toISOString(), unread: true,
+      text, groupId, target, icon, time: new Date().toISOString(), unread: true,
     }, ...prev].slice(0, 50));
+
+  async function approveAccess(notif) {
+    const { noteId, fromId, fromName, noteTitle } = notif.target;
+    setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, action: "approving" } : n));
+    try {
+      await apiFetch(`/notes/${noteId}/shares`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: fromId }),
+      });
+      sendBroadcast(`inbox:${fromId}`, "note-access-granted", {
+        note_id: noteId, title: noteTitle,
+        from: user?.displayName || user?.email?.split("@")[0] || "소유자",
+      });
+      setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, action: "approved", unread: false } : n));
+    } catch {
+      setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, action: null } : n));
+      setToast("공유에 실패했어요. 다시 시도해주세요.");
+    }
+  }
+
+  function denyAccess(notif) {
+    const { fromId, noteTitle } = notif.target;
+    sendBroadcast(`inbox:${fromId}`, "note-access-denied", { title: noteTitle });
+    setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, action: "denied", unread: false } : n));
+  }
 
   // 공유받은 노트 목록을 새로 받고, 처음 보는 노트는 🔔 알림에 남긴다.
   // (내가 꺼져 있을 때 공유된 노트도 다음 접속 때 알림으로 보이게 — 본 적 있는 목록은 브라우저에 기억)
@@ -172,8 +199,8 @@ export default function App() {
         list.filter(n => !known.includes(n.id)).forEach(n => {
           const from = fromNames[n.id];
           const title = n.title || "제목 없음";
-          pushNotif(from ? `📝 ${from}님이 "${title}" 노트를 공유했어요` : `📝 새로 공유받은 노트: "${title}"`,
-            null, { type: "note", noteId: n.id });
+          pushNotif(from ? `${from}님이 "${title}" 노트를 공유했어요` : `새로 공유받은 노트: "${title}"`,
+            null, { type: "note", noteId: n.id }, "share");
         });
       }
       try { localStorage.setItem(key, JSON.stringify(list.map(n => n.id))); } catch { /* 저장 못 해도 동작 */ }
@@ -191,14 +218,16 @@ export default function App() {
     let target = { type: "group", groupId };
     if (ev.event === "doc-added" && ev.doc_id) target = { type: "doc", docId: ev.doc_id, filename: ev.filename, groupId, tab: "summary" };
     if (ev.event === "note-added" && ev.note_id) target = { type: "gnote", groupId, noteId: ev.note_id };
+    let icon = "group";
     if (ev.event === "doc-added")     msg = `${ev.by_name}님이 "${ev.filename}" 자료를 올렸어요`;
-    else if (ev.event === "note-added")   msg = `${ev.by_name}님이 새 공동 노트를 만들었어요`;
+    else if (ev.event === "note-added")   { msg = `${ev.by_name}님이 새 공동 노트를 만들었어요`; icon = "note"; }
     else if (ev.event === "member-joined") msg = `${ev.by_name}님이 그룹에 참가했어요`;
     else if (ev.event === "quiz-room") {
       setGroupQuiz(q => ({ ...q, [groupId]: ev }));
       msg = `${ev.by_name}님이 그룹 퀴즈 방을 열었어요 (코드 ${ev.code})`;
+      icon = "quiz";
     }
-    if (msg) { setToast(msg); pushNotif(msg, groupId, target); }
+    if (msg) { setToast(msg); pushNotif(msg, groupId, target, icon); }
   }, myGroupNameFor);
 
   // 그룹 멤버 목록을 불러오면 presence 이름을 그룹 표시 이름으로 맞춘다 (같은 이름이면 다시 안 보냄)
@@ -217,13 +246,19 @@ export default function App() {
         return;
       }
       refreshDmRooms();
-      setToast(`💬 ${payload.from}: ${(payload.content || "").slice(0, 40)}`);
+      setToast(`${payload.from}: ${(payload.content || "").slice(0, 40)}`);
     }).on("broadcast", { event: "note-access-request" }, ({ payload }) => {
       pushNotif(
-        `🔑 ${payload.from}님이 "${payload.title}" 노트 접근을 요청했어요`,
+        `${payload.from}님이 "${payload.title}" 노트 접근을 요청했어요`,
         null,
-        { type: "note", noteId: payload.note_id },
+        { type: "access-request", noteId: payload.note_id, fromId: payload.from_id, fromName: payload.from, noteTitle: payload.title },
+        "key",
       );
+    }).on("broadcast", { event: "note-access-granted" }, ({ payload }) => {
+      setToast(`"${payload.title}" 노트 접근이 허락됐어요`);
+      pushNotif(`"${payload.title}" 노트 접근이 허락됐어요`, null, { type: "note", noteId: payload.note_id }, "share");
+    }).on("broadcast", { event: "note-access-denied" }, ({ payload }) => {
+      setToast(`"${payload.title}" 노트 접근 요청이 거절됐어요`);
     }).on("broadcast", { event: "note-shared" }, ({ payload }) => {
       // 새로고침 없이 사이드바 '공유받은 노트'에 추가하고 🔔 알림에 기록
       syncShared({ [payload.note_id]: payload.from });
@@ -763,17 +798,16 @@ export default function App() {
                     {notifications.length === 0 ? (
                       <p className="notif-empty">새 알림이 없어요</p>
                     ) : notifications.map(n => (
-                      <div key={n.id} className={`notif-item ${n.unread ? "notif-item--unread" : ""}`}
+                      <div key={n.id} className={`notif-item ${n.unread ? "notif-item--unread" : ""} ${n.target?.type === "access-request" ? "notif-item--action" : ""}`}
                         onClick={() => {
+                          if (n.target?.type === "access-request") return;
                           const t = n.target || (n.groupId && { type: "group", groupId: n.groupId });
                           if (t?.type === "note") {
-                            // 공유받은 노트 — 그새 공유가 해제됐으면 열지 않는다
                             if (sharedNotes.some(x => x.id === t.noteId) || notes.some(x => x.id === t.noteId)) setView(t);
                             else setToast("공유가 해제된 노트예요");
                             closeNotif();
                             return;
                           }
-                          // 그새 그룹에서 나갔거나 삭제된 자료면 그룹 홈으로
                           const gd = t && groupData[t.groupId];
                           const exists = !t || !gd ? !!gd
                             : t.type === "doc" ? gd.docs?.some(d => d.doc_id === t.docId)
@@ -781,8 +815,29 @@ export default function App() {
                           if (t && gd) setView(exists ? t : { type: "group", groupId: t.groupId });
                           closeNotif();
                         }}>
+                        <span className="notif-icon-wrap" aria-hidden="true">
+                          {n.icon === "key" && <KeyIcon size="14px" />}
+                          {n.icon === "share" && <ShareIcon size="14px" />}
+                          {n.icon === "quiz" && <SparkleIcon size="14px" />}
+                          {n.icon === "group" && <UsersIcon size="14px" />}
+                          {n.icon === "dm" && <MessageIcon size="14px" />}
+                          {!n.icon && <NoteIcon size="14px" />}
+                        </span>
                         <span className="notif-text">{n.text}</span>
                         <span className="notif-time">{timeAgo(n.time)}</span>
+                        {n.target?.type === "access-request" && (
+                          <div className="notif-actions" onClick={e => e.stopPropagation()}>
+                            {!n.action && <>
+                              <button className="notif-action-btn notif-action-btn--approve"
+                                onClick={() => approveAccess(n)}>허락</button>
+                              <button className="notif-action-btn notif-action-btn--deny"
+                                onClick={() => denyAccess(n)}>거절</button>
+                            </>}
+                            {n.action === "approving" && <span className="notif-action-done">처리 중...</span>}
+                            {n.action === "approved" && <span className="notif-action-done notif-action-done--ok">허락됨</span>}
+                            {n.action === "denied" && <span className="notif-action-done notif-action-done--no">거절됨</span>}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
