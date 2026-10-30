@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { DocIcon, SparkleIcon, CalendarIcon } from "./Icons.jsx";
 
 const MOCK_QUESTIONS = [
   {
@@ -64,7 +65,7 @@ export default function LandingPage({ onStart }) {
       entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add("lp-revealed"); }),
       { threshold: 0.12 }
     );
-    document.querySelectorAll(".lp-step, .lp-section-title, .lp-bottom-cta, .lp-steps-section, .lp-compare-section").forEach(el => obs.observe(el));
+    document.querySelectorAll(".lp-step, .lp-section-title, .lp-bottom-cta, .lp-steps-section, .lp-compare-section, .lp-tech-section").forEach(el => obs.observe(el));
     return () => obs.disconnect();
   }, []);
 
@@ -157,9 +158,9 @@ export default function LandingPage({ onStart }) {
         <h2 className="lp-section-title">어떻게 작동하나요?</h2>
         <div className="lp-tech-grid">
           {[
-            { icon: "🔍", title: "RAG — 자료 기반 검색",   desc: "질문하면 강의자료 안에서 관련 내용만 골라 LLM에게 전달합니다. 엉뚱한 답변 없이 자료에 근거한 답만 나옵니다." },
-            { icon: "🧠", title: "LLM — 자동 요약·퀴즈",  desc: "AI가 전체 자료를 읽고 핵심 개념·요약·퀴즈를 자동 생성합니다. 어렵거나 자주 틀린 유형은 더 많이 출제됩니다." },
-            { icon: "🔁", title: "SM-2 간격반복",          desc: "틀린 문제는 망각곡선에 따라 복습 날짜를 자동 계산합니다. 기억이 사라지기 직전에 다시 알려줍니다." },
+            { icon: <DocIcon size="1.1em" />,      title: "RAG — 자료 기반 검색",  desc: "질문하면 강의자료 안에서 관련 내용만 골라 LLM에게 전달합니다. 엉뚱한 답변 없이 자료에 근거한 답만 나옵니다." },
+            { icon: <SparkleIcon size="1.1em" />,  title: "LLM — 자동 요약·퀴즈", desc: "AI가 전체 자료를 읽고 핵심 개념·요약·퀴즈를 자동 생성합니다. 어렵거나 자주 틀린 유형은 더 많이 출제됩니다." },
+            { icon: <CalendarIcon size="1.1em" />, title: "SM-2 간격반복",         desc: "틀린 문제는 망각곡선에 따라 복습 날짜를 자동 계산합니다. 기억이 사라지기 직전에 다시 알려줍니다." },
           ].map(({ icon, title, desc }) => (
             <div key={title} className="lp-tech-card">
               <span className="lp-tech-icon">{icon}</span>

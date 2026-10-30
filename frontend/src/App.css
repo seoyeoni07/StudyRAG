@@ -981,7 +981,12 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
   border-radius: var(--r-lg); padding: 24px 20px;
   display: flex; flex-direction: column; gap: 8px;
 }
-.lp-tech-icon { font-size: 24px; line-height: 1; }
+.lp-tech-icon {
+  width: 34px; height: 34px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--primary-light); border-radius: var(--r-md);
+  color: var(--primary);
+}
 .lp-tech-title { font-size: 15px; font-weight: 700; color: var(--text-1); }
 .lp-tech-desc { font-size: 13.5px; color: var(--text-3); line-height: 1.65; margin: 0; }
 @media (max-width: 640px) { .lp-tech-section { padding: 56px 20px; } }
@@ -1177,6 +1182,65 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 .lp-bottom-cta.lp-revealed .lp-bottom-sub      { opacity: 1; transform: none; transition-delay: 120ms; }
 .lp-bottom-cta.lp-revealed .lp-bottom-btn      { opacity: 1; transform: none; transition-delay: 240ms; }
 
+/* ── 공통 애니메이션 keyframes ─────────────── */
+@keyframes fade-up-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes bar-grow {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+/* 홈 자료 카드 stagger */
+.launcher-doc-grid .launcher-doc-card:not(.launcher-doc-card--add) {
+  animation: fade-up-in .28s ease both;
+}
+.launcher-doc-grid .launcher-doc-card:nth-child(2) { animation-delay: 45ms; }
+.launcher-doc-grid .launcher-doc-card:nth-child(3) { animation-delay: 90ms; }
+.launcher-doc-grid .launcher-doc-card:nth-child(4) { animation-delay: 135ms; }
+.launcher-doc-grid .launcher-doc-card:nth-child(5) { animation-delay: 180ms; }
+.launcher-doc-grid .launcher-doc-card:nth-child(6) { animation-delay: 225ms; }
+
+/* 요약 블록 stagger */
+.summary-wrap > * { animation: fade-up-in .35s ease both; }
+.summary-wrap > *:nth-child(2) { animation-delay: 80ms; }
+.summary-wrap > *:nth-child(3) { animation-delay: 160ms; }
+.summary-wrap > *:nth-child(4) { animation-delay: 240ms; }
+
+/* 퀴즈 선택지 stagger */
+.quiz-options .quiz-opt-card { animation: fade-up-in .22s ease both; }
+.quiz-options .quiz-opt-card:nth-child(2) { animation-delay: 45ms; }
+.quiz-options .quiz-opt-card:nth-child(3) { animation-delay: 90ms; }
+.quiz-options .quiz-opt-card:nth-child(4) { animation-delay: 135ms; }
+
+/* 숙련도 바 grow */
+.mastery-bar-fill {
+  transform-origin: left;
+  animation: bar-grow .75s cubic-bezier(.4,0,.2,1) both .15s;
+}
+
+/* 랜딩 AI 기술 카드 scroll-reveal */
+.lp-tech-card {
+  opacity: 0; transform: translateY(16px);
+  transition: opacity .45s ease, transform .45s ease;
+}
+.lp-tech-section.lp-revealed .lp-tech-card            { opacity: 1; transform: translateY(0); }
+.lp-tech-section.lp-revealed .lp-tech-card:nth-child(2) { transition-delay: 80ms; }
+.lp-tech-section.lp-revealed .lp-tech-card:nth-child(3) { transition-delay: 160ms; }
+
+/* 랜딩 비교표 행 scroll-reveal */
+.lp-compare-table tbody tr {
+  opacity: 0; transform: translateX(-8px);
+  transition: opacity .3s ease, transform .3s ease;
+}
+.lp-compare-section.lp-revealed .lp-compare-table tbody tr             { opacity: 1; transform: translateX(0); }
+.lp-compare-section.lp-revealed .lp-compare-table tbody tr:nth-child(2) { transition-delay: 55ms; }
+.lp-compare-section.lp-revealed .lp-compare-table tbody tr:nth-child(3) { transition-delay: 110ms; }
+.lp-compare-section.lp-revealed .lp-compare-table tbody tr:nth-child(4) { transition-delay: 165ms; }
+.lp-compare-section.lp-revealed .lp-compare-table tbody tr:nth-child(5) { transition-delay: 220ms; }
+.lp-compare-section.lp-revealed .lp-compare-table tbody tr:nth-child(6) { transition-delay: 275ms; }
+
 /* prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
   .lp-animate-1, .lp-animate-2, .lp-animate-3, .lp-animate-4, .lp-animate-5 { animation: none; }
@@ -1185,6 +1249,11 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
   .lp-bottom-cta .lp-bottom-headline,
   .lp-bottom-cta .lp-bottom-sub,
   .lp-bottom-cta .lp-bottom-btn { opacity: 1; transform: none; transition: none; }
+  /* in-app */
+  .launcher-doc-card, .summary-wrap > *, .quiz-options .quiz-opt-card,
+  .mastery-bar-fill { animation: none; transform: none; }
+  /* landing scroll-reveal */
+  .lp-tech-card, .lp-compare-table tbody tr { opacity: 1; transform: none; transition: none; }
 }
 
 /* ── TechIntroPage ──────────────────────────── */
