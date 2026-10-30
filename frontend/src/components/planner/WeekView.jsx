@@ -1,4 +1,5 @@
 import { addDays, fmtMin, fromKey, timelineTotals, today, WEEKDAYS } from "./plannerUtils";
+import { DocIcon, NoteIcon } from "../Icons.jsx";
 
 /** 일주일 한눈에: 요일별 할 일·공부 시간, 아래에 과목별 주간 합계 */
 export default function WeekView({ start, days, tasks, colorOf, onPickDay, onToggle, onOpenLink }) {
@@ -37,7 +38,7 @@ export default function WeekView({ start, days, tasks, colorOf, onPickDay, onTog
                     <span className="pl-week-title" title={t.title}>{t.title}</span>
                     {t.link_type && (
                       <button className="pl-week-link" title={t.link_label} onClick={() => onOpenLink(t)}>
-                        {t.link_type === "doc" ? "📄" : "📝"}
+                        {t.link_type === "doc" ? <DocIcon size="0.85em" /> : <NoteIcon size="0.85em" />}
                       </button>
                     )}
                   </li>

@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { createReactBlockSpec } from "@blocknote/react";
 import { BlockNoteSchema, defaultBlockSpecs, insertOrUpdateBlockForSlashMenu } from "@blocknote/core";
+import { NoteIcon, DocIcon } from "./Icons.jsx";
 
 /*
  * 노트 안의 노트 (노션의 페이지 블록).
@@ -28,7 +29,7 @@ function NotePageView({ block }) {
       role="button" tabIndex={0} title={gone ? "삭제된 노트" : "노트 열기"}
       onClick={() => !gone && open(noteId)}
       onKeyDown={e => { if (e.key === "Enter" && !gone) open(noteId); }}>
-      <span className="np-icon">{live?.icon || icon || "📝"}</span>
+      <span className="np-icon">{live?.icon || icon || <NoteIcon size="0.9em" />}</span>
       <span className="np-title">{gone ? "삭제된 노트" : (live?.title || title || "제목 없음")}</span>
     </div>
   );
@@ -37,13 +38,13 @@ function NotePageView({ block }) {
 const NotePage = createReactBlockSpec(
   {
     type: "notePage",
-    propSchema: { noteId: { default: "" }, title: { default: "" }, icon: { default: "📝" } },
+    propSchema: { noteId: { default: "" }, title: { default: "" }, icon: { default: "" } },
     content: "none",
   },
   {
     render: ({ block }) => <NotePageView block={block} />,
     // 검색용 마크다운 변환 때는 제목만 남긴다
-    toExternalHTML: ({ block }) => <p>📄 {block.props.title || "노트"}</p>,
+    toExternalHTML: ({ block }) => <p>{block.props.title || "노트"}</p>,
   },
 );
 
@@ -58,13 +59,13 @@ export function notePageSlashItem(editor, create) {
     subtext: "이 노트 안에 하위 노트 만들기",
     aliases: ["노트", "페이지", "하위", "note", "page", "subpage"],
     group: "페이지",
-    icon: <span style={{ fontSize: 16 }}>📄</span>,
+    icon: <span style={{ fontSize: 16 }}><DocIcon size="1em" /></span>,
     onItemClick: async () => {
       const n = await create();
       if (!n) return;
       insertOrUpdateBlockForSlashMenu(editor, {
         type: "notePage",
-        props: { noteId: n.id, title: n.title || "", icon: n.icon || "📝" },
+        props: { noteId: n.id, title: n.title || "", icon: n.icon || "" },
       });
     },
   };

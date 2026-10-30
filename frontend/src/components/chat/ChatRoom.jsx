@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { apiFetch, BASE } from "../../api";
 import { subscribeBroadcast, sendBroadcast } from "../../realtime/chatBus";
 import { registerOpenRoom, markDmRead, touchDmRoom } from "../../realtime/dmStore";
+import { DocIcon, PaperclipIcon, WarningIcon } from "../Icons.jsx";
 
 /*
  * 채팅방 공용 부품 — 채팅 페이지와 오른쪽 아래 작은 채팅창이 같이 쓴다.
@@ -91,7 +92,7 @@ function AttachmentView({ att, onLoad }) {
   }
   return (
     <a className="chat-file" href={href} target="_blank" rel="noopener noreferrer">
-      <span className="chat-file-icon">{att.type === "application/pdf" ? "📄" : "📎"}</span>
+      <span className="chat-file-icon">{att.type === "application/pdf" ? <DocIcon size="1em" /> : <PaperclipIcon size="1em" />}</span>
       <span className="chat-file-info">
         <span className="chat-file-name">{att.name || "파일"}</span>
         <span className="chat-file-size">{fileSize(att.size)}</span>
@@ -222,7 +223,7 @@ function Composer({ onSend, pickRef, onTyping }) {
       {att && (
         <div className={`chat-pending chat-pending--${att.status}`}>
           <span className="chat-pending-name">
-            {att.status === "uploading" ? "올리는 중… " : att.status === "error" ? "⚠️ " : "📎 "}
+            {att.status === "uploading" ? "올리는 중… " : att.status === "error" ? <><WarningIcon size="0.9em" /> </> : <><PaperclipIcon size="0.9em" /> </>}
             {att.name}{att.error ? ` — ${att.error}` : ""}
           </span>
           <button className="chat-pending-x" onClick={() => setAtt(null)} aria-label="첨부 취소">×</button>

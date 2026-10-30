@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../api";
+import { CalendarIcon, SparkleIcon } from "./Icons.jsx";
 
 const FILTERS = [["all", "전체"], ["pending", "미복습"], ["today", "오늘 복습"]];
 
@@ -173,12 +174,12 @@ export default function WrongAnswerBook({ docId, refreshKey = 0, onCountLoaded, 
                 : <button className="btn-secondary btn-sm" style={{ marginTop: 4, fontSize: 12 }}
                     disabled={explaining === item.id}
                     onClick={() => aiExplain(item)}>
-                    {explaining === item.id ? "AI 해설 생성 중…" : "🤖 AI 해설 받기"}
+                    {explaining === item.id ? "AI 해설 생성 중…" : <><SparkleIcon size="0.9em" /> AI 해설 받기</>}
                   </button>
               }
               {item.reviewed && item.next_review && (
                 <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>
-                  📅 다음 복습: {new Date(item.next_review + (item.next_review.endsWith("Z") ? "" : "Z")).toLocaleDateString("ko-KR")}
+                  <CalendarIcon size="0.85em" /> 다음 복습: {new Date(item.next_review + (item.next_review.endsWith("Z") ? "" : "Z")).toLocaleDateString("ko-KR")}
                 </p>
               )}
             </div>

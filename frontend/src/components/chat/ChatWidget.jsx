@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import ChatRoom, { timeAgo } from "./ChatRoom";
 import { NewDmPanel } from "../ChatApp";
 import { useDmRooms, refreshDmRooms, addDmRoom, markListSeen } from "../../realtime/dmStore";
+import { UsersIcon } from "../Icons.jsx";
 
 /*
  * 화면 오른쪽 아래 작은 채팅창 (인스타그램 DM처럼).
@@ -73,7 +74,7 @@ export default function ChatWidget({ me, groups = [], groupDetails = {}, unread 
             <p className="chatw-empty">참여 중인 그룹이 없어요.</p>
           ) : groups.map(g => (
             <button key={g.id} className="chatapp-room-row" onClick={() => setActive({ kind: "group", groupId: g.id })}>
-              <span className="chatapp-user-avatar">👥</span>
+              <span className="chatapp-user-avatar"><UsersIcon size="1em" /></span>
               <span className="chatapp-room-info">
                 <span className="chatapp-room-row-name">{g.name}</span>
                 <span className="chatapp-room-last">{g.member_count || ""}명</span>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../../api";
 import { COLORS, WEEKDAYS, addDays, fmtMin, prettyDate, today } from "./plannerUtils";
+import { DocIcon, NoteIcon, PaperclipIcon } from "../Icons.jsx";
 
 /**
  * ✨ AI로 계획 세우기
@@ -128,7 +129,7 @@ export default function AiPlanModal({ planner, startDate, onClose, onApplied, on
                         </label>
                         <label>시험일 <input type="date" value={s.exam_date} onChange={e => setSubj(i, { exam_date: e.target.value })} /></label>
                         <button className="pl-chip" onClick={() => setOpenLinks(openLinks === i ? null : i)}>
-                          📎 자료·노트 {s.doc_ids.length + s.note_ids.length ? `(${s.doc_ids.length + s.note_ids.length})` : "연결"}
+                          <PaperclipIcon size="0.85em" /> 자료·노트 {s.doc_ids.length + s.note_ids.length ? `(${s.doc_ids.length + s.note_ids.length})` : "연결"}
                         </button>
                       </div>
                     )}
@@ -136,11 +137,11 @@ export default function AiPlanModal({ planner, startDate, onClose, onApplied, on
                       <div className="pl-subj-links">
                         {linkables.docs.map(d => (
                           <label key={d.id}><input type="checkbox" checked={s.doc_ids.includes(d.id)}
-                            onChange={() => setSubj(i, { doc_ids: toggleIn(s.doc_ids, d.id) })} /> 📄 {d.label.replace(/\.pdf$/i, "")}</label>
+                            onChange={() => setSubj(i, { doc_ids: toggleIn(s.doc_ids, d.id) })} /> <DocIcon size="0.85em" /> {d.label.replace(/\.pdf$/i, "")}</label>
                         ))}
                         {linkables.notes.map(n => (
                           <label key={n.id}><input type="checkbox" checked={s.note_ids.includes(n.id)}
-                            onChange={() => setSubj(i, { note_ids: toggleIn(s.note_ids, n.id) })} /> {n.icon || "📝"} {n.label}</label>
+                            onChange={() => setSubj(i, { note_ids: toggleIn(s.note_ids, n.id) })} /> {n.icon || <NoteIcon size="0.85em" />} {n.label}</label>
                         ))}
                         {!linkables.docs.length && !linkables.notes.length && <p className="pl-empty">연결할 자료·노트가 없어요</p>}
                         <p className="pl-muted">고른 자료의 핵심 개념·오답 수를 보고 계획을 짜고, 할 일에 자동으로 연결돼요.</p>
@@ -206,7 +207,7 @@ export default function AiPlanModal({ planner, startDate, onClose, onApplied, on
                     {d.tasks.map((t, ti) => (
                       <li key={ti}>
                         <span className="pl-preview-subj">{t.subject}</span> {t.title}
-                        <span className="pl-muted"> · {t.minutes}분{t.link_label ? ` · 📎 ${t.link_label.replace(/\.pdf$/i, "")}` : ""}</span>
+                        <span className="pl-muted"> · {t.minutes}분{t.link_label ? <> · <PaperclipIcon size="0.8em" /> {t.link_label.replace(/\.pdf$/i, "")}</> : ""}</span>
                         <button className="pl-x" onClick={() => removeTask(di, ti)} aria-label="빼기">✕</button>
                       </li>
                     ))}

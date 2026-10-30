@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { apiFetch } from "../api";
 import NoteEditor, { useCollabDoc } from "./NoteEditor";
 import { sendBroadcast } from "../realtime/chatBus";
+import { NoteIcon } from "./Icons.jsx";
 
 const ICONS = ["📝", "📒", "📘", "📗", "📙", "💡", "⭐", "🔖", "🧠", "📌", "✏️", "🎯"];
 
@@ -137,7 +138,7 @@ export default function NotePage({ noteId, user, pastDocs, onChanged, onDeleted,
     <div className="note-page">
       <div className="note-icon-wrap">
         <button className="note-icon" onClick={() => setIconOpen(o => !o)} title="아이콘 변경">
-          {props.icon || "📝"}
+          {props.icon || <NoteIcon size="1em" />}
         </button>
         {iconOpen && (
           <div className="note-icon-picker" role="listbox">

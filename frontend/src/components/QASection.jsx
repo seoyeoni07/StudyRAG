@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { ThumbUpIcon, ThumbDownIcon } from "./Icons.jsx";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
@@ -28,8 +29,8 @@ function FeedbackRow({ docId, question, onSave }) {
       ) : (
         <>
           <span className="feedback-label">도움이 됐나요?</span>
-          <button className="feedback-btn" onClick={() => send(true)}>👍</button>
-          <button className="feedback-btn" onClick={() => send(false)}>👎</button>
+          <button className="feedback-btn" onClick={() => send(true)} aria-label="도움됨"><ThumbUpIcon size="1em" /></button>
+          <button className="feedback-btn" onClick={() => send(false)} aria-label="도움 안됨"><ThumbDownIcon size="1em" /></button>
         </>
       )}
       {onSave && <button className="feedback-save" onClick={onSave}>노트로 저장</button>}

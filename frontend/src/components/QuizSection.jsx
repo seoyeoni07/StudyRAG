@@ -191,7 +191,7 @@ export default function QuizSection({ docId, onGoToWrong }) {
 
         {wrongCount > 0 && (
           <div className="wrong-saved">
-            📝 오답 {wrongCount}개가 오답노트에 저장되었습니다.
+            오답 {wrongCount}개가 오답노트에 저장되었습니다.
             {onGoToWrong && (
               <button className="btn-secondary" style={{ marginLeft: 12, fontSize: 13, padding: "3px 12px" }}
                 onClick={onGoToWrong}>오답노트 보기 →</button>

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import LinkPicker from "./LinkPicker";
+import { DocIcon, NoteIcon, LinkIcon } from "../Icons.jsx";
 import {
   HOURS, DAY_START_HOUR, STICKERS, fmtMin, prettyDate, slotLabel, timelineTotals,
 } from "./plannerUtils";
@@ -34,11 +35,11 @@ function TaskRow({ task, subjects, colorOf, onUpdate, onDelete, onMove, onLink, 
         onChange={e => onUpdate({ minutes: e.target.value === "" ? null : Number(e.target.value) })} aria-label="예상 시간(분)" />
       {task.link_type ? (
         <button className="pl-link-chip" title="눌러서 열기" onClick={() => onOpenLink(task)}>
-          {task.link_type === "doc" ? "📄" : "📝"} {(task.link_label || "").replace(/\.pdf$/i, "")}
+          {task.link_type === "doc" ? <DocIcon size="0.9em" /> : <NoteIcon size="0.9em" />} {(task.link_label || "").replace(/\.pdf$/i, "")}
         </button>
       ) : null}
       <span className="pl-task-tools">
-        <button title={task.link_type ? "연결 바꾸기" : "자료·노트 연결"} onClick={onLink}>🔗</button>
+        <button title={task.link_type ? "연결 바꾸기" : "자료·노트 연결"} onClick={onLink}><LinkIcon size="0.9em" /></button>
         <button title="위로" disabled={first} onClick={() => onMove(-1)}>↑</button>
         <button title="아래로" disabled={last} onClick={() => onMove(1)}>↓</button>
         <button title="삭제" onClick={onDelete}>✕</button>

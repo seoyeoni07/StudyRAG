@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../../api";
+import { DocIcon, NoteIcon } from "../Icons.jsx";
 
 /** 할 일에 연결할 자료·노트 고르기. 개인 플래너는 내 것, 스터디 플래너는 그룹 것. */
 export default function LinkPicker({ plannerId, current, onPick, onClose }) {
@@ -25,17 +26,17 @@ export default function LinkPicker({ plannerId, current, onPick, onClose }) {
             {current?.link_type && (
               <button className="pl-link-row pl-link-row--remove" onClick={() => onPick(null)}>✕ 연결 해제</button>
             )}
-            <p className="pl-link-group">📄 강의자료</p>
+            <p className="pl-link-group"><DocIcon size="0.85em" /> 강의자료</p>
             {items.docs.filter(d => match(d.label)).map(d => (
               <button key={d.id} className="pl-link-row" onClick={() => onPick({ link_type: "doc", link_id: d.id, link_label: d.label })}>
-                📄 {d.label.replace(/\.pdf$/i, "")}
+                <DocIcon size="0.85em" /> {d.label.replace(/\.pdf$/i, "")}
               </button>
             ))}
             {items.docs.length === 0 && <p className="pl-empty">올린 자료가 없어요</p>}
-            <p className="pl-link-group">📝 노트</p>
+            <p className="pl-link-group"><NoteIcon size="0.85em" /> 노트</p>
             {items.notes.filter(n => match(n.label)).map(n => (
               <button key={n.id} className="pl-link-row" onClick={() => onPick({ link_type: n.type, link_id: n.id, link_label: n.label })}>
-                {n.icon || "📝"} {n.label}
+                {n.icon || <NoteIcon size="0.85em" />} {n.label}
               </button>
             ))}
             {items.notes.length === 0 && <p className="pl-empty">노트가 없어요</p>}

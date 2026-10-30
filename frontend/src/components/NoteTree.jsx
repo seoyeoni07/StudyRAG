@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { PencilIcon, CopyIcon, TrashIcon, ArrowUpIcon, StarIcon, StarFilledIcon, NoteIcon } from "./Icons.jsx";
 
 /** parent_id → 하위 페이지 목록 (만든 순서) */
 export function childrenMap(list) {
@@ -92,18 +93,18 @@ function NoteMenu({ note, anchor, all, allowPin, canDelete, onAction, onRename, 
       ) : (
         <>
           <button role="menuitem" onClick={act(() => onAction("add-child", note))}><span>＋</span>하위 노트 추가</button>
-          <button role="menuitem" onClick={act(onRename)}><span>✏️</span>이름 바꾸기</button>
+          <button role="menuitem" onClick={act(onRename)}><span><PencilIcon size="0.9em" /></span>이름 바꾸기</button>
           {allowPin && (
             <button role="menuitem" onClick={act(() => onAction("pin", note))}>
-              <span>{note.pinned ? "☆" : "⭐"}</span>{note.pinned ? "즐겨찾기 해제" : "즐겨찾기에 추가"}
+              <span>{note.pinned ? <StarFilledIcon size="0.9em" /> : <StarIcon size="0.9em" />}</span>{note.pinned ? "즐겨찾기 해제" : "즐겨찾기에 추가"}
             </button>
           )}
-          <button role="menuitem" onClick={act(() => onAction("duplicate", note))}><span>📑</span>복제</button>
+          <button role="menuitem" onClick={act(() => onAction("duplicate", note))}><span><CopyIcon size="0.9em" /></span>복제</button>
           <button role="menuitem" onClick={act(onMove)}><span>↪</span>옮기기</button>
           {canDelete && (
             <>
               <div className="nt-sep" />
-              <button role="menuitem" className="nt-danger" onClick={() => setConfirm(true)}><span>🗑</span>삭제</button>
+              <button role="menuitem" className="nt-danger" onClick={() => setConfirm(true)}><span><TrashIcon size="0.9em" /></span>삭제</button>
             </>
           )}
           <div className="nt-meta">
@@ -143,14 +144,14 @@ function MoveModal({ note, all, onPick, onClose }) {
           {!q && (
             <button className={`nt-move-row ${!note.parent_id ? "current" : ""}`} disabled={!note.parent_id}
               onClick={() => onPick(null)}>
-              <span>⬆</span>맨 위로 (상위 페이지 없음){!note.parent_id && <em>지금 위치</em>}
+              <span><ArrowUpIcon size="0.9em" /></span>맨 위로 (상위 페이지 없음){!note.parent_id && <em>지금 위치</em>}
             </button>
           )}
           {shown.map(([n, depth]) => (
             <button key={n.id} className={`nt-move-row ${note.parent_id === n.id ? "current" : ""}`}
               style={{ paddingLeft: 10 + (q ? 0 : depth * 16) }} disabled={note.parent_id === n.id}
               onClick={() => onPick(n.id)}>
-              <span>{n.icon || "📝"}</span>{n.title || "제목 없음"}{note.parent_id === n.id && <em>지금 위치</em>}
+              <span>{n.icon || <NoteIcon size="0.9em" />}</span>{n.title || "제목 없음"}{note.parent_id === n.id && <em>지금 위치</em>}
             </button>
           ))}
           {shown.length === 0 && q && <p className="sb-empty">검색 결과 없음</p>}
@@ -168,7 +169,7 @@ function MoveModal({ note, all, onPick, onClose }) {
  */
 export default function NoteTree({
   roots, all, activeId, onOpen, onAction, expanded, setExpanded, prefix = "",
-  allowPin = false, canDelete = () => true, flat = false, child = false, defaultIcon = "📝",
+  allowPin = false, canDelete = () => true, flat = false, child = false, defaultIcon = null,
 }) {
   const [menu, setMenu] = useState(null);       // { note, anchor }
   const [editing, setEditing] = useState(null); // note id
@@ -195,7 +196,7 @@ export default function NoteTree({
           onClick={() => editing !== n.id && onOpen(n)}
           onKeyDown={e => { if (e.key === "Enter" && editing !== n.id && e.target === e.currentTarget) onOpen(n); }}>
           {!flat && <Caret open={open} hidden={!kids.length} onClick={() => kids.length && toggle(n.id)} />}
-          <span className="sb-icon">{n.icon || defaultIcon}</span>
+          <span className="sb-icon">{n.icon || defaultIcon || <NoteIcon size="0.9em" />}</span>
           {editing === n.id ? (
             <input className="nt-rename" autoFocus defaultValue={n.title || ""} maxLength={256}
               onClick={e => e.stopPropagation()}

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { apiFetch } from "../api.js";
 import ChatRoom, { timeAgo } from "./chat/ChatRoom";
 import { useDmRooms, refreshDmRooms, addDmRoom, markListSeen } from "../realtime/dmStore";
+import { UsersIcon, ChatIcon } from "./Icons.jsx";
 
 // ── 새 DM 시작 (유저 검색) ────────────────────────────────────────────────────
 
@@ -145,7 +146,7 @@ export default function ChatApp({ me, groups = [], groupDetails = {} }) {
                 <button key={g.id}
                   className={`chatapp-room-row ${active?.groupId === g.id ? "active" : ""}`}
                   onClick={() => setActive({ kind: "group", groupId: g.id })}>
-                  <span className="chatapp-user-avatar">👥</span>
+                  <span className="chatapp-user-avatar"><UsersIcon size="1em" /></span>
                   <span className="chatapp-room-info">
                     <span className="chatapp-room-row-name">{g.name}</span>
                     <span className="chatapp-room-last">{g.member_count || ""}명</span>
@@ -160,7 +161,7 @@ export default function ChatApp({ me, groups = [], groupDetails = {} }) {
       <div className="chatapp-main">
         {rightPanel || (
           <div className="chatapp-empty">
-            <p>💬</p>
+            <p><ChatIcon size="2em" /></p>
             <p>대화를 선택하거나 새 대화를 시작해보세요</p>
           </div>
         )}

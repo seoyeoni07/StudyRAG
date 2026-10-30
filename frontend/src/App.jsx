@@ -14,6 +14,7 @@ import SettingsPage from "./components/SettingsPage";
 import LoginPage from "./components/LoginPage";
 import Sidebar, { tabsFor } from "./components/Sidebar";
 import { ancestorsOf } from "./components/NoteTree";
+import { NoteIcon, DocIcon } from "./components/Icons.jsx";
 import GroupHome, { GroupStart, timeAgo as groupTimeAgo } from "./components/GroupHome";
 import ChatApp from "./components/ChatApp";
 import ChatWidget from "./components/chat/ChatWidget";
@@ -367,7 +368,7 @@ export default function App() {
       const n = await apiFetch("/notes/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, content, doc_id, parent_id, icon: "📝" }),
+        body: JSON.stringify({ title, content, doc_id, parent_id, icon: null }),
       });
       setNotes(prev => [n, ...prev]);
       if (open) setView({ type: "note", noteId: n.id });
@@ -710,13 +711,13 @@ export default function App() {
                     </div>
                     {notes.length === 0 ? (
                       <button className="note-empty" style={{ borderRadius: 0, border: "none", borderTop: "none" }} onClick={() => createNote()}>
-                        <span>📝</span> 첫 노트를 만들어보세요.
+                        <NoteIcon size="0.9em" /> 첫 노트를 만들어보세요.
                       </button>
                     ) : (
                       <div className="dash-side-list">
                         {notes.slice(0, 5).map(n => (
                           <button key={n.id} className="dash-side-row" onClick={() => setView({ type: "note", noteId: n.id })}>
-                            <span style={{ fontSize: 14, flexShrink: 0 }}>{n.icon || "📝"}</span>
+                            <span style={{ fontSize: 14, flexShrink: 0 }}>{n.icon || <NoteIcon size="0.9em" />}</span>
                             <span className="dash-side-name">{n.title || "제목 없음"}</span>
                             <span style={{ fontSize: 12, color: "var(--text-4)", flexShrink: 0 }}>{timeAgo(n.updated_at)}</span>
                           </button>
@@ -828,7 +829,7 @@ export default function App() {
 
           {view.type === "doc" && (
             <>
-              <div className="page-icon">📄</div>
+              <div className="page-icon"><DocIcon size="1.4em" /></div>
               <h1 className="page-title page-title--doc" title={currentDoc?.filename}>
                 {currentDoc?.filename?.replace(/\.pdf$/i, "")}
               </h1>
@@ -841,7 +842,7 @@ export default function App() {
               <div className="doc-meta-row">
                 {docNotes.map(n => (
                   <button key={n.id} className="doc-note-chip" onClick={() => setView({ type: "note", noteId: n.id })}>
-                    {n.icon || "📝"} {n.title || "제목 없음"}
+                    {n.icon || <NoteIcon size="0.9em" />} {n.title || "제목 없음"}
                   </button>
                 ))}
                 <button className="doc-note-chip doc-note-chip--add" onClick={() => createNote({ doc_id: docId })}>
