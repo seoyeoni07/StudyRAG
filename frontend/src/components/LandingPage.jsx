@@ -96,17 +96,6 @@ export default function LandingPage({ onStart }) {
         </div>
       </section>
 
-      {/* ── 차별점 ── */}
-      <section className="lp-diff-section">
-        <div className="lp-diff-inner">
-          <p className="lp-diff-label">다른 도구와 다른 점</p>
-          <p className="lp-diff-text">
-            NotebookLM은 자료를 정리해줍니다. StudyRAG는 자료로 시험을 통과하게 합니다.
-            이해에서 끝나지 않고, 기억으로 이어지는 유일한 학습 루프입니다.
-          </p>
-        </div>
-      </section>
-
       {/* ── 하단 CTA ── */}
       <section className="lp-bottom-cta">
         <h2 className="lp-bottom-headline">아직 강의자료를 혼자 읽고 있나요?</h2>
