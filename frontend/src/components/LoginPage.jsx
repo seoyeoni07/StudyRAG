@@ -55,10 +55,10 @@ export default function LoginPage() {
         {/* 소개 */}
         <div className="login-intro">
           <h1 className="login-headline">
-            자료를 올리면,<br /><em>공부가 시작됩니다.</em>
+            이해만으로는 부족합니다.<br /><em>기억까지.</em>
           </h1>
           <p className="login-desc">
-            PDF와 이미지 강의자료를 AI가 요약하고, 질문에 답하고, 퀴즈를 만들고, 오답을 추적합니다. 그룹 스터디도 함께.
+            강의자료를 올리면 요약·Q&A·퀴즈·오답 복습·그룹 스터디까지. 자료에서 시험까지 한 번에.
           </p>
         </div>
 
@@ -111,7 +111,6 @@ export default function LoginPage() {
           )}
         </div>
 
-        <p className="login-terms">로그인하면 서비스 이용에 동의하게 됩니다.</p>
       </div>
     </div>
   );
