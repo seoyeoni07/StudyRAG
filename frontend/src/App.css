@@ -1644,6 +1644,22 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
   display: flex; align-items: center; justify-content: space-between;
   padding: 6px 8px; border-radius: 6px; background: var(--bg-2); font-size: 14px;
 }
+.share-vis-section { display: flex; flex-direction: column; gap: 8px; }
+.share-vis-label { font-size: 12px; color: var(--text-3); font-weight: 500; margin: 0; }
+.share-vis-btns { display: flex; gap: 6px; }
+.share-vis-btn {
+  flex: 1; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--bg-2); cursor: pointer; font-size: 13px; color: var(--text-2);
+  transition: background .15s, border-color .15s;
+}
+.share-vis-btn:hover { background: var(--bg-3); }
+.share-vis-btn--active {
+  border-color: var(--primary); background: var(--primary-bg, #eef2ff);
+  color: var(--primary); font-weight: 600;
+}
+.share-link-row { display: flex; gap: 6px; align-items: center; }
+.share-link-input { flex: 1; font-size: 12px; color: var(--text-3); }
+.share-divider { height: 1px; background: var(--border); margin: 4px 0; }
 
 /* ── 그룹 공지 ────────────────────────────────── */
 .group-announcement {

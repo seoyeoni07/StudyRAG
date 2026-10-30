@@ -167,6 +167,7 @@ def _to_dict(n: Note, with_content: bool = True) -> dict:
         "group_id": n.group_id,
         "pinned": bool(n.pinned),
         "versions_public": bool(n.versions_public),
+        "visibility": getattr(n, "visibility", "private") or "private",
         "created_at": n.created_at.isoformat() if n.created_at else None,
         "updated_at": n.updated_at.isoformat() if n.updated_at else None,
     }
@@ -338,6 +339,11 @@ def get_note(
     x_user_id: str | None = Header(default=None),
     db: Session = Depends(get_db),
 ):
+    note = db.query(Note).filter(Note.id == note_id).first()
+    if not note:
+        raise HTTPException(404, "노트를 찾을 수 없습니다.")
+    if getattr(note, "visibility", "private") == "public":
+        return _to_dict(note)
     return _to_dict(_get_owned(db, note_id, _require_user(x_user_id)))
 
 
@@ -445,6 +451,24 @@ def duplicate_note(note_id: str, x_user_id: str | None = Header(default=None), d
     db.add(n)
     db.commit()
     return _to_dict(n, with_content=False)
+
+
+# ── 노트 공개 범위 ──────────────────────────────────────────
+
+class VisibilityUpdate(BaseModel):
+    visibility: str  # private | public
+
+@router.patch("/{note_id}/visibility")
+def set_visibility(note_id: str, body: VisibilityUpdate, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    user_id = _require_user(x_user_id)
+    note = _get_owned(db, note_id, user_id)
+    if note.user_id != user_id:
+        raise HTTPException(403, "작성자만 공개 범위를 변경할 수 있습니다.")
+    if body.visibility not in ("private", "public"):
+        raise HTTPException(400, "잘못된 공개 범위입니다.")
+    note.visibility = body.visibility
+    db.commit()
+    return {"visibility": note.visibility}
 
 
 # ── 노트 공유 ────────────────────────────────────────────

@@ -139,6 +139,7 @@ class Note(Base):
     versions_public = Column(Boolean, nullable=False, default=False, server_default="false")
     parent_id = Column(String(36), nullable=True, index=True)  # 하위 페이지면 상위 노트 id
     pinned = Column(Boolean, nullable=False, default=False, server_default="false")  # 즐겨찾기 (개인 노트)
+    visibility = Column(String(16), nullable=False, default="private", server_default="private")  # private | public
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
 

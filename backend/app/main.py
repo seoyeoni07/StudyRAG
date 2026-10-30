@@ -137,6 +137,7 @@ async def startup():
             created_at TIMESTAMP DEFAULT NOW()
         )""",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS photo_url VARCHAR(512)",
+        "ALTER TABLE notes ADD COLUMN IF NOT EXISTS visibility VARCHAR(16) NOT NULL DEFAULT 'private'",
     ]
     try:
         from sqlalchemy import text

@@ -23,6 +23,51 @@ import { useGroupChannels } from "./realtime/useGroupChannels";
 import { supabase } from "./supabase";
 import "./App.css";
 
+// ── 해시 라우팅 헬퍼 ────────────────────────────────────────────────
+function viewToHash(v) {
+  if (!v) return "#home";
+  switch (v.type) {
+    case "home":        return "#home";
+    case "planner":     return v.groupId ? `#group/${v.groupId}/planner` : "#planner";
+    case "stats":       return "#stats";
+    case "settings":    return "#settings";
+    case "chat":        return "#chat";
+    case "group-start": return "#group-start";
+    case "group":       return `#group/${v.groupId}`;
+    case "note":        return `#note/${v.noteId}`;
+    case "gnote":       return `#group/${v.groupId}/note/${v.noteId}`;
+    case "doc":         return v.groupId
+      ? `#group/${v.groupId}/doc/${v.docId}/${v.tab || "summary"}`
+      : `#doc/${v.docId}/${v.tab || "summary"}`;
+    default:            return "#home";
+  }
+}
+
+function hashToView(hash) {
+  const h = (hash || "").replace(/^#/, "");
+  if (!h || h === "home") return { type: "home" };
+  const p = h.split("/");
+  switch (p[0]) {
+    case "planner":     return { type: "planner" };
+    case "stats":       return { type: "stats" };
+    case "settings":    return { type: "settings" };
+    case "chat":        return { type: "chat" };
+    case "group-start": return { type: "group-start" };
+    case "note":        return p[1] ? { type: "note", noteId: p[1] } : { type: "home" };
+    case "doc":         return p[1] ? { type: "doc", docId: p[1], tab: p[2] || "summary" } : { type: "home" };
+    case "group": {
+      if (!p[1]) return { type: "home" };
+      const gid = p[1];
+      if (!p[2])              return { type: "group", groupId: gid };
+      if (p[2] === "planner") return { type: "planner", groupId: gid };
+      if (p[2] === "note")    return p[3] ? { type: "gnote", groupId: gid, noteId: p[3] } : { type: "group", groupId: gid };
+      if (p[2] === "doc")     return p[3] ? { type: "doc", docId: p[3], tab: p[4] || "summary", groupId: gid } : { type: "group", groupId: gid };
+      return { type: "group", groupId: gid };
+    }
+    default: return { type: "home" };
+  }
+}
+
 // 블록 에디터(BlockNote)는 무거워서 공동 노트를 열 때만 불러온다
 const GroupNotePage = lazy(() => import("./components/GroupNotePage"));
 const NotePage = lazy(() => import("./components/NotePage"));
@@ -48,7 +93,7 @@ export default function App() {
   const [user, setUser] = useState(undefined);
   // view: { type: "home" } | { type: "doc", docId, filename, tab, groupId? } | { type: "note", noteId }
   //     | { type: "group-start" } | { type: "group", groupId } | { type: "gnote", groupId, noteId }
-  const [view, setView] = useState({ type: "home" });
+  const [view, setView] = useState(() => { try { return hashToView(window.location.hash); } catch { return { type: "home" }; } });
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [pastDocs, setPastDocs] = useState([]);
@@ -200,6 +245,28 @@ export default function App() {
     if (!user?.uid) return;
     apiFetch("/users/streak").then(d => setStreak(d.streak ?? 0)).catch(() => {});
   }, [user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── 해시 라우팅 ──────────────────────────────────────────────────────
+  // 뒤로가기/앞으로가기 시 hash 변화를 view에 반영
+  useEffect(() => {
+    const onPop = () => { try { setView(hashToView(window.location.hash)); } catch {} };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  // view가 바뀔 때마다 URL hash 업데이트 (popstate에서 온 변경은 이미 URL에 반영됐으므로 중복 pushState 방지)
+  useEffect(() => {
+    const next = viewToHash(view);
+    if (window.location.hash !== next) window.history.pushState(null, "", next);
+  }, [view]);
+
+  // hash에 docId만 있고 filename이 없을 때 (북마크·공유 링크 진입) pastDocs에서 채워넣기
+  useEffect(() => {
+    if (view.type !== "doc" || view.filename) return;
+    const doc = pastDocs.find(d => d.doc_id === view.docId)
+      || Object.values(groupData).flatMap(g => g?.docs || []).find(d => d.doc_id === view.docId);
+    if (doc) setView(v => v.type === "doc" && v.docId === doc.doc_id ? { ...v, filename: doc.filename } : v);
+  }, [view, pastDocs, groupData]);
 
   // 알림창: 열 때가 아니라 닫을 때 읽음 처리 — 열자마자 지우면 어떤 게 새 알림인지 안 보인다
   const closeNotif = () => {

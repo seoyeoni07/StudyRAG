@@ -10,6 +10,38 @@ function ShareModal({ noteId, getTitle, getIcon, me, onClose }) {
   const [shares, setShares] = useState(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [visibility, setVisibility] = useState(null); // null = 로딩 중
+  const [visBusy, setVisBusy] = useState(false);
+  const noteUrl = `${window.location.origin}${window.location.pathname}#note/${noteId}`;
+
+  useEffect(() => {
+    apiFetch(`/notes/${noteId}`)
+      .then(n => setVisibility(n.visibility || "private"))
+      .catch(() => setVisibility("private"));
+  }, [noteId]);
+
+  async function setVis(v) {
+    setVisBusy(true);
+    try {
+      await apiFetch(`/notes/${noteId}/visibility`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ visibility: v }),
+      });
+      setVisibility(v);
+      setMsg(v === "public" ? "링크로 공유 가능해요." : "비공개로 설정했어요.");
+    } catch (err) { setMsg(err.message); }
+    finally { setVisBusy(false); }
+  }
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(noteUrl);
+      setMsg("링크를 복사했어요!");
+    } catch {
+      setMsg(noteUrl);
+    }
+  }
 
   useEffect(() => {
     apiFetch(`/notes/${noteId}/shares`)
@@ -58,6 +90,28 @@ function ShareModal({ noteId, getTitle, getIcon, me, onClose }) {
           <button className="btn-ghost" onClick={onClose}>닫기</button>
         </div>
         {msg && <p className="share-msg">{msg}</p>}
+        <div className="share-vis-section">
+          <p className="share-vis-label">링크 공개 범위</p>
+          <div className="share-vis-btns">
+            <button
+              className={`share-vis-btn ${visibility === "private" ? "share-vis-btn--active" : ""}`}
+              onClick={() => visibility !== "private" && setVis("private")}
+              disabled={visBusy || visibility === null}
+            >🔒 비공개</button>
+            <button
+              className={`share-vis-btn ${visibility === "public" ? "share-vis-btn--active" : ""}`}
+              onClick={() => visibility !== "public" && setVis("public")}
+              disabled={visBusy || visibility === null}
+            >🌐 공개 링크</button>
+          </div>
+          {visibility === "public" && (
+            <div className="share-link-row">
+              <input className="input share-link-input" readOnly value={noteUrl} />
+              <button className="btn-secondary btn-sm" onClick={copyLink}>복사</button>
+            </div>
+          )}
+        </div>
+        <div className="share-divider" />
         <div className="share-search-row">
           <input className="input" value={q} placeholder="이메일 또는 이름으로 검색 (2자 이상)"
             onChange={e => setQ(e.target.value)}
