@@ -874,58 +874,22 @@ export default function App() {
           )}
 
           {view.type === "home" && (
-            <>
-              <div className="dash-welcome">
-                <div className="dash-welcome-text">
-                  <span className="dash-welcome-sub">{greeting}</span>
-                  <h1 className="dash-welcome-name">{displayName ? `${displayName}님` : "안녕하세요"}</h1>
-                </div>
-                {streak > 0 && (
-                  <div className="streak-pill">
-                    <strong>{streak}일</strong> 연속
-                    {streak >= 30 && <span className="streak-badge"> 월간 달성</span>}
-                    {streak >= 7 && streak < 30 && <span className="streak-badge"> 주간 달성</span>}
-                  </div>
-                )}
-              </div>
-
-              <DashboardHome
-                onFileAccepted={handleFilesAccepted}
-                onSelectDoc={(id, name) => selectDoc(id, name, "summary")}
-                onSelectDocTab={selectDoc}
-                onDeleteDoc={handleDeleteDoc}
-                pastDocs={pastDocs}
-                uploading={uploading}
-                reviewDue={reviewDue}
-                streak={streak}
-                onAskMulti={askMultiDocs}
-                onOpenPlanner={() => setView({ type: "planner" })}
-                onPastDocsChange={() => apiFetch("/documents/").then(d => setPastDocs(dedupDocs(d))).catch(() => {})}
-                notesSlot={
-                  <div className="dash-panel">
-                    <div className="dash-panel-head">
-                      <span className="dash-panel-title">최근 노트</span>
-                      <button className="btn-ghost" style={{ fontSize: 13 }} onClick={() => createNote()}>+ 새 노트</button>
-                    </div>
-                    {notes.length === 0 ? (
-                      <button className="note-empty" style={{ borderRadius: 0, border: "none", borderTop: "none" }} onClick={() => createNote()}>
-                        <NoteIcon size="0.9em" /> 첫 노트를 만들어보세요.
-                      </button>
-                    ) : (
-                      <div className="dash-side-list">
-                        {notes.slice(0, 5).map(n => (
-                          <button key={n.id} className="dash-side-row" onClick={() => setView({ type: "note", noteId: n.id })}>
-                            <span style={{ fontSize: 14, flexShrink: 0 }}>{renderNoteIcon(n.icon, "0.9em") || <NoteIcon size="0.9em" />}</span>
-                            <span className="dash-side-name">{n.title || "제목 없음"}</span>
-                            <span style={{ fontSize: 12, color: "var(--text-4)", flexShrink: 0 }}>{timeAgo(n.updated_at)}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                }
-              />
-            </>
+            <DashboardHome
+              onFileAccepted={handleFilesAccepted}
+              onSelectDoc={(id, name) => selectDoc(id, name, "summary")}
+              onSelectDocTab={selectDoc}
+              onDeleteDoc={handleDeleteDoc}
+              pastDocs={pastDocs}
+              uploading={uploading}
+              reviewDue={reviewDue}
+              streak={streak}
+              onAskMulti={askMultiDocs}
+              onOpenPlanner={() => setView({ type: "planner" })}
+              onPastDocsChange={() => apiFetch("/documents/").then(d => setPastDocs(dedupDocs(d))).catch(() => {})}
+              notes={notes}
+              onOpenNote={(noteId) => setView({ type: "note", noteId })}
+              onCreateNote={() => createNote()}
+            />
           )}
 
           {view.type === "planner" && (
