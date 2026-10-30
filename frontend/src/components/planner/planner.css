@@ -5,7 +5,7 @@
   --pl-sub: var(--text-3, #6b7280);
   --pl-line: #e5e7eb;
   --pl-cell: #f9fafb;
-  --pl-accent: #2563eb;
+  --pl-accent: var(--primary, #6D8196);
   --pl-box: transparent;
   --pl-pattern: none;
   color: var(--pl-ink);
@@ -25,7 +25,7 @@
 .pl-title { font-size: 26px; font-weight: 700; margin: 0; cursor: text; color: var(--text-1); }
 .pl-title-input { font-size: 26px; font-weight: 700; border: none; border-bottom: 2px solid var(--primary, #2383e2); outline: none; background: transparent; color: var(--text-1); min-width: 200px; }
 .pl-dday {
-  font-size: 13px; font-weight: 700; color: #fff; background: #eb5757;
+  font-size: 13px; font-weight: 700; color: #fff; background: var(--amber, #d97706);
   padding: 3px 10px; border-radius: 999px;
 }
 .pl-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -76,7 +76,7 @@
 
 /* 하루 */
 .pl-day { display: flex; flex-direction: column; gap: 12px; }
-.pl-day-head { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; padding-bottom: 10px; border-bottom: 2px solid var(--pl-ink); }
+.pl-day-head { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; padding-bottom: 10px; border-bottom: 1px solid var(--pl-line); }
 .pl-date { font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
 .pl-goal { display: flex; flex-direction: column; gap: 2px; font-size: 11px; color: var(--pl-sub); font-weight: 700; }
 .pl-goal input { border: none; border-bottom: 1px dashed var(--pl-line); background: transparent; font: inherit; font-size: 15px; font-weight: 500; color: var(--pl-ink); padding: 3px 0; outline: none; }
@@ -224,11 +224,11 @@
 }
 .pl-month-cell:hover { background: var(--hover, rgba(55,53,47,.06)); }
 .pl-month-cell--empty { background: transparent; border-color: transparent; cursor: default; }
-.pl-month-cell--today { border-color: var(--pl-accent); background: rgba(35,131,226,.06); }
+.pl-month-cell--today { border-color: var(--pl-accent); background: color-mix(in srgb, var(--pl-accent) 6%, transparent); }
 .pl-month-cell--selected { box-shadow: 0 0 0 2px var(--pl-accent); }
 .pl-month-day { font-size: 13px; font-weight: 600; color: var(--pl-ink); }
 .pl-month-cell--today .pl-month-day {
-  background: var(--pl-accent); color: #fff;
+  background: transparent; color: var(--pl-accent); border: 2px solid var(--pl-accent);
   width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px;
 }
 .pl-month-sticker { font-size: 16px; line-height: 1; }
