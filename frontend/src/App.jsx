@@ -18,8 +18,6 @@ import Sidebar, { tabsFor } from "./components/Sidebar";
 import { ancestorsOf } from "./components/NoteTree";
 import { NoteIcon, DocIcon, renderNoteIcon, KeyIcon, ShareIcon, UsersIcon, SparkleIcon, MessageIcon } from "./components/Icons.jsx";
 import GroupHome, { GroupStart, timeAgo as groupTimeAgo } from "./components/GroupHome";
-import FeedPage from "./components/FeedPage";
-const ProfilePage = lazy(() => import("./components/ProfilePage"));
 import ChatApp from "./components/ChatApp";
 import ChatWidget from "./components/chat/ChatWidget";
 import { useDmRooms, refreshDmRooms, resetDmStore, isRoomOpen, touchDmRoom, badgeCount } from "./realtime/dmStore";
@@ -37,8 +35,6 @@ function viewToHash(v) {
     case "stats":       return "#stats";
     case "settings":    return "#settings";
     case "chat":        return "#chat";
-    case "feed":        return "#feed";
-    case "profile":     return `#profile/${v.uid}`;
     case "group-start": return "#group-start";
     case "group":       return `#group/${v.groupId}`;
     case "note":        return `#note/${v.noteId}`;
@@ -59,8 +55,6 @@ function hashToView(hash) {
     case "stats":       return { type: "stats" };
     case "settings":    return { type: "settings" };
     case "chat":        return { type: "chat" };
-    case "feed":        return { type: "feed" };
-    case "profile":     return p[1] ? { type: "profile", uid: p[1] } : { type: "feed" };
     case "group-start": return { type: "group-start" };
     case "note":        return p[1] ? { type: "note", noteId: p[1] } : { type: "home" };
     case "doc":         return p[1] ? { type: "doc", docId: p[1], tab: p[2] || "summary" } : { type: "home" };
@@ -253,17 +247,6 @@ export default function App() {
       }
       refreshDmRooms();
       setToast(`${payload.from}: ${(payload.content || "").slice(0, 40)}`);
-    }).on("broadcast", { event: "friend-request" }, ({ payload }) => {
-      pushNotif(
-        `${payload.from}님이 친구 요청을 보냈어요`,
-        null,
-        { type: "feed" },
-        "dm",
-      );
-      setToast(`${payload.from}님이 친구 요청을 보냈어요`);
-    }).on("broadcast", { event: "friend-accepted" }, ({ payload }) => {
-      pushNotif(`${payload.from}님이 친구 요청을 수락했어요`, null, { type: "profile", uid: payload.from_uid }, "dm");
-      setToast(`${payload.from}님이 친구 요청을 수락했어요`);
     }).on("broadcast", { event: "note-access-request" }, ({ payload }) => {
       pushNotif(
         `${payload.from}님이 "${payload.title}" 노트 접근을 요청했어요`,
@@ -725,8 +708,6 @@ export default function App() {
     : view.type === "stats" ? [["", "학습 통계"]]
     : view.type === "planner" ? (view.groupId ? [...groupCrumb, ["", "스터디 플래너"]] : [["", "개인 플래너"]])
     : view.type === "settings" ? [["", "설정"]]
-    : view.type === "feed"    ? [["", "커뮤니티"]]
-    : view.type === "profile" ? [["", "커뮤니티", { type: "feed" }], ["", view.uid?.slice(0, 8)]]
     : view.type === "group-start" ? [["", "그룹 스터디"]]
     : view.type === "group" ? groupCrumb
     : view.type === "gnote" ? [
@@ -877,28 +858,7 @@ export default function App() {
           />
         )}
 
-        {view.type === "feed" && (
-          <FeedPage
-            me={user}
-            onOpenProfile={(uid) => setView({ type: "profile", uid })}
-          />
-        )}
-
-        {view.type === "profile" && (
-          <Suspense fallback={<div className="loading-wrap"><div className="spinner" /></div>}>
-            <ProfilePage
-              uid={view.uid}
-              me={user}
-              onOpenNote={(noteId) => setView({ type: "note", noteId })}
-              onStartDm={(uid, profile) => {
-                // 채팅 탭으로 이동 후 DM 시작 — chatWidget 경유
-                setView({ type: "chat" });
-              }}
-            />
-          </Suspense>
-        )}
-
-        <div className={`page ${view.type === "planner" ? "page--wide" : ""}`} style={(view.type === "chat" || view.type === "feed" || view.type === "profile") ? { display: "none" } : undefined}>
+        <div className={`page ${view.type === "planner" ? "page--wide" : ""}`} style={view.type === "chat" ? { display: "none" } : undefined}>
           {serverWaking && (
             <div className="callout callout--amber">
               <div className="spinner spinner-sm" />

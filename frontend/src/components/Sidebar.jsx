@@ -1,7 +1,7 @@
 ﻿import { useState, useRef } from "react";
 import { apiFetch } from "../api.js";
 import NoteTree, { isRoot } from "./NoteTree";
-import { DocIcon, NoteIcon, WarningIcon, renderNoteIcon, HomeIcon, CalendarIcon, BarChartIcon, ChatIcon, SettingsIcon, UploadIcon, UsersIcon, GlobeIcon } from "./Icons.jsx";
+import { DocIcon, NoteIcon, WarningIcon, renderNoteIcon, HomeIcon, CalendarIcon, BarChartIcon, ChatIcon, SettingsIcon, UploadIcon, UsersIcon } from "./Icons.jsx";
 
 export const DOC_TABS = [
   ["summary", "요약",       "AI가 강의 전체를 핵심만 정리해드립니다", ""],
@@ -99,10 +99,7 @@ export default function Sidebar({
             <span className="sb-icon"><ChatIcon size="1em" /></span><span className="sb-label">채팅</span>
             {dmUnread > 0 && <span className="sb-badge">{dmUnread > 99 ? "99+" : dmUnread}</span>}
           </button>
-          <button className={`sb-item ${(view.type === "feed" || view.type === "profile") ? "active" : ""}`} onClick={() => go({ type: "feed" })}>
-            <span className="sb-icon"><GlobeIcon size="1em" /></span><span className="sb-label">커뮤니티</span>
-          </button>
-          <button className={`sb-item ${view.type === "settings" ? "active" : ""}`} onClick={() => go({ type: "settings" })}>
+<button className={`sb-item ${view.type === "settings" ? "active" : ""}`} onClick={() => go({ type: "settings" })}>
             <span className="sb-icon"><SettingsIcon size="1em" /></span><span className="sb-label">설정</span>
           </button>
           <label className="sb-item">
@@ -353,8 +350,7 @@ export default function Sidebar({
         </nav>
 
         <div className="sb-footer">
-          {streak > 0 && <span className="sb-streak" title="연속 학습일">{streak}일</span>}
-          <span className="sb-user" title={user.email}>{user.email || name}</span>
+<span className="sb-user" title={user.email}>{user.email || name}</span>
           <button className="sb-theme-btn" onClick={onToggleTheme} title={theme === "dark" ? "라이트 모드로 전환" : "다크 모드로 전환"} aria-label="테마 전환">
             {theme === "dark"
               ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>

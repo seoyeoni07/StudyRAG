@@ -262,32 +262,6 @@ class DmMessage(Base):
 
 # ── 스터디 플래너 ─────────────────────────────────────────────────────────────
 
-class Friendship(Base):
-    __tablename__ = "friendships"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    requester_id = Column(String(128), nullable=False, index=True)
-    addressee_id = Column(String(128), nullable=False, index=True)
-    status = Column(String(16), nullable=False, default="pending")  # pending | accepted | denied
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow)
-
-
-class Post(Base):
-    __tablename__ = "posts"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(String(128), nullable=False, index=True)
-    content = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-
-class PostLike(Base):
-    __tablename__ = "post_likes"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    post_id = Column(Integer, nullable=False, index=True)
-    user_id = Column(String(128), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-
 class Planner(Base):
     """플래너 한 권. 개인용(owner_type=user)은 사람마다, 스터디용(owner_type=group)은 그룹마다 하나."""
     __tablename__ = "planners"

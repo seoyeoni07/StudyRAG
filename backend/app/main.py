@@ -14,7 +14,6 @@ from .api.groups import router as groups_router
 from .api.users import router as users_router
 from .api.chat import router as chat_router
 from .api.planner import router as planner_router
-from .api.social import router as social_router
 from .db.models import Base  # noqa: F401
 from .db.session import engine
 
@@ -139,30 +138,6 @@ async def startup():
         )""",
         "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS photo_url VARCHAR(512)",
         "ALTER TABLE notes ADD COLUMN IF NOT EXISTS visibility VARCHAR(16) NOT NULL DEFAULT 'private'",
-        """CREATE TABLE IF NOT EXISTS friendships (
-            id SERIAL PRIMARY KEY,
-            requester_id VARCHAR(128) NOT NULL,
-            addressee_id VARCHAR(128) NOT NULL,
-            status VARCHAR(16) NOT NULL DEFAULT 'pending',
-            created_at TIMESTAMP DEFAULT NOW(),
-            updated_at TIMESTAMP DEFAULT NOW()
-        )""",
-        "CREATE INDEX IF NOT EXISTS ix_friendships_requester ON friendships(requester_id)",
-        "CREATE INDEX IF NOT EXISTS ix_friendships_addressee ON friendships(addressee_id)",
-        """CREATE TABLE IF NOT EXISTS posts (
-            id SERIAL PRIMARY KEY,
-            user_id VARCHAR(128) NOT NULL,
-            content TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT NOW()
-        )""",
-        "CREATE INDEX IF NOT EXISTS ix_posts_user_id ON posts(user_id)",
-        """CREATE TABLE IF NOT EXISTS post_likes (
-            id SERIAL PRIMARY KEY,
-            post_id INTEGER NOT NULL,
-            user_id VARCHAR(128) NOT NULL,
-            created_at TIMESTAMP DEFAULT NOW()
-        )""",
-        "CREATE INDEX IF NOT EXISTS ix_post_likes_post_id ON post_likes(post_id)",
     ]
     try:
         from sqlalchemy import text
@@ -213,7 +188,6 @@ app.include_router(groups_router)
 app.include_router(users_router)
 app.include_router(chat_router)
 app.include_router(planner_router)
-app.include_router(social_router)
 
 
 @app.get("/health")
