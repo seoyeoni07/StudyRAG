@@ -32,6 +32,8 @@ export default function QuizSection({ docId, onGoToWrong, initialSession, onClea
   const [error, setError] = useState("");
   const [reportedIds, setReportedIds] = useState(new Set());
   const [adaptive, setAdaptive] = useState(false);
+  // -1 = 결과 요약, 0..n-1 = 해당 문제
+  const [currentIdx, setCurrentIdx] = useState(0);
 
   useEffect(() => {
     if (initialSession) {
@@ -41,6 +43,7 @@ export default function QuizSection({ docId, onGoToWrong, initialSession, onClea
       setResults(null);
       setError("");
       setReportedIds(new Set());
+      setCurrentIdx(0);
       onClearInitial?.();
     }
   }, [initialSession]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -51,6 +54,7 @@ export default function QuizSection({ docId, onGoToWrong, initialSession, onClea
     setError("");
     setResults(null);
     setAnswers({});
+    setCurrentIdx(0);
     let step = 0;
     stepTimerRef.current = setInterval(() => {
       step = Math.min(step + 1, LOADING_STEPS.length - 1);
@@ -95,6 +99,7 @@ export default function QuizSection({ docId, onGoToWrong, initialSession, onClea
         }),
       });
       setResults(data);
+      setCurrentIdx(-1); // 결과 요약 화면으로
     } catch (err) {
       setError(err.message);
     } finally {
@@ -109,6 +114,7 @@ export default function QuizSection({ docId, onGoToWrong, initialSession, onClea
     setResults(null);
     setError("");
     setReportedIds(new Set());
+    setCurrentIdx(0);
   }
 
   async function handleReport(question) {
@@ -129,6 +135,7 @@ export default function QuizSection({ docId, onGoToWrong, initialSession, onClea
     </div>
   ) : null;
 
+  // ── 로딩 ──
   if (loading) {
     return (
       <div className="loading-wrap" style={{ flexDirection: "column", gap: "16px", padding: "40px 0" }}>
@@ -146,6 +153,17 @@ export default function QuizSection({ docId, onGoToWrong, initialSession, onClea
     );
   }
 
+  // ── 채점 중 ──
+  if (grading) {
+    return (
+      <div className="loading-wrap" style={{ flexDirection: "column", gap: "12px", padding: "40px 0" }}>
+        <div className="spinner" style={{ width: "32px", height: "32px" }} />
+        <span style={{ fontSize: "14px", color: "var(--text-3)" }}>채점 중...</span>
+      </div>
+    );
+  }
+
+  // ── 설정 화면 ──
   if (!questions.length) {
     return (
       <div>
@@ -168,11 +186,12 @@ export default function QuizSection({ docId, onGoToWrong, initialSession, onClea
     );
   }
 
-  if (results) {
+  // ── 결과 요약 ──
+  if (results && currentIdx === -1) {
     const pct = Math.round((results.score / results.total) * 100);
     const wrongCount = results.total - results.score;
     const scoreClass = pct >= 80 ? "good" : pct >= 50 ? "mid" : "low";
-    const scoreMsg   = pct >= 80 ? "훌륭해요!" : pct >= 50 ? "절반 이상 맞혔어요" : "복습이 필요해요";
+    const scoreMsg = pct >= 80 ? "훌륭해요!" : pct >= 50 ? "절반 이상 맞혔어요" : "복습이 필요해요";
     return (
       <div>
         <div className={`score-header ${scoreClass}`}>
@@ -182,35 +201,7 @@ export default function QuizSection({ docId, onGoToWrong, initialSession, onClea
             <span className="score-label">{scoreMsg}</span>
           </div>
         </div>
-
         <ErrorBox msg={error} />
-
-        {results.results.map((r) => {
-          const q = questions.find((q) => q.id === r.id);
-          const reported = reportedIds.has(q?.question);
-          return (
-            <div key={r.id} className={`result-item ${r.correct ? "correct" : "wrong"}`}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <span className={`result-badge ${r.correct ? "badge-correct" : "badge-wrong"}`}>
-                  {r.correct ? "✓ 정답" : "✗ 오답"}
-                </span>
-                <button
-                  className={`report-btn ${reported ? "report-btn--done" : ""}`}
-                  onClick={() => !reported && handleReport(q?.question)}
-                  title="문제 오류 신고"
-                  disabled={reported}
-                >
-                  {reported ? "신고됨" : "오류 신고"}
-                </button>
-              </div>
-              <div className="q-text"><Md>{q?.question}</Md></div>
-              <p>내 답변: <strong>{r.user_answer || "(미입력)"}</strong></p>
-              {!r.correct && <div className="correct-ans"><Md>{r.correct_answer}</Md></div>}
-              <div className="explanation"><Md>{r.explanation}</Md></div>
-            </div>
-          );
-        })}
-
         {wrongCount > 0 && (
           <div className="wrong-saved">
             오답 {wrongCount}개가 오답노트에 저장되었습니다.
@@ -220,63 +211,127 @@ export default function QuizSection({ docId, onGoToWrong, initialSession, onClea
             )}
           </div>
         )}
-
-        <button className="btn-secondary" onClick={reset}>다시 풀기</button>
+        <div className="quiz-nav-row">
+          <button className="btn-secondary" onClick={reset}>다시 풀기</button>
+          <button className="btn-primary" onClick={() => setCurrentIdx(0)}>문제별 결과 보기</button>
+        </div>
       </div>
     );
   }
 
+  // ── 문제별 결과 리뷰 ──
+  if (results && currentIdx >= 0) {
+    const r = results.results[currentIdx];
+    const q = questions.find(q => q.id === r.id);
+    const reported = reportedIds.has(q?.question);
+    const isLast = currentIdx === results.results.length - 1;
+    const correctLetter = r.correct_answer?.[0];
+
+    return (
+      <div>
+        <div className="quiz-progress">문제 {currentIdx + 1} / {results.total}</div>
+        <div className="q-text" style={{ margin: "12px 0 20px" }}><Md>{q?.question}</Md></div>
+
+        {q?.type === "multiple_choice" && (
+          <div className="quiz-options">
+            {q.options.map(opt => {
+              const letter = opt[0];
+              const isUserPick = r.user_answer === letter;
+              const isCorrectCard = correctLetter && letter === correctLetter;
+              let cls = "quiz-opt-card";
+              if (isCorrectCard) cls += " quiz-opt-card--correct";
+              else if (isUserPick && !r.correct) cls += " quiz-opt-card--wrong";
+              return <div key={opt} className={cls}>{opt}</div>;
+            })}
+          </div>
+        )}
+
+        {q?.type !== "multiple_choice" && (
+          <div className="quiz-feedback-answer">
+            내 답변: <strong>{r.user_answer || "(미입력)"}</strong>
+            {!r.correct && <> · 정답: <strong>{r.correct_answer}</strong></>}
+          </div>
+        )}
+
+        <div className="quiz-feedback-row">
+          <span className={`quiz-feedback-badge ${r.correct ? "quiz-feedback-badge--correct" : "quiz-feedback-badge--wrong"}`}>
+            {r.correct ? "정답" : "오답"}
+          </span>
+          {r.explanation && <span className="quiz-feedback-text"><Md>{r.explanation}</Md></span>}
+        </div>
+
+        <div className="quiz-nav-row">
+          <button className="btn-secondary" disabled={currentIdx === 0}
+            onClick={() => setCurrentIdx(i => i - 1)}>이전</button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              className={`report-btn ${reported ? "report-btn--done" : ""}`}
+              onClick={() => !reported && handleReport(q?.question)}
+              disabled={reported}
+            >{reported ? "신고됨" : "오류 신고"}</button>
+            {isLast ? (
+              <button className="btn-secondary" onClick={reset}>다시 풀기</button>
+            ) : (
+              <button className="btn-primary" onClick={() => setCurrentIdx(i => i + 1)}>다음</button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── 문제 풀기 (한 문제씩) ──
+  const q = questions[currentIdx];
+  const isLast = currentIdx === questions.length - 1;
+  const selected = answers[q.id];
+
   return (
     <div>
-      <p className="q-num" style={{ marginBottom: "16px" }}>{questions.length}문제</p>
+      <div className="quiz-progress">
+        문제 {currentIdx + 1} / {questions.length}
+        {q.difficulty && (
+          <span className={`diff-badge diff-${q.difficulty === "기본" ? "easy" : q.difficulty === "응용" ? "mid" : "hard"}`}
+            style={{ marginLeft: 8 }}>
+            {q.difficulty}
+          </span>
+        )}
+      </div>
+
+      <div className="q-text" style={{ margin: "12px 0 20px" }}><Md>{q.question}</Md></div>
 
       <ErrorBox msg={error} />
 
-      {questions.map((q) => (
-        <div key={q.id} className="question-item">
-          <div className="q-num">
-            문제 {q.id}
-            {q.difficulty && (
-              <span className={`diff-badge diff-${q.difficulty === "기본" ? "easy" : q.difficulty === "응용" ? "mid" : "hard"}`}>
-                {q.difficulty}
-              </span>
-            )}
-          </div>
-          <div className="q-text"><Md>{q.question}</Md></div>
-          {q.type === "multiple_choice" ? (
-            <div className="options">
-              {q.options.map((opt) => {
-                const letter = opt[0];
-                return (
-                  <label key={opt} className="option-label">
-                    <input
-                      type="radio"
-                      name={`q-${q.id}`}
-                      value={letter}
-                      checked={answers[q.id] === letter}
-                      onChange={() => setAnswers((prev) => ({ ...prev, [q.id]: letter }))}
-                    />
-                    {opt}
-                  </label>
-                );
-              })}
-            </div>
-          ) : (
-            <input
-              type="text"
-              placeholder="답변을 입력하세요"
-              value={answers[q.id] || ""}
-              onChange={(e) => setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))}
-              className="input"
-            />
-          )}
+      {q.type === "multiple_choice" ? (
+        <div className="quiz-options">
+          {q.options.map(opt => {
+            const letter = opt[0];
+            return (
+              <div key={opt}
+                className={`quiz-opt-card${selected === letter ? " quiz-opt-card--selected" : ""}`}
+                onClick={() => setAnswers(prev => ({ ...prev, [q.id]: letter }))}
+              >{opt}</div>
+            );
+          })}
         </div>
-      ))}
+      ) : (
+        <input
+          type="text"
+          placeholder="답변을 입력하세요"
+          value={answers[q.id] || ""}
+          onChange={e => setAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
+          className="input"
+          style={{ marginBottom: 16 }}
+        />
+      )}
 
-      <div className="quiz-submit-row">
-        <button className="btn-primary" onClick={handleGrade} disabled={grading}>
-          {grading ? <><div className="spinner spinner-sm" /> 채점 중...</> : "제출하기"}
-        </button>
+      <div className="quiz-nav-row">
+        <button className="btn-secondary" disabled={currentIdx === 0}
+          onClick={() => setCurrentIdx(i => i - 1)}>이전</button>
+        {isLast ? (
+          <button className="btn-primary" onClick={handleGrade}>제출하기</button>
+        ) : (
+          <button className="btn-primary" onClick={() => setCurrentIdx(i => i + 1)}>다음</button>
+        )}
       </div>
     </div>
   );
