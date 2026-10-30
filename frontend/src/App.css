@@ -1633,6 +1633,10 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
   transition: background .12s, color .12s;
 }
 .launcher-chip:hover { background: var(--primary); color: #fff; }
+.launcher-tag {
+  font-size: 11.5px; color: var(--text-3); background: var(--bg-subtle);
+  border-radius: var(--r-sm); padding: 3px 9px;
+}
 
 /* note list */
 .launcher-note-list { display: flex; flex-direction: column; gap: 2px; }

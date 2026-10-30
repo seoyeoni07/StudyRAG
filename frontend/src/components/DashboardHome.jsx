@@ -138,12 +138,13 @@ export default function DashboardHome({
                 {d.status === "processing" && (
                   <span className="launcher-doc-processing">처리 중…</span>
                 )}
-                <div className="launcher-doc-chips" onClick={e => e.stopPropagation()}>
-                  <button className="launcher-chip" onClick={() => onSelectDocTab(d.doc_id, d.filename, "summary")}>요약</button>
-                  <button className="launcher-chip" onClick={() => onSelectDocTab(d.doc_id, d.filename, "quiz")}>퀴즈</button>
-                  <button className="launcher-chip" onClick={() => onSelectDocTab(d.doc_id, d.filename, "wrong")}>오답노트</button>
-                  <button className="launcher-chip" onClick={() => onSelectDocTab(d.doc_id, d.filename, "qa")}>Q&A</button>
-                </div>
+                {d.tags?.length > 0 && (
+                  <div className="launcher-doc-chips" onClick={e => e.stopPropagation()}>
+                    {d.tags.map((tag, i) => (
+                      <span key={i} className="launcher-tag">{tag}</span>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
             {/* 자료 추가 카드 */}

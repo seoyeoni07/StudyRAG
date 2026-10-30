@@ -399,8 +399,16 @@ def list_documents(x_user_id: str | None = Header(default=None), db: Session = D
         .order_by(Document.created_at.desc())
         .all()
     )
+    import json as _json
+    def _tags(r):
+        try:
+            s = _json.loads(r.summary or "{}") if r.summary else {}
+            return (s.get("key_concepts") or s.get("keywords") or [])[:4]
+        except Exception:
+            return []
     return [
         {"doc_id": r.id, "filename": r.filename, "chunks": r.chunks, "folder": r.folder,
-         "status": r.status or "done", "created_at": r.created_at.isoformat()}
+         "status": r.status or "done", "created_at": r.created_at.isoformat(),
+         "tags": _tags(r)}
         for r in rows
     ]
