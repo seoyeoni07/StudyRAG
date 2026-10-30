@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { auth, updateUserProfile, changePassword } from "../firebase";
 import { apiFetch, BASE } from "../api";
+import { PencilIcon } from "./Icons.jsx";
 
 const FIREBASE_ERRORS = {
   "auth/wrong-password":        "현재 비밀번호가 틀렸어요.",
@@ -112,7 +113,7 @@ export default function SettingsPage({ user, onUserRefresh }) {
               : <span className="settings-avatar-init">{(user.displayName || user.email || "?")[0].toUpperCase()}</span>
             }
             <span className="settings-avatar-overlay">
-              {avatarUploading ? <span className="spinner spinner-sm" /> : "✎"}
+              {avatarUploading ? <span className="spinner spinner-sm" /> : <PencilIcon size="14px" />}
             </span>
           </div>
           <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif"

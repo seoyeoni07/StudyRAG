@@ -4,6 +4,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import { apiFetch } from "../api";
+import { WarningIcon } from "./Icons.jsx";
 
 const Md = ({ children }) => (
   <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
@@ -52,7 +53,7 @@ export default function SummarySection({ docId, onSaveNote }) {
       <div className="summary-empty">
         {error && (
           <div className="error-banner" style={{ marginBottom: 16 }}>
-            <span className="error-icon">⚠️</span><span>{error}</span>
+            <span className="error-icon"><WarningIcon size="15px" /></span><span>{error}</span>
           </div>
         )}
         <p className="empty" style={{ marginBottom: 20 }}>

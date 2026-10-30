@@ -4,6 +4,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import { apiFetch } from "../api";
+import { WarningIcon } from "./Icons.jsx";
 
 const Md = ({ children }) => (
   <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
@@ -171,7 +172,7 @@ export default function StudyRoomSection({ docId, userId, groupId, preJoined, de
   if (view === "home") {
     return (
       <div className="room-home">
-        {error && <div className="error-banner"><span className="error-icon">⚠️</span><span>{error}</span></div>}
+        {error && <div className="error-banner"><span className="error-icon"><WarningIcon size="15px" /></span><span>{error}</span></div>}
         <div className="room-nick-row">
           <label className="room-field-label">닉네임</label>
           <input
@@ -195,7 +196,8 @@ export default function StudyRoomSection({ docId, userId, groupId, preJoined, de
                   {groupRooms.map(r => (
                     <button key={r.room_id} className="btn-secondary" style={{ marginBottom: 6, width: "100%" }}
                       onClick={() => handleJoinById(r.room_id)} disabled={!nickname.trim()}>
-                      {r.status === "active" ? "🟢 진행 중" : "⏳ 대기 중"} — 바로 참가하기
+                      <span className={`room-status-dot room-status-dot--${r.status === "active" ? "active" : "waiting"}`} />
+                      {r.status === "active" ? "진행 중" : "대기 중"} — 바로 참가하기
                     </button>
                   ))}
                 </div>
@@ -237,7 +239,7 @@ export default function StudyRoomSection({ docId, userId, groupId, preJoined, de
           </div>
         )}
 
-        {error && <div className="error-banner"><span className="error-icon">⚠️</span><span>{error}</span></div>}
+        {error && <div className="error-banner"><span className="error-icon"><WarningIcon size="15px" /></span><span>{error}</span></div>}
 
         <div className="room-members">
           <p className="room-members-label">참가자 ({totalCount}명)</p>
@@ -288,7 +290,7 @@ export default function StudyRoomSection({ docId, userId, groupId, preJoined, de
           )}
         </div>
 
-        {error && <div className="error-banner"><span className="error-icon">⚠️</span><span>{error}</span></div>}
+        {error && <div className="error-banner"><span className="error-icon"><WarningIcon size="15px" /></span><span>{error}</span></div>}
 
         {room.questions.map((q) => (
           <div key={q.id} className="question-item" style={{ opacity: submitted ? 0.65 : 1 }}>

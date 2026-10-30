@@ -4,6 +4,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import { apiFetch } from "../api";
+import { WarningIcon } from "./Icons.jsx";
 
 const Md = ({ children }) => (
   <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
@@ -130,7 +131,7 @@ export default function QuizSection({ docId, onGoToWrong, initialSession, onClea
 
   const ErrorBox = ({ msg }) => msg ? (
     <div className="error-banner">
-      <span className="error-icon">⚠️</span>
+      <span className="error-icon"><WarningIcon size="15px" /></span>
       <span>{msg}</span>
     </div>
   ) : null;

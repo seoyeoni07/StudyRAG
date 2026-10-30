@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect } from "react";
 import { apiFetch } from "../api.js";
-import { LockIcon, GlobeIcon, UsersIcon, DocIcon, NoteIcon, renderNoteIcon } from "./Icons.jsx";
+import { LockIcon, GlobeIcon, UsersIcon, DocIcon, NoteIcon, renderNoteIcon, WarningIcon, SpinnerIcon } from "./Icons.jsx";
 
 export function timeAgo(iso) {
   if (!iso) return "";
@@ -244,7 +244,7 @@ export default function GroupHome({
                   return (
                     <div key={d.doc_id} className="dash-doc-row">
                       <button className="dash-doc-main" onClick={() => onOpenDoc(d)}>
-                        <span className="dash-doc-icon">{d.status === "processing" ? "⏳" : d.status === "failed" ? "⚠️" : <DocIcon />}</span>
+                        <span className="dash-doc-icon">{d.status === "processing" ? <SpinnerIcon size="1em" className="spin" /> : d.status === "failed" ? <WarningIcon size="1em" /> : <DocIcon />}</span>
                         <span className="dash-doc-name">{d.filename.replace(/\.pdf$/i, "")}</span>
                         {d.status === "processing" && <span className="dash-doc-status">인식 중</span>}
                         {watching.length > 0 && <span className="group-watching">{watching.map(w => w.name).join(", ")} 보는 중</span>}

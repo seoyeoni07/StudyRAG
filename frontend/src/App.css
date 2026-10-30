@@ -585,6 +585,12 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
   flex-shrink: 0;
 }
 .spinner-sm { width: 14px; height: 14px; border-width: 2px; }
+.spin { animation: spin .8s linear infinite; }
+.room-status-dot {
+  display: inline-block; width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+}
+.room-status-dot--active { background: #22c55e; }
+.room-status-dot--waiting { background: var(--text-4); }
 .loading-text { color: var(--text-3); font-size: 14px; }
 
 /* ── Q&A ──────────────────────────────────── */
@@ -597,7 +603,7 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
   background: transparent; border: none; border-radius: var(--r-md);
   font-size: 14px; color: var(--text-2); cursor: pointer;
 }
-.example-chip::before { content: "💬  "; }
+.example-chip::before { content: "›  "; color: var(--text-4); }
 .example-chip:hover { background: var(--hover); color: var(--text-1); }
 
 .answer-box { background: var(--bg); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 16px 18px; animation: fadeUp .2s ease both; box-shadow: var(--shadow-sm); }
@@ -754,7 +760,6 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
   font-size: 14px; color: var(--text-1); font-weight: 500;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.past-doc-name::before { content: "📄 "; }
 .past-doc-date { font-size: 12px; color: var(--text-4); flex-shrink: 0; }
 
 /* ── Tutor ────────────────────────────────── */
@@ -1175,8 +1180,8 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 .feedback-save {
   margin-left: auto; background: none; border: none; cursor: pointer;
   font-size: 12px; color: var(--text-3); padding: 3px 8px; border-radius: var(--r-md);
+  display: flex; align-items: center; gap: 4px;
 }
-.feedback-save::before { content: "📝 "; }
 .feedback-save:hover { background: var(--hover); color: var(--text-1); }
 .source-page { font-size: 11px; font-weight: 500; color: var(--text-3); background: var(--bg-callout); padding: 1px 5px; border-radius: var(--r-sm); margin-right: 6px; }
 
@@ -1201,9 +1206,9 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 .summary-wrap { display: flex; flex-direction: column; gap: 24px; }
 .summary-overview {
   display: block; background: var(--bg-callout); border-radius: var(--r-md);
-  padding: 16px 16px 16px 48px; position: relative;
+  padding: 16px 16px 16px 20px;
+  border-left: 3px solid var(--primary);
 }
-.summary-overview::before { content: "📘"; position: absolute; left: 16px; top: 16px; font-size: 18px; line-height: 1.4; }
 .summary-title { font-size: 15px; font-weight: 600; color: var(--text-1); margin-bottom: 4px; }
 .summary-text { font-size: 15px; color: var(--text-1); line-height: 1.7; }
 .summary-subtitle { font-size: 20px; font-weight: 600; color: var(--text-1); margin-bottom: 8px; }
@@ -1349,7 +1354,6 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 /* review callout */
 .dash-review-section { background: var(--amber-bg); border-radius: var(--r-md); padding: 12px 14px; }
 .dash-review-section > .dash-section-title { border-bottom: none; color: var(--text-1); padding-bottom: 2px; margin-bottom: 0; }
-.dash-review-section > .dash-section-title::before { content: "🔁  "; }
 .dash-review-row:hover { background: rgba(255, 255, 255, .55) !important; }
 .dash-review-count { font-size: 13px; color: #9a6d1e; white-space: nowrap; }
 .dash-review-go { font-size: 13px; color: var(--text-1); font-weight: 500; white-space: nowrap; }

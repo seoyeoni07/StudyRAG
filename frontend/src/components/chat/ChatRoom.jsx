@@ -400,12 +400,12 @@ function useChatRoom({ kind, id, me, myName, other }) {
       sendBroadcast(topic, `${ev}-saved`, { key, id: saved.id, created_at: saved.created_at });
       if (kind === "dm") {
         touchDmRoom(id, {
-          last_message: content || (attachment?.type?.startsWith("image/") ? "📷 사진" : `📎 ${attachment?.name || "파일"}`),
+          last_message: content || (attachment?.type?.startsWith("image/") ? "사진" : attachment?.name || "파일"),
           last_at: saved.created_at,
         });
       }
       if (kind === "dm" && other?.uid) {
-        const preview = content || (attachment?.type?.startsWith("image/") ? "📷 사진" : `📎 ${attachment?.name || "파일"}`);
+        const preview = content || (attachment?.type?.startsWith("image/") ? "사진" : attachment?.name || "파일");
         sendBroadcast(`inbox:${other.uid}`, "dm-notif", { from: myName, content: preview, room_id: id, from_uid: me.uid });
       }
     } catch {

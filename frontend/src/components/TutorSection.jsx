@@ -4,6 +4,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import { apiFetch } from "../api";
+import { WarningIcon } from "./Icons.jsx";
 
 const STARTERS = [
   "이 자료의 핵심 개념을 가르쳐주세요",
@@ -124,7 +125,7 @@ export default function TutorSection({ docId }) {
 
       {error && (
         <div className="error-banner">
-          <span className="error-icon">⚠️</span>
+          <span className="error-icon"><WarningIcon size="15px" /></span>
           <span>{error}</span>
         </div>
       )}

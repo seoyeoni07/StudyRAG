@@ -67,7 +67,7 @@ function ShareModal({ noteId, getTitle, getIcon, me, onClose }) {
       setShares(fresh);
       // 상대 화면에 새로고침 없이 바로 보이도록 (사이드바 '공유받은 노트' + 알림)
       sendBroadcast(`inbox:${uid}`, "note-shared", {
-        note_id: noteId, title: getTitle?.() || "", icon: getIcon?.() || "📝",
+        note_id: noteId, title: getTitle?.() || "", icon: getIcon?.() || "note",
         from: me?.displayName || me?.email?.split("@")[0] || "누군가", from_uid: me?.uid,
       });
       setResults(r => r.filter(u => u.uid !== uid));

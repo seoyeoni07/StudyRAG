@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import ChatRoom, { timeAgo } from "./ChatRoom";
 import { NewDmPanel } from "../ChatApp";
 import { useDmRooms, refreshDmRooms, addDmRoom, markListSeen } from "../../realtime/dmStore";
-import { UsersIcon } from "../Icons.jsx";
+import { UsersIcon, PencilIcon } from "../Icons.jsx";
 
 /*
  * 화면 오른쪽 아래 작은 채팅창 (인스타그램 DM처럼).
@@ -93,7 +93,7 @@ export default function ChatWidget({ me, groups = [], groupDetails = {}, unread 
           {!active && (
             <div className="chatw-header">
               <span className="chatw-title">메시지</span>
-              <button className="chatw-icon" title="새 대화" onClick={() => { setTab("dm"); setActive({ kind: "new-dm" }); }}>✎</button>
+              <button className="chatw-icon" title="새 대화" onClick={() => { setTab("dm"); setActive({ kind: "new-dm" }); }}><PencilIcon size="14px" /></button>
               <button className="chatw-icon" title="크게 보기" onClick={() => { setOpen(false); onExpand?.(); }}>⤢</button>
               <button className="chatw-icon" title="닫기" onClick={() => setOpen(false)}>✕</button>
             </div>

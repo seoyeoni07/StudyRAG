@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { ThumbUpIcon, ThumbDownIcon } from "./Icons.jsx";
+import { ThumbUpIcon, ThumbDownIcon, WarningIcon, BookmarkIcon } from "./Icons.jsx";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
@@ -33,7 +33,7 @@ function FeedbackRow({ docId, question, onSave }) {
           <button className="feedback-btn" onClick={() => send(false)} aria-label="도움 안됨"><ThumbDownIcon size="1em" /></button>
         </>
       )}
-      {onSave && <button className="feedback-save" onClick={onSave}>노트로 저장</button>}
+      {onSave && <button className="feedback-save" onClick={onSave}><BookmarkIcon size="0.9em" />노트로 저장</button>}
     </span>
   );
 }
@@ -157,7 +157,7 @@ export default function QASection({ docId, onSaveNote }) {
 
       {error && (
         <div className="error-banner">
-          <span className="error-icon">⚠️</span>
+          <span className="error-icon"><WarningIcon size="15px" /></span>
           <span>{error}</span>
         </div>
       )}
