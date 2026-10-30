@@ -1,14 +1,14 @@
-import { useState, useRef } from "react";
+﻿import { useState, useRef } from "react";
 import { apiFetch } from "../api.js";
 import NoteTree, { isRoot } from "./NoteTree";
 
 export const DOC_TABS = [
-  ["summary", "요약",       "AI가 강의 전체를 핵심만 정리해드립니다", "📋"],
-  ["qa",      "Q&A",        "물어보면 답을 바로 줍니다", "💬"],
-  ["tutor",   "AI 튜터",    "답 대신 이해할 때까지 가르쳐줍니다", "🧑‍🏫"],
-  ["quiz",    "퀴즈",        "자동 문제 생성·채점", "✅"],
-  ["wrong",   "오답노트",    "틀린 문제 복습", "📕"],
-  ["room",    "그룹 퀴즈",   "그룹 멤버와 같은 문제를 풀고 점수 비교", "🏆"],
+  ["summary", "요약",       "AI가 강의 전체를 핵심만 정리해드립니다", ""],
+  ["qa",      "Q&A",        "물어보면 답을 바로 줍니다", ""],
+  ["tutor",   "AI 튜터",    "답 대신 이해할 때까지 가르쳐줍니다", ""],
+  ["quiz",    "퀴즈",        "자동 문제 생성·채점", ""],
+  ["wrong",   "오답노트",    "틀린 문제 복습", ""],
+  ["room",    "그룹 퀴즈",   "그룹 멤버와 같은 문제를 풀고 점수 비교", ""],
 ];
 
 /** 개인 자료에는 그룹 퀴즈 탭이 없다. */
@@ -85,25 +85,25 @@ export default function Sidebar({
 
         <nav className="sb-scroll">
           <button className={`sb-item ${view.type === "home" ? "active" : ""}`} onClick={() => go({ type: "home" })}>
-            <span className="sb-icon">🏠</span><span className="sb-label">홈</span>
+            <span className="sb-icon"></span><span className="sb-label">홈</span>
           </button>
           <button className={`sb-item ${view.type === "planner" && !view.groupId ? "active" : ""}`} onClick={() => go({ type: "planner" })}>
-            <span className="sb-icon">📅</span><span className="sb-label">플래너</span>
+            <span className="sb-icon"></span><span className="sb-label">플래너</span>
           </button>
           <button className={`sb-item ${view.type === "stats" ? "active" : ""}`} onClick={() => go({ type: "stats" })}>
-            <span className="sb-icon">📊</span><span className="sb-label">학습 통계</span>
+            <span className="sb-icon"></span><span className="sb-label">학습 통계</span>
           </button>
           <button className={`sb-item ${view.type === "chat" ? "active" : ""}`} onClick={() => go({ type: "chat" })}>
-            <span className="sb-icon">💬</span><span className="sb-label">채팅</span>
+            <span className="sb-icon"></span><span className="sb-label">채팅</span>
             {dmUnread > 0 && <span className="sb-badge">{dmUnread > 99 ? "99+" : dmUnread}</span>}
           </button>
           <button className={`sb-item ${view.type === "settings" ? "active" : ""}`} onClick={() => go({ type: "settings" })}>
-            <span className="sb-icon">⚙️</span><span className="sb-label">설정</span>
+            <span className="sb-icon"></span><span className="sb-label">설정</span>
           </button>
           <label className="sb-item">
             <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.gif" hidden disabled={uploading}
               onChange={e => { if (e.target.files?.[0]) { onUpload([e.target.files[0]]); e.target.value = ""; onClose?.(); } }} />
-            <span className="sb-icon">⬆️</span><span className="sb-label">{uploading ? "분석 중…" : "PDF 업로드"}</span>
+            <span className="sb-icon"></span><span className="sb-label">{uploading ? "분석 중…" : "PDF 업로드"}</span>
           </label>
 
           {/* ── 즐겨찾기 ── */}
@@ -148,7 +148,7 @@ export default function Sidebar({
                   <button className={`sb-item ${view.type === "group" && view.groupId === g.id ? "active" : ""}`}
                     onClick={() => go({ type: "group", groupId: g.id })}>
                     <Caret open={isGroupOpen(g.id)} onClick={() => setExpanded(e => ({ ...e, [`g:${g.id}`]: !isGroupOpen(g.id) }))} />
-                    <span className="sb-icon">👥</span>
+                    <span className="sb-icon"></span>
                     <span className="sb-label">{g.name}</span>
                     {online[g.id] && <span className="sb-online" title={`지금 ${onlineCount}명 접속 중 (나 포함)`}>{onlineCount}명</span>}
                   </button>
@@ -156,7 +156,7 @@ export default function Sidebar({
                     <div className="sb-children">
                       <button className={`sb-item sb-child ${view.type === "planner" && view.groupId === g.id ? "active" : ""}`}
                         onClick={() => go({ type: "planner", groupId: g.id })}>
-                        <span className="sb-icon">📅</span><span className="sb-label">스터디 플래너</span>
+                        <span className="sb-icon"></span><span className="sb-label">스터디 플래너</span>
                       </button>
                       {(() => {
                         // 자료끼리, 노트끼리 묶어서 펼치기 — 지금 보고 있는 쪽은 자동으로 펼친다
@@ -169,7 +169,7 @@ export default function Sidebar({
                           <>
                             <button className="sb-item sb-child sb-folder" onClick={() => flip(docsKey, docsOpenG)}>
                               <Caret open={docsOpenG} onClick={() => flip(docsKey, docsOpenG)} />
-                              <span className="sb-icon">📁</span><span className="sb-label">자료</span>
+                              <span className="sb-icon"></span><span className="sb-label">자료</span>
                               <span className="sb-count">{docs.length}</span>
                             </button>
                             {docsOpenG && (
@@ -180,7 +180,7 @@ export default function Sidebar({
                                   return (
                                     <button key={d.doc_id} className={`sb-item sb-child ${active ? "active" : ""}`} title={`${d.filename} · ${d.uploader_name}`}
                                       onClick={() => go({ type: "doc", docId: d.doc_id, filename: d.filename, groupId: g.id, tab: active ? view.tab : "summary" })}>
-                                      <span className="sb-icon">{(d.status === "processing" ? "⏳" : d.status === "failed" ? "⚠️" : "📄")}</span>
+                                      <span className="sb-icon">{(d.status === "processing" ? "⏳" : d.status === "failed" ? "⚠️" : "")}</span>
                                       <span className="sb-label">{d.filename.replace(/\.pdf$/i, "")}</span>
                                     </button>
                                   );
@@ -189,12 +189,12 @@ export default function Sidebar({
                             )}
                             <button className="sb-item sb-child sb-folder" onClick={() => flip(notesKey, notesOpenG)}>
                               <Caret open={notesOpenG} onClick={() => flip(notesKey, notesOpenG)} />
-                              <span className="sb-icon">🗂️</span><span className="sb-label">공동 노트</span>
+                              <span className="sb-icon"></span><span className="sb-label">공동 노트</span>
                               <span className="sb-count">{gnotes.length}</span>
                             </button>
                             {notesOpenG && (
                               <div className="sb-children">
-                                <NoteTree prefix={`g:${g.id}:`} expanded={expanded} setExpanded={setExpanded} child defaultIcon="📄"
+                                <NoteTree prefix={`g:${g.id}:`} expanded={expanded} setExpanded={setExpanded} child defaultIcon=""
                                   roots={gnotes.filter(n => isRoot(n, gnotes))} all={gnotes}
                                   activeId={view.type === "gnote" ? view.noteId : null}
                                   onOpen={(n) => go({ type: "gnote", groupId: g.id, noteId: n.id })}
@@ -267,7 +267,7 @@ export default function Sidebar({
               {sharedNotes.map(n => (
                 <button key={n.id} className={`sb-item ${view.type === "note" && view.noteId === n.id ? "active" : ""}`}
                   onClick={() => { onOpenSharedNote?.(n.id); onClose?.(); }}>
-                  <span className="sb-icon">{n.icon || "📝"}</span>
+                  <span className="sb-icon">{n.icon || ""}</span>
                   <span className="sb-label">{n.title || "제목 없음"}</span>
                 </button>
               ))}
@@ -301,7 +301,7 @@ export default function Sidebar({
                             className={`sb-item ${view.type === "doc" && view.docId === d.doc_id ? "active" : ""}`}
                             onClick={() => go({ type: "doc", docId: d.doc_id, filename: d.filename, tab: "summary" })}
                             title={d.filename}>
-                            <span className="sb-icon">{d.status === "processing" ? "⏳" : d.status === "failed" ? "⚠️" : "📄"}</span>
+                            <span className="sb-icon">{d.status === "processing" ? "⏳" : d.status === "failed" ? "⚠️" : ""}</span>
                             <span className="sb-label">{d.filename.replace(/\.pdf$/i, "")}</span>
                           </button>
                         ));
@@ -317,7 +317,7 @@ export default function Sidebar({
                           onClick={() => go({ type: "doc", docId: d.doc_id, filename: d.filename, tab: active ? view.tab : "summary" })}
                           title={d.filename}>
                           <Caret open={isOpen(d.doc_id)} onClick={() => toggle(d.doc_id)} />
-                          <span className="sb-icon">{d.status === "processing" ? "⏳" : d.status === "failed" ? "⚠️" : "📄"}</span>
+                          <span className="sb-icon">{d.status === "processing" ? "⏳" : d.status === "failed" ? "⚠️" : ""}</span>
                           <span className="sb-label">{d.filename.replace(/\.pdf$/i, "")}</span>
                         </button>
                         {isOpen(d.doc_id) && (
@@ -348,7 +348,7 @@ export default function Sidebar({
         </nav>
 
         <div className="sb-footer">
-          {streak > 0 && <span className="sb-streak" title="연속 학습일">🔥 {streak}일</span>}
+          {streak > 0 && <span className="sb-streak" title="연속 학습일">{streak}일</span>}
           <span className="sb-user" title={user.email}>{user.email || name}</span>
           <button className="sb-logout" onClick={onLogout}>로그아웃</button>
         </div>

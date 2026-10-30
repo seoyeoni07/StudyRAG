@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { apiFetch } from "../api";
 
 export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc, pastDocs, uploading, onPastDocsChange, onSelectDocTab, notesSlot, reviewDue = 0, onAskMulti, onOpenPlanner }) {
@@ -123,14 +123,14 @@ export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc
                   <div key={folder}>
                     {folderOrder.length > 1 && (
                       <div className="dash-doc-folder-row">
-                        <span className="dash-doc-folder-name">📁 {folder}</span>
+                        <span className="dash-doc-folder-name">{folder}</span>
                         <span className="dash-doc-folder-count">{grouped[folder].length}</span>
                       </div>
                     )}
                     {grouped[folder].map(d => (
                       <div key={d.doc_id} className="dash-doc-row">
                         <button className="dash-doc-main" onClick={() => onSelectDoc(d.doc_id, d.filename)}>
-                          <span className="dash-doc-icon">📄</span>
+                          
                           <span className="dash-doc-name" title={d.filename}>{d.filename.replace(/\.pdf$/i, "")}</span>
                           {d.status === "processing" && <span className="dash-doc-status">처리 중</span>}
                         </button>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { apiFetch } from "../api.js";
 
 export function timeAgo(iso) {
@@ -100,7 +100,7 @@ export default function GroupHome({
           </div>
         </div>
         {onOpenPlanner && (
-          <button className="btn-secondary btn-sm" onClick={onOpenPlanner}>📅 플래너</button>
+          <button className="btn-secondary btn-sm" onClick={onOpenPlanner}>플래너</button>
         )}
       </div>
 
@@ -130,7 +130,7 @@ export default function GroupHome({
           {(group.announcement || group.my_role === "owner") && (
             <div className="dash-panel">
               <div className="dash-panel-head">
-                <span className="dash-panel-title">📢 공지사항</span>
+                <span className="dash-panel-title">공지사항</span>
                 {group.my_role === "owner" && !editingAnn && (
                   <button className="btn-ghost btn-sm" onClick={() => setEditingAnn(true)}>
                     {group.announcement ? "수정" : "공지 등록"}

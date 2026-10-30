@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from "react";
+﻿import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, logout } from "./firebase";
 import { apiFetch, setUserId } from "./api";
@@ -526,25 +526,25 @@ export default function App() {
   })();
 
   // breadcrumb
-  const groupCrumb = group ? [["👥", group.detail.name]] : [];
-  const crumbs = view.type === "home" ? [["🏠", "홈"]]
-    : view.type === "stats" ? [["📊", "학습 통계"]]
-    : view.type === "planner" ? (view.groupId ? [...groupCrumb, ["📅", "스터디 플래너"]] : [["📅", "개인 플래너"]])
-    : view.type === "settings" ? [["⚙️", "설정"]]
-    : view.type === "group-start" ? [["👥", "그룹 스터디"]]
+  const groupCrumb = group ? [["", group.detail.name]] : [];
+  const crumbs = view.type === "home" ? [["", "홈"]]
+    : view.type === "stats" ? [["", "학습 통계"]]
+    : view.type === "planner" ? (view.groupId ? [...groupCrumb, ["", "스터디 플래너"]] : [["", "개인 플래너"]])
+    : view.type === "settings" ? [["", "설정"]]
+    : view.type === "group-start" ? [["", "그룹 스터디"]]
     : view.type === "group" ? groupCrumb
     : view.type === "gnote" ? [
         ...groupCrumb.map(c => [...c, { type: "group", groupId }]),
-        ...ancestorsOf(view.noteId, group?.notes || []).map(a => [a.icon || "📄", a.title || "제목 없음", { type: "gnote", groupId, noteId: a.id }]),
-        [groupNote?.icon || "📄", groupNote?.title || "제목 없음"],
+        ...ancestorsOf(view.noteId, group?.notes || []).map(a => [a.icon || "", a.title || "제목 없음", { type: "gnote", groupId, noteId: a.id }]),
+        [groupNote?.icon || "", groupNote?.title || "제목 없음"],
       ]
-    : view.type === "doc" ? [...(groupId ? groupCrumb : []), ["📄", currentDoc?.filename?.replace(/\.pdf$/i, "")], [currentTab?.[3], currentTab?.[1]]]
+    : view.type === "doc" ? [...(groupId ? groupCrumb : []), ["", currentDoc?.filename?.replace(/\.pdf$/i, "")], [currentTab?.[3], currentTab?.[1]]]
     : (() => {
         const linked = currentNote?.doc_id && pastDocs.find(d => d.doc_id === currentNote.doc_id);
         return [
-          ...(linked ? [["📄", linked.filename.replace(/\.pdf$/i, ""), { type: "doc", docId: linked.doc_id, filename: linked.filename, tab: "summary" }]] : [["📝", "내 노트"]]),
-          ...ancestorsOf(view.noteId, notes).map(a => [a.icon || "📝", a.title || "제목 없음", { type: "note", noteId: a.id }]),
-          [currentNote?.icon || "📝", currentNote?.title || "제목 없음"],
+          ...(linked ? [["", linked.filename.replace(/\.pdf$/i, ""), { type: "doc", docId: linked.doc_id, filename: linked.filename, tab: "summary" }]] : [["", "내 노트"]]),
+          ...ancestorsOf(view.noteId, notes).map(a => [a.icon || "", a.title || "제목 없음", { type: "note", noteId: a.id }]),
+          [currentNote?.icon || "", currentNote?.title || "제목 없음"],
         ];
       })();
 
@@ -669,7 +669,7 @@ export default function App() {
           )}
           {error && (
             <div className="error-banner">
-              <span className="error-icon">⚠️</span>
+              
               <span style={{ flex: 1 }}>{error}</span>
               <button className="btn-ghost" onClick={() => setError("")}>닫기</button>
             </div>
@@ -684,7 +684,7 @@ export default function App() {
                 </div>
                 {streak > 0 && (
                   <div className="streak-pill">
-                    🔥 <strong>{streak}일</strong> 연속
+                    <strong>{streak}일</strong> 연속
                     {streak >= 30 && <span className="streak-badge"> 월간 달성</span>}
                     {streak >= 7 && streak < 30 && <span className="streak-badge"> 주간 달성</span>}
                   </div>
@@ -743,7 +743,6 @@ export default function App() {
 
           {view.type === "stats" && (
             <>
-              <div className="page-icon">📊</div>
               <h1 className="page-title">학습 통계</h1>
               <StatsSection />
             </>
@@ -751,7 +750,6 @@ export default function App() {
 
           {view.type === "settings" && (
             <>
-              <div className="page-icon">⚙️</div>
               <h1 className="page-title">설정</h1>
               <SettingsPage
                 user={user}
@@ -837,7 +835,7 @@ export default function App() {
 
               {groupDoc && (
                 <p className="doc-uploader">
-                  👥 {group.detail.name} · <strong>{groupDoc.uploader_name}</strong>님이 {groupTimeAgo(groupDoc.created_at)} 올림
+                  {group.detail.name} · <strong>{groupDoc.uploader_name}</strong>님이 {groupTimeAgo(groupDoc.created_at)} 올림
                 </p>
               )}
               <div className="doc-meta-row">
@@ -890,7 +888,7 @@ export default function App() {
               )}
               {docStatusValue === "failed" && (
                 <div className="error-banner">
-                  <span className="error-icon">⚠️</span>
+                  
                   <span style={{ flex: 1 }}>
                     이미지 인식에 실패했어요. 무료 AI 모델이 잠시 붐비는 경우가 많아요 — 잠시 후 다시 시도해주세요.
                     {docStatus?.error && <><br /><small style={{ opacity: .75 }}>{docStatus.error}</small></>}

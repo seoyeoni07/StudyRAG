@@ -122,7 +122,7 @@ export default function PlannerPage({ user, groupId, groupName, onOpenLink }) {
     <div className={`planner planner--${planner.theme || "basic"}`}>
       <header className="pl-header">
         <div className="pl-title-row">
-          <span className="pl-scope">{groupId ? `👥 ${groupName || "스터디"} 플래너` : "📅 개인 플래너"}</span>
+          <span className="pl-scope">{groupId ? `${groupName || "스터디"} 플래너` : "개인 플래너"}</span>
           {editTitle === null ? (
             <h1 className="pl-title" onClick={() => setEditTitle(planner.title)} title="눌러서 이름 바꾸기">{planner.title}</h1>
           ) : (
@@ -155,8 +155,8 @@ export default function PlannerPage({ user, groupId, groupName, onOpenLink }) {
             <button className={mode === "week" ? "active" : ""} onClick={() => setMode("week")}>일주일</button>
             <button className={mode === "month" ? "active" : ""} onClick={() => setMode("month")}>한달</button>
           </div>
-          <button className="btn-secondary btn-sm" onClick={() => setDecoOpen(o => !o)}>🎨 꾸미기·과목</button>
-          <button className="btn-primary btn-sm" onClick={() => setAiOpen(true)}>✨ AI로 계획 세우기</button>
+          <button className="btn-secondary btn-sm" onClick={() => setDecoOpen(o => !o)}>꾸미기·과목</button>
+          <button className="btn-primary btn-sm" onClick={() => setAiOpen(true)}>AI 플랜</button>
         </div>
 
         {decoOpen && (
