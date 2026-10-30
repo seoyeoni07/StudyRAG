@@ -535,9 +535,13 @@ def get_ydoc(
     x_user_id: str | None = Header(default=None),
     db: Session = Depends(get_db),
 ):
-    note = _get_owned(db, note_id, _require_user(x_user_id))
+    note = db.query(Note).filter(Note.id == note_id).first()
+    if not note:
+        raise HTTPException(404, "노트를 찾을 수 없습니다.")
+    # 공개 노트는 로그인 없이도, 소유자가 아니어도 읽기 가능
+    if getattr(note, "visibility", "private") != "public":
+        note = _get_owned(db, note_id, _require_user(x_user_id))
     return {**_to_dict(note, with_content=False), "group_id": note.group_id, "user_id": note.user_id, "ydoc": note.ydoc,
-            # 아직 블록 에디터로 옮기기 전인 예전 마크다운 노트 — 에디터가 처음 열 때 블록으로 변환한다
             "legacy_markdown": note.content if not note.ydoc else None}
 
 
