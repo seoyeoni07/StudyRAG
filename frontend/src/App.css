@@ -59,8 +59,7 @@
 
 /* ── Global transitions ───────────────────── */
 button, a, input, select, textarea { transition: background .15s, color .15s, border-color .15s, box-shadow .15s, opacity .15s; }
-.dash-stat-card { transition: box-shadow .2s, transform .15s; }
-.dash-stat-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.dash-stat-card { transition: background .1s; }
 .note-card { transition: box-shadow .2s, transform .15s; }
 .dash-doc-row, .dash-side-row, .dash-planner-task, .sb-item { transition: background .12s; }
 .dash-panel { transition: box-shadow .2s; }
@@ -452,8 +451,7 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
   align-items: center;
   justify-content: center;
   gap: 6px;
-  box-shadow: 0 1px 3px rgba(37,99,235,.3);
-  transition: background .15s, box-shadow .15s;
+  transition: background .15s;
 }
 .btn-primary:hover:not(:disabled)  { background: var(--primary-dark); box-shadow: 0 2px 6px rgba(109,129,150,.40); }
 .btn-primary:active:not(:disabled) { background: var(--primary-deeper); }
@@ -995,7 +993,7 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 .streak-pill {
   display: flex; align-items: center; gap: 6px; flex-shrink: 0;
   padding: 6px 14px; border-radius: 100px;
-  background: var(--bg); border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+  background: var(--bg); border: 1px solid var(--border);
   font-size: 13px; color: var(--text-2); white-space: nowrap;
 }
 .streak-pill strong { color: var(--text-1); }
@@ -1667,12 +1665,12 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 .streak-banner {
   display: flex; align-items: center; gap: 10px;
   padding: 12px 16px; margin-bottom: 20px;
-  background: linear-gradient(135deg, #fff7ed, #fef3c7);
-  border: 1px solid #fcd34d; border-radius: 12px;
+  background: var(--amber-bg);
+  border: 1px solid var(--amber-border); border-radius: var(--r-md);
   font-size: 15px; color: var(--text-1);
 }
 @media (prefers-color-scheme: dark) {
-  .streak-banner { background: linear-gradient(135deg, #2d1a00, #2d2500); border-color: #92400e; }
+  .streak-banner { background: #2d1a00; border-color: #92400e; }
 }
 .streak-fire { font-size: 24px; }
 .streak-badge {
