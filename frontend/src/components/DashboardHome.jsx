@@ -95,8 +95,9 @@ export default function DashboardHome({
           />
           {q && <button className="launcher-search-clear" onClick={() => setQ("")}>×</button>}
         </div>
-        <button className="launcher-upload-btn" onClick={() => fileRef.current?.click()} disabled={uploading}>
-          <UploadIcon size="0.9em" />
+        <button className="launcher-upload-btn" onClick={() => fileRef.current?.click()} disabled={uploading}
+          aria-label={uploading ? "자료 분석 중" : "자료 추가"}>
+          <UploadIcon size="0.9em" aria-hidden="true" />
           {uploading ? "분석 중…" : "자료 추가"}
         </button>
         <input ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.gif" hidden onChange={handleFile} />
@@ -132,6 +133,7 @@ export default function DashboardHome({
                     {d.filename.replace(/\.(pdf|jpe?g|png|webp|gif)$/i, "")}
                   </span>
                   <button className="launcher-doc-del" title="삭제"
+                    aria-label={`${d.filename.replace(/\.(pdf|jpe?g|png|webp|gif)$/i, "")} 삭제`}
                     onClick={e => { e.stopPropagation(); if (window.confirm(`"${d.filename.replace(/\.(pdf|jpe?g|png|webp|gif)$/i, "")}" 자료를 삭제할까요?`)) onDeleteDoc(d.doc_id); }}>×</button>
                 </div>
                 <span className="launcher-doc-date">{timeAgo(d.created_at)}</span>

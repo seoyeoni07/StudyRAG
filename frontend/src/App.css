@@ -120,7 +120,16 @@ body {
 }
 button, input, select, textarea { font-family: inherit; color: inherit; }
 ::selection { background: rgba(35, 131, 226, .22); }
-:focus-visible { outline: 2px solid rgba(35, 131, 226, .5); outline-offset: 1px; }
+/* 접근성: 포커스 링 — 키보드 사용자가 명확히 볼 수 있어야 함 */
+:focus-visible {
+  outline: 2.5px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
+  outline: 2.5px solid var(--primary);
+  outline-offset: 3px;
+}
 
 /* ── Keyframes ────────────────────────────── */
 @keyframes spin      { to { transform: rotate(360deg); } }
@@ -1345,6 +1354,7 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 .report-btn--done { background: var(--amber-bg); color: #9a6d1e; cursor: default; }
 .adaptive-toggle { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 14px; color: var(--text-2); cursor: pointer; user-select: none; }
 .adaptive-toggle input { cursor: pointer; accent-color: var(--primary); }
+.adaptive-hint { font-size: 12px; color: var(--primary); margin: 4px 0 0 0; padding-left: 2px; }
 
 /* ── Study Room ───────────────────────────── */
 .room-home { display: flex; flex-direction: column; gap: 16px; }
@@ -2092,9 +2102,30 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 .stats-empty { font-size: 13px; color: var(--text-3); padding: 12px 0; }
 .stats-zero  { text-align: center; padding: 40px 20px; color: var(--text-3); font-size: 14px; line-height: 1.8; }
 
+/* ── 숙련도 바 ───────────────────────────────── */
+.mastery-row { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; background: var(--bg-subtle); border-radius: 8px; }
+.mastery-row-head { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+.mastery-doc-name { font-size: 13px; font-weight: 500; color: var(--text-1); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mastery-badge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 99px; white-space: nowrap; }
+.mastery-badge--warn { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
+.mastery-bars { display: flex; flex-direction: column; gap: 4px; }
+.mastery-bar-wrap { display: grid; grid-template-columns: 36px 1fr 38px; align-items: center; gap: 8px; }
+.mastery-bar-label { font-size: 11px; color: var(--text-3); }
+.mastery-bar-track { height: 7px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.mastery-bar-fill  { height: 100%; border-radius: 4px; transition: width .5s ease; }
+.mastery-bar-pct   { font-size: 11px; color: var(--text-2); font-variant-numeric: tabular-nums; text-align: right; }
+
+/* ── 집중 필요 알림 ──────────────────────────── */
+.stats-alert { background: var(--amber-bg); border: 1px solid var(--amber-border); border-radius: 8px; padding: 14px 16px; }
+.stats-alert-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; list-style: none; padding: 0; }
+.stats-alert-item { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+.stats-alert-name { color: var(--text-1); }
+.stats-alert-pct  { font-weight: 600; font-size: 12px; }
+
 @media (max-width: 640px) {
   .stats-summary { grid-template-columns: repeat(2, 1fr); }
   .stats-hbar-row { grid-template-columns: 100px 1fr 64px; }
+  .mastery-bar-wrap { grid-template-columns: 32px 1fr 34px; }
 }
 
 /* ── Settings ─────────────────────────────── */

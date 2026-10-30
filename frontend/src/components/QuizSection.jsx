@@ -139,8 +139,9 @@ export default function QuizSection({ docId, onGoToWrong, initialSession, onClea
   // ── 로딩 ──
   if (loading) {
     return (
-      <div className="loading-wrap" style={{ flexDirection: "column", gap: "16px", padding: "40px 0" }}>
-        <div className="spinner" style={{ width: "36px", height: "36px" }} />
+      <div className="loading-wrap" role="status" aria-live="polite" aria-label="퀴즈 생성 중"
+        style={{ flexDirection: "column", gap: "16px", padding: "40px 0" }}>
+        <div className="spinner" style={{ width: "36px", height: "36px" }} aria-hidden="true" />
         <span className="loading-text" style={{ fontSize: "15px", fontWeight: "600" }}>
           {LOADING_STEPS[loadingStep]}
         </span>
@@ -180,9 +181,13 @@ export default function QuizSection({ docId, onGoToWrong, initialSession, onClea
           <button className="btn-primary" onClick={handleGenerate}>퀴즈 생성</button>
         </div>
         <label className="adaptive-toggle">
-          <input type="checkbox" checked={adaptive} onChange={(e) => setAdaptive(e.target.checked)} />
+          <input type="checkbox" checked={adaptive} onChange={(e) => setAdaptive(e.target.checked)}
+            aria-describedby="adaptive-desc" />
           <span>취약 유형 집중 (적응형)</span>
         </label>
+        {adaptive && (
+          <p id="adaptive-desc" className="adaptive-hint">자주 틀린 개념을 분석해 관련 문제를 더 많이 출제해요.</p>
+        )}
       </div>
     );
   }

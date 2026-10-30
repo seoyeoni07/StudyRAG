@@ -52,8 +52,16 @@ class GradeRequest(BaseModel):
 
 @router.post("/generate")
 async def generate(req: GenerateRequest, db: Session = Depends(get_db)):
+    # 적응형: 자주 틀린 개념을 퀴즈 생성 힌트로 전달
+    weak_hints: list[str] = []
+    if req.focus_difficulty:
+        from collections import Counter
+        wrongs = db.query(WrongAnswer).filter(WrongAnswer.doc_id == req.doc_id).all()
+        counts = Counter(w.question for w in wrongs)
+        weak_hints = [q for q, _ in counts.most_common(3)]
+
     try:
-        questions = await asyncio.to_thread(generate_quiz, req.doc_id, req.n, req.focus_difficulty)
+        questions = await asyncio.to_thread(generate_quiz, req.doc_id, req.n, req.focus_difficulty, weak_hints)
     except ValueError as e:
         raise HTTPException(404, str(e))
 
@@ -402,20 +410,62 @@ def get_user_stats(x_user_id: str | None = Header(default=None), db: Session = D
         for h in recent
     ]
 
-    # 자료별 평균
+    # 자료별 평균 + 숙련도(최근 세션 가중) + 기억 유지율
+    import math
+    now_dt = datetime.utcnow()
+
     by_doc: dict[str, dict] = {}
+    sessions_by_doc: dict[str, list] = {}
     for h in all_history:
         s = by_doc.setdefault(h.doc_id, {"total": 0, "correct": 0, "sessions": 0})
         s["total"] += h.total; s["correct"] += h.correct; s["sessions"] += 1
+        sessions_by_doc.setdefault(h.doc_id, []).append(h)
+
+    # 숙련도: 최근 5회 세션을 지수 가중 평균 (최신 = 높은 가중치)
+    mastery_by_doc: dict[str, int] = {}
+    for did, hist in sessions_by_doc.items():
+        hist.sort(key=lambda h: h.created_at)
+        recent = hist[-5:]
+        ws = [0.4, 0.6, 0.75, 0.875, 1.0][-len(recent):]
+        w_sum = sum(ws)
+        mastery_by_doc[did] = round(
+            sum(w * (h.correct / h.total) for w, h in zip(ws, recent) if h.total) / w_sum * 100
+        ) if w_sum else 0
+
+    # 기억 유지율: 에빙하우스 망각곡선 R = e^(-t/S) 로 각 오답 추정 후 평균
+    wrongs_by_doc: dict[str, list] = {}
+    for w in all_wrongs:
+        wrongs_by_doc.setdefault(w.doc_id, []).append(w)
+
+    retention_by_doc: dict[str, int] = {}
+    for did in doc_ids:
+        doc_wrongs = wrongs_by_doc.get(did, [])
+        if not doc_wrongs:
+            retention_by_doc[did] = 100
+            continue
+        r_sum = 0.0
+        for w in doc_wrongs:
+            days = max(0, (now_dt - w.created_at).total_seconds() / 86400)
+            # stability: 복습 횟수에 따라 안정화 (SM-2 근사: S ≈ review_count * 3 + 1)
+            stability = (w.review_count or 0) * 3 + 1
+            r = math.exp(-days / stability)
+            r_sum += max(0.0, min(1.0, r))
+        retention_by_doc[did] = round(r_sum / len(doc_wrongs) * 100)
+
     doc_stats = [
         {
             "doc_id": did,
             "name": doc_name.get(did, "?"),
             "avg_pct": round(s["correct"] / s["total"] * 100) if s["total"] else 0,
             "sessions": s["sessions"],
+            "mastery_pct": mastery_by_doc.get(did, 0),
+            "retention_pct": retention_by_doc.get(did, 100),
         }
         for did, s in by_doc.items()
     ]
+
+    avg_mastery = round(sum(d["mastery_pct"] for d in doc_stats) / len(doc_stats)) if doc_stats else 0
+    avg_retention = round(sum(d["retention_pct"] for d in doc_stats) / len(doc_stats)) if doc_stats else 100
 
     # 난이도별 오답률 (모든 자료 합산)
     sessions = db.query(QuizSession).filter(QuizSession.doc_id.in_(doc_ids)).all()
@@ -444,6 +494,8 @@ def get_user_stats(x_user_id: str | None = Header(default=None), db: Session = D
     return {
         "total_sessions": len(all_history),
         "avg_score_pct": avg_pct,
+        "avg_mastery_pct": avg_mastery,
+        "avg_retention_pct": avg_retention,
         "total_wrongs": len(all_wrongs),
         "total_docs": len(docs),
         "recent_sessions": recent_sessions,

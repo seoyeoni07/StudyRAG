@@ -59,7 +59,7 @@ _GRADE_PROMPT = """\
 {{"correct": true, "feedback": "간략한 피드백 (1~2줄)"}}"""
 
 
-def generate_quiz(doc_id: str, n: int = 5, focus_difficulty: str | None = None) -> list[dict]:
+def generate_quiz(doc_id: str, n: int = 5, focus_difficulty: str | None = None, weak_hints: list[str] | None = None) -> list[dict]:
     vs = get_vectorstore(doc_id)
     docs = vs.as_retriever(search_type="mmr", search_kwargs={"k": 15, "fetch_k": 40}).invoke("강의 핵심 개념")
     if not docs:
@@ -68,12 +68,14 @@ def generate_quiz(doc_id: str, n: int = 5, focus_difficulty: str | None = None) 
     sample = random.sample(docs, min(12, len(docs)))
     context = "\n\n---\n\n".join(d.page_content for d in sample)
 
-    # 적응형 난이도: 취약 난이도가 있으면 프롬프트에 추가
-    focus_note = ""
+    adaptive_note = ""
     if focus_difficulty:
-        focus_note = f"\n\n⚠️ 학생이 '{focus_difficulty}' 난이도에서 오답률이 높습니다. '{focus_difficulty}' 문제를 전체의 50% 이상 포함하세요."
+        adaptive_note += f"\n\n⚠️ 학생이 '{focus_difficulty}' 난이도에서 오답률이 높습니다. '{focus_difficulty}' 문제를 전체의 50% 이상 포함하세요."
+    if weak_hints:
+        adaptive_note += "\n\n📌 아래 개념들은 이 학생이 자주 틀렸습니다. 반드시 관련 문제를 포함하세요:\n"
+        adaptive_note += "\n".join(f"- {q[:100]}" for q in weak_hints)
 
-    prompt = _GENERATE_PROMPT.format(n=n, context=context) + focus_note
+    prompt = _GENERATE_PROMPT.format(n=n, context=context) + adaptive_note
     last_err = None
     for model in [_PRIMARY_MODEL] + _FALLBACK_MODELS:
         try:
