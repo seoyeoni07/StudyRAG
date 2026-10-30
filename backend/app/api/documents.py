@@ -403,8 +403,7 @@ def list_documents(x_user_id: str | None = Header(default=None), db: Session = D
     def _tags(r):
         try:
             s = _json.loads(r.summary or "{}") if r.summary else {}
-            raw = (s.get("key_concepts") or s.get("keywords") or [])[:4]
-            return [" ".join(t.split()[:2]) for t in raw]
+            return (s.get("tags") or s.get("key_concepts") or s.get("keywords") or [])[:3]
         except Exception:
             return []
     return [
