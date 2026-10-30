@@ -264,7 +264,7 @@ export default function Sidebar({
           {sharedNotes.length > 0 && (
             <div className="sb-section">
               <div className="sb-section-head">
-                <span className="sb-section-title">공유된 노트</span>
+                <span className="sb-section-title">공유받은 노트</span>
               </div>
               {sharedNotes.map(n => (
                 <button key={n.id} className={`sb-item ${view.type === "note" && view.noteId === n.id ? "active" : ""}`}
