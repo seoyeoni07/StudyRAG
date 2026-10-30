@@ -1,5 +1,15 @@
 import { useState, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 import { apiFetch } from "../api";
+
+const Md = ({ children }) => (
+  <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+    {children || ""}
+  </ReactMarkdown>
+);
 
 export default function SummarySection({ docId, onSaveNote }) {
   const [summary, setSummary] = useState(null);
@@ -57,14 +67,14 @@ export default function SummarySection({ docId, onSaveNote }) {
     <div className="summary-wrap">
       <div className="summary-overview">
         <h3 className="summary-title">강의 개요</h3>
-        <p className="summary-text">{summary.overview}</p>
+        <div className="summary-text"><Md>{summary.overview}</Md></div>
       </div>
 
       <div className="summary-section">
         <h4 className="summary-subtitle">핵심 개념</h4>
         <ol className="summary-concepts">
           {(summary.key_concepts || []).map((c, i) => (
-            <li key={i}>{c}</li>
+            <li key={i}><Md>{c}</Md></li>
           ))}
         </ol>
       </div>
@@ -80,7 +90,7 @@ export default function SummarySection({ docId, onSaveNote }) {
 
       {summary.study_tip && (
         <div className="summary-tip">
-          <span>{summary.study_tip}</span>
+          <Md>{summary.study_tip}</Md>
         </div>
       )}
 

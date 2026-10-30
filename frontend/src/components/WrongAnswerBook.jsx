@@ -1,6 +1,16 @@
 import { useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 import { apiFetch } from "../api";
 import { CalendarIcon, SparkleIcon } from "./Icons.jsx";
+
+const Md = ({ children }) => (
+  <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+    {children || ""}
+  </ReactMarkdown>
+);
 
 const FILTERS = [["all", "전체"], ["pending", "미복습"], ["today", "오늘 복습"]];
 
@@ -186,7 +196,7 @@ export default function WrongAnswerBook({ docId, refreshKey = 0, onCountLoaded, 
           : visible.map((item) => (
             <div key={item.id} className={`wrong-item ${item.reviewed ? "wrong-item--reviewed" : ""}`}>
               <div className="wrong-item-header">
-                <p className="q-text" style={{ margin: 0 }}><strong>Q.</strong> {item.question}</p>
+                <div className="q-text" style={{ margin: 0 }}><strong>Q.</strong> <Md>{item.question}</Md></div>
                 {item.reviewed ? (
                   <button className="reviewed-btn reviewed-btn--done" onClick={() => unmarkReviewed(item)}
                     title="복습 완료 취소">✓ 복습 완료</button>
@@ -199,9 +209,9 @@ export default function WrongAnswerBook({ docId, refreshKey = 0, onCountLoaded, 
                 )}
               </div>
               <p className="wrong-ans">내 답변: {item.user_answer || "(미입력)"}</p>
-              <p className="correct-ans">정답: {item.correct_answer}</p>
+              <div className="correct-ans">정답: <Md>{item.correct_answer}</Md></div>
               {item.explanation
-                ? <p className="explanation">{item.explanation}</p>
+                ? <div className="explanation"><Md>{item.explanation}</Md></div>
                 : <button className="btn-secondary btn-sm" style={{ marginTop: 4, fontSize: 12 }}
                     disabled={explaining === item.id}
                     onClick={() => aiExplain(item)}>
@@ -243,14 +253,14 @@ export default function WrongAnswerBook({ docId, refreshKey = 0, onCountLoaded, 
                         <span className={`result-badge ${r.correct ? "badge-correct" : "badge-wrong"}`}>
                           {r.correct ? "✓ 정답" : "✗ 오답"}
                         </span>
-                        <p className="q-text">{r.question}</p>
+                        <div className="q-text"><Md>{r.question}</Md></div>
                         {!r.correct && (
                           <>
                             {r.user_answer && <p>내 답변: <strong>{r.user_answer}</strong></p>}
-                            <p className="correct-ans">정답: {r.correct_answer}</p>
+                            <div className="correct-ans">정답: <Md>{r.correct_answer}</Md></div>
                           </>
                         )}
-                        <p className="explanation">{r.explanation}</p>
+                        <div className="explanation"><Md>{r.explanation}</Md></div>
                       </div>
                     ))}
                   </div>

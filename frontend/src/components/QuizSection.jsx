@@ -1,5 +1,15 @@
 import { useState, useEffect, useRef } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 import { apiFetch } from "../api";
+
+const Md = ({ children }) => (
+  <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+    {children || ""}
+  </ReactMarkdown>
+);
 
 const LOADING_STEPS = [
   "강의자료 분석 중...",
@@ -193,10 +203,10 @@ export default function QuizSection({ docId, onGoToWrong, initialSession, onClea
                   {reported ? "신고됨" : "오류 신고"}
                 </button>
               </div>
-              <p className="q-text">{q?.question}</p>
+              <div className="q-text"><Md>{q?.question}</Md></div>
               <p>내 답변: <strong>{r.user_answer || "(미입력)"}</strong></p>
-              {!r.correct && <p className="correct-ans">정답: {r.correct_answer}</p>}
-              <p className="explanation">{r.explanation}</p>
+              {!r.correct && <div className="correct-ans"><Md>{r.correct_answer}</Md></div>}
+              <div className="explanation"><Md>{r.explanation}</Md></div>
             </div>
           );
         })}
@@ -232,7 +242,7 @@ export default function QuizSection({ docId, onGoToWrong, initialSession, onClea
               </span>
             )}
           </div>
-          <p className="q-text">{q.question}</p>
+          <div className="q-text"><Md>{q.question}</Md></div>
           {q.type === "multiple_choice" ? (
             <div className="options">
               {q.options.map((opt) => {
