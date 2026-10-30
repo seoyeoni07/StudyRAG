@@ -1,7 +1,7 @@
 ﻿import { useState, useRef } from "react";
 import { apiFetch } from "../api.js";
 import NoteTree, { isRoot } from "./NoteTree";
-import { DocIcon, NoteIcon, WarningIcon, renderNoteIcon, HomeIcon, CalendarIcon, BarChartIcon, ChatIcon, SettingsIcon, UploadIcon } from "./Icons.jsx";
+import { DocIcon, NoteIcon, WarningIcon, renderNoteIcon, HomeIcon, CalendarIcon, BarChartIcon, ChatIcon, SettingsIcon, UploadIcon, UsersIcon } from "./Icons.jsx";
 
 export const DOC_TABS = [
   ["summary", "요약",       "AI가 강의 전체를 핵심만 정리해드립니다", ""],
@@ -149,7 +149,7 @@ export default function Sidebar({
                   <button className={`sb-item ${view.type === "group" && view.groupId === g.id ? "active" : ""}`}
                     onClick={() => go({ type: "group", groupId: g.id })}>
                     <Caret open={isGroupOpen(g.id)} onClick={() => setExpanded(e => ({ ...e, [`g:${g.id}`]: !isGroupOpen(g.id) }))} />
-                    <span className="sb-icon"></span>
+                    <span className="sb-icon"><UsersIcon size="0.85em" /></span>
                     <span className="sb-label">{g.name}</span>
                     {online[g.id] && <span className="sb-online" title={`지금 ${onlineCount}명 접속 중 (나 포함)`}>{onlineCount}명</span>}
                   </button>
