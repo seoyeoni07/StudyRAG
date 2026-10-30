@@ -36,6 +36,10 @@ class ReportRequest(BaseModel):
     issue: str = ""
 
 
+class ReviewedRequest(BaseModel):
+    confidence: int = 2  # 1=어려움, 2=보통, 3=쉬움
+
+
 class AnswerItem(BaseModel):
     id: int
     answer: str
@@ -214,20 +218,61 @@ async def explain_wrong_answer(item_id: int, db: Session = Depends(get_db)):
 
 
 @router.patch("/wrong-answers/{item_id}/reviewed")
-def toggle_reviewed(item_id: int, db: Session = Depends(get_db)):
+def toggle_reviewed(item_id: int, req: ReviewedRequest = ReviewedRequest(), db: Session = Depends(get_db)):
     item = db.get(WrongAnswer, item_id)
     if not item:
         raise HTTPException(404)
     item.reviewed = not item.reviewed
     if item.reviewed:
-        # 스페이스드 리피티션: review_count에 따라 다음 복습일 계산
-        days = _REVIEW_INTERVALS[min(item.review_count, len(_REVIEW_INTERVALS) - 1)]
-        item.next_review = datetime.utcnow() + timedelta(days=days)
-        item.review_count = (item.review_count or 0) + 1
+        count = item.review_count or 0
+        # confidence: 1=어려움(리셋), 2=보통, 3=쉬움(한 단계 앞으로)
+        if req.confidence == 1:
+            idx = 0
+        elif req.confidence == 3:
+            idx = min(count + 1, len(_REVIEW_INTERVALS) - 1)
+        else:
+            idx = min(count, len(_REVIEW_INTERVALS) - 1)
+        item.next_review = datetime.utcnow() + timedelta(days=_REVIEW_INTERVALS[idx])
+        item.review_count = count + 1
     else:
         item.next_review = None
     db.commit()
     return {"reviewed": item.reviewed, "next_review": item.next_review.isoformat() if item.next_review else None}
+
+
+@router.post("/retry-wrongs")
+def retry_wrongs(doc_id: str, db: Session = Depends(get_db)):
+    wrongs = (
+        db.query(WrongAnswer)
+        .filter(WrongAnswer.doc_id == doc_id, WrongAnswer.reviewed == False)
+        .order_by(WrongAnswer.created_at.desc())
+        .limit(15)
+        .all()
+    )
+    if not wrongs:
+        raise HTTPException(404, "복습할 오답이 없습니다.")
+
+    questions = [
+        {
+            "id": i + 1,
+            "type": "short_answer",
+            "question": w.question,
+            "answer": w.correct_answer,
+            "explanation": w.explanation or f"정답은 '{w.correct_answer}'입니다.",
+        }
+        for i, w in enumerate(wrongs)
+    ]
+
+    session_id = str(uuid.uuid4())
+    db.add(QuizSession(
+        id=session_id,
+        doc_id=doc_id,
+        questions_json=json.dumps(questions, ensure_ascii=False),
+    ))
+    db.commit()
+
+    public = [{"id": q["id"], "type": q["type"], "question": q["question"]} for q in questions]
+    return {"session_id": session_id, "questions": public, "is_retry": True}
 
 
 @router.get("/due-count")

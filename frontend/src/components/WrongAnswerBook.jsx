@@ -4,7 +4,7 @@ import { CalendarIcon, SparkleIcon } from "./Icons.jsx";
 
 const FILTERS = [["all", "전체"], ["pending", "미복습"], ["today", "오늘 복습"]];
 
-export default function WrongAnswerBook({ docId, refreshKey = 0, onCountLoaded, onGoToQuiz }) {
+export default function WrongAnswerBook({ docId, refreshKey = 0, onCountLoaded, onGoToQuiz, onRetryWrongs }) {
   const [items, setItems] = useState([]);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,6 +16,7 @@ export default function WrongAnswerBook({ docId, refreshKey = 0, onCountLoaded, 
   const [sessionDetail, setSessionDetail] = useState({});
   const [detailLoading, setDetailLoading] = useState(false);
   const [explaining, setExplaining] = useState(null); // item id
+  const [retrying, setRetrying] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -28,23 +29,42 @@ export default function WrongAnswerBook({ docId, refreshKey = 0, onCountLoaded, 
       .finally(() => setLoading(false));
   }, [docId, refreshKey]);
 
-  async function toggleReviewed(item) {
-    // 낙관적 업데이트: 즉시 UI 반영
-    const nextReviewed = !item.reviewed;
-    setItems(prev => prev.map(it =>
-      it.id === item.id ? { ...it, reviewed: nextReviewed } : it
-    ));
+  async function rateReview(item, confidence) {
+    setItems(prev => prev.map(it => it.id === item.id ? { ...it, reviewed: true } : it));
     try {
-      const data = await apiFetch(`/quiz/wrong-answers/${item.id}/reviewed`, { method: "PATCH" });
+      const data = await apiFetch(`/quiz/wrong-answers/${item.id}/reviewed`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confidence }),
+      });
       setItems(prev => prev.map(it =>
         it.id === item.id ? { ...it, reviewed: data.reviewed, next_review: data.next_review } : it
       ));
     } catch (err) {
-      // 실패 시 롤백
-      setItems(prev => prev.map(it =>
-        it.id === item.id ? { ...it, reviewed: item.reviewed } : it
-      ));
+      setItems(prev => prev.map(it => it.id === item.id ? { ...it, reviewed: false } : it));
       setError(err.message);
+    }
+  }
+
+  async function unmarkReviewed(item) {
+    setItems(prev => prev.map(it => it.id === item.id ? { ...it, reviewed: false } : it));
+    try {
+      await apiFetch(`/quiz/wrong-answers/${item.id}/reviewed`, { method: "PATCH" });
+    } catch (err) {
+      setItems(prev => prev.map(it => it.id === item.id ? { ...it, reviewed: true } : it));
+      setError(err.message);
+    }
+  }
+
+  async function handleRetryWrongs() {
+    if (!onRetryWrongs) return;
+    setRetrying(true);
+    try {
+      await onRetryWrongs();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setRetrying(false);
     }
   }
 
@@ -143,11 +163,19 @@ export default function WrongAnswerBook({ docId, refreshKey = 0, onCountLoaded, 
         </div>
       )}
 
-      {view === "wrong" && onGoToQuiz && items.length > 0 && (
-        <div style={{ textAlign: "right", marginBottom: 4 }}>
-          <button className="btn-secondary" style={{ fontSize: 12, padding: "3px 12px" }} onClick={onGoToQuiz}>
-            퀴즈 다시 풀기 →
-          </button>
+      {view === "wrong" && items.filter(i => !i.reviewed).length > 0 && (
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginBottom: 4 }}>
+          {onRetryWrongs && (
+            <button className="btn-primary" style={{ fontSize: 12, padding: "3px 12px" }}
+              disabled={retrying} onClick={handleRetryWrongs}>
+              {retrying ? "준비 중…" : "오답만 다시 풀기"}
+            </button>
+          )}
+          {onGoToQuiz && (
+            <button className="btn-secondary" style={{ fontSize: 12, padding: "3px 12px" }} onClick={onGoToQuiz}>
+              새 퀴즈 →
+            </button>
+          )}
         </div>
       )}
 
@@ -159,13 +187,16 @@ export default function WrongAnswerBook({ docId, refreshKey = 0, onCountLoaded, 
             <div key={item.id} className={`wrong-item ${item.reviewed ? "wrong-item--reviewed" : ""}`}>
               <div className="wrong-item-header">
                 <p className="q-text" style={{ margin: 0 }}><strong>Q.</strong> {item.question}</p>
-                <button
-                  className={`reviewed-btn ${item.reviewed ? "reviewed-btn--done" : ""}`}
-                  onClick={() => toggleReviewed(item)}
-                  title={item.reviewed ? "복습 완료 취소" : "복습 완료로 표시"}
-                >
-                  {item.reviewed ? "✓ 복습 완료" : "복습 전"}
-                </button>
+                {item.reviewed ? (
+                  <button className="reviewed-btn reviewed-btn--done" onClick={() => unmarkReviewed(item)}
+                    title="복습 완료 취소">✓ 복습 완료</button>
+                ) : (
+                  <div className="review-rate-btns">
+                    <button className="review-rate-btn review-rate-btn--hard" onClick={() => rateReview(item, 1)}>✗ 어려워요</button>
+                    <button className="review-rate-btn review-rate-btn--mid"  onClick={() => rateReview(item, 2)}>△ 헷갈려요</button>
+                    <button className="review-rate-btn review-rate-btn--easy" onClick={() => rateReview(item, 3)}>○ 알겠어요</button>
+                  </div>
+                )}
               </div>
               <p className="wrong-ans">내 답변: {item.user_answer || "(미입력)"}</p>
               <p className="correct-ans">정답: {item.correct_answer}</p>

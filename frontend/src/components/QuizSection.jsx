@@ -9,7 +9,7 @@ const LOADING_STEPS = [
   "마무리 중...",
 ];
 
-export default function QuizSection({ docId, onGoToWrong }) {
+export default function QuizSection({ docId, onGoToWrong, initialSession, onClearInitial }) {
   const [n, setN] = useState(5);
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
@@ -22,6 +22,18 @@ export default function QuizSection({ docId, onGoToWrong }) {
   const [error, setError] = useState("");
   const [reportedIds, setReportedIds] = useState(new Set());
   const [adaptive, setAdaptive] = useState(false);
+
+  useEffect(() => {
+    if (initialSession) {
+      setQuestions(initialSession.questions);
+      setSessionId(initialSession.session_id);
+      setAnswers({});
+      setResults(null);
+      setError("");
+      setReportedIds(new Set());
+      onClearInitial?.();
+    }
+  }, [initialSession]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleGenerate() {
     setLoading(true);

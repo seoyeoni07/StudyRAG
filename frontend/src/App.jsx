@@ -72,6 +72,7 @@ export default function App() {
   const dmUnread = badgeCount(useDmRooms());
   const [streak, setStreak] = useState(0);
   const [wrongRefreshKey, setWrongRefreshKey] = useState(0);
+  const [quizInitialSession, setQuizInitialSession] = useState(null);
 
   const loadGroup = useCallback(async (id) => {
     try {
@@ -710,6 +711,7 @@ export default function App() {
                 pastDocs={pastDocs}
                 uploading={uploading}
                 reviewDue={reviewDue}
+                streak={streak}
                 onAskMulti={askMultiDocs}
                 onOpenPlanner={() => setView({ type: "planner" })}
                 onPastDocsChange={() => apiFetch("/documents/").then(d => setPastDocs(dedupDocs(d))).catch(() => {})}
@@ -914,10 +916,18 @@ export default function App() {
                   ["summary", <SummarySection key="summary" docId={docId} onSaveNote={saveToNote} />],
                   ["qa",      <QASection key="qa" docId={docId} onSaveNote={saveToNote} />],
                   ["tutor",   <TutorSection key="tutor" docId={docId} />],
-                  ["quiz",    <QuizSection key="quiz" docId={docId} onGoToWrong={() => { setView(v => ({ ...v, tab: "wrong" })); setWrongRefreshKey(k => k + 1); }} />],
+                  ["quiz",    <QuizSection key="quiz" docId={docId}
+                                initialSession={quizInitialSession}
+                                onClearInitial={() => setQuizInitialSession(null)}
+                                onGoToWrong={() => { setView(v => ({ ...v, tab: "wrong" })); setWrongRefreshKey(k => k + 1); }} />],
                   ["wrong",   <WrongAnswerBook key="wrong" docId={docId} refreshKey={wrongRefreshKey}
                                 onCountLoaded={setWrongCount}
-                                onGoToQuiz={() => setView(v => ({ ...v, tab: "quiz" }))} />],
+                                onGoToQuiz={() => setView(v => ({ ...v, tab: "quiz" }))}
+                                onRetryWrongs={async () => {
+                                  const data = await apiFetch(`/quiz/retry-wrongs?doc_id=${docId}`, { method: "POST" });
+                                  setQuizInitialSession(data);
+                                  setView(v => ({ ...v, tab: "quiz" }));
+                                }} />],
                   ...(groupId ? [["room", <StudyRoomSection key="room" docId={docId} userId={user?.uid}
                     groupId={groupId}
                     preJoined={preJoined?.doc_id === docId ? preJoined : null}

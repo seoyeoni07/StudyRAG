@@ -1,7 +1,7 @@
 ﻿import { useState, useEffect, useRef } from "react";
 import { apiFetch } from "../api";
 
-export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc, pastDocs, uploading, onPastDocsChange, onSelectDocTab, notesSlot, reviewDue = 0, onAskMulti, onOpenPlanner }) {
+export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc, pastDocs, uploading, onPastDocsChange, onSelectDocTab, notesSlot, reviewDue = 0, onAskMulti, onOpenPlanner, streak = 0 }) {
   const [stats, setStats] = useState(null);
   const [planner, setPlanner] = useState(null);
   const [history, setHistory] = useState(null);
@@ -83,6 +83,10 @@ export default function DashboardHome({ onFileAccepted, onSelectDoc, onDeleteDoc
         <div className="dash-stat-card">
           <span className="dash-stat-label">내 자료</span>
           {stats === null ? <span className="skeleton skeleton-val" /> : <span className="dash-stat-value">{stats.total_docs ?? pastDocs.length}</span>}
+        </div>
+        <div className="dash-stat-card">
+          <span className="dash-stat-label">연속 학습</span>
+          <span className="dash-stat-value">{streak > 0 ? `${streak}일` : "—"}</span>
         </div>
       </div>
 
