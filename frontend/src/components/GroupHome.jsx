@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect } from "react";
 import { apiFetch } from "../api.js";
-import { LockIcon, GlobeIcon, UsersIcon, DocIcon } from "./Icons.jsx";
+import { LockIcon, GlobeIcon, UsersIcon, DocIcon, NoteIcon, renderNoteIcon } from "./Icons.jsx";
 
 export function timeAgo(iso) {
   if (!iso) return "";
@@ -296,7 +296,7 @@ export default function GroupHome({
                   return (
                     <div key={n.id} className="dash-doc-row">
                       <button className="dash-doc-main" onClick={() => onOpenNote(n)}>
-                        <span className="dash-doc-icon">{n.icon || <DocIcon />}</span>
+                        <span className="dash-doc-icon">{renderNoteIcon(n.icon) || <NoteIcon />}</span>
                         <span className="dash-doc-name">{n.title || "제목 없음"}</span>
                         {editing.length > 0 && (
                           <span className="group-editing">

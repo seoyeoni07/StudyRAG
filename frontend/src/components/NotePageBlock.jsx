@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { createReactBlockSpec } from "@blocknote/react";
 import { BlockNoteSchema, defaultBlockSpecs, insertOrUpdateBlockForSlashMenu } from "@blocknote/core";
-import { NoteIcon, DocIcon } from "./Icons.jsx";
+import { NoteIcon, DocIcon, renderNoteIcon } from "./Icons.jsx";
 
 /*
  * 노트 안의 노트 (노션의 페이지 블록).
@@ -29,7 +29,7 @@ function NotePageView({ block }) {
       role="button" tabIndex={0} title={gone ? "삭제된 노트" : "노트 열기"}
       onClick={() => !gone && open(noteId)}
       onKeyDown={e => { if (e.key === "Enter" && !gone) open(noteId); }}>
-      <span className="np-icon">{live?.icon || icon || <NoteIcon size="0.9em" />}</span>
+      <span className="np-icon">{renderNoteIcon(live?.icon || icon, "0.9em") || <NoteIcon size="0.9em" />}</span>
       <span className="np-title">{gone ? "삭제된 노트" : (live?.title || title || "제목 없음")}</span>
     </div>
   );

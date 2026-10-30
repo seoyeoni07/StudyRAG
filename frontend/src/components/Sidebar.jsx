@@ -1,6 +1,7 @@
 ﻿import { useState, useRef } from "react";
 import { apiFetch } from "../api.js";
 import NoteTree, { isRoot } from "./NoteTree";
+import { DocIcon, NoteIcon, WarningIcon, renderNoteIcon } from "./Icons.jsx";
 
 export const DOC_TABS = [
   ["summary", "요약",       "AI가 강의 전체를 핵심만 정리해드립니다", ""],
@@ -169,7 +170,7 @@ export default function Sidebar({
                           <>
                             <button className="sb-item sb-child sb-folder" onClick={() => flip(docsKey, docsOpenG)}>
                               <Caret open={docsOpenG} onClick={() => flip(docsKey, docsOpenG)} />
-                              <span className="sb-icon"></span><span className="sb-label">자료</span>
+                              <span className="sb-icon"><DocIcon size="0.85em" /></span><span className="sb-label">자료</span>
                               <span className="sb-count">{docs.length}</span>
                             </button>
                             {docsOpenG && (
@@ -180,7 +181,7 @@ export default function Sidebar({
                                   return (
                                     <button key={d.doc_id} className={`sb-item sb-child ${active ? "active" : ""}`} title={`${d.filename} · ${d.uploader_name}`}
                                       onClick={() => go({ type: "doc", docId: d.doc_id, filename: d.filename, groupId: g.id, tab: active ? view.tab : "summary" })}>
-                                      <span className="sb-icon">{(d.status === "processing" ? "⏳" : d.status === "failed" ? "⚠️" : "")}</span>
+                                      <span className="sb-icon">{d.status === "processing" ? "⏳" : d.status === "failed" ? <WarningIcon size="0.85em" /> : <DocIcon size="0.85em" />}</span>
                                       <span className="sb-label">{d.filename.replace(/\.pdf$/i, "")}</span>
                                     </button>
                                   );
@@ -189,7 +190,7 @@ export default function Sidebar({
                             )}
                             <button className="sb-item sb-child sb-folder" onClick={() => flip(notesKey, notesOpenG)}>
                               <Caret open={notesOpenG} onClick={() => flip(notesKey, notesOpenG)} />
-                              <span className="sb-icon"></span><span className="sb-label">공동 노트</span>
+                              <span className="sb-icon"><NoteIcon size="0.85em" /></span><span className="sb-label">공동 노트</span>
                               <span className="sb-count">{gnotes.length}</span>
                             </button>
                             {notesOpenG && (
@@ -267,7 +268,7 @@ export default function Sidebar({
               {sharedNotes.map(n => (
                 <button key={n.id} className={`sb-item ${view.type === "note" && view.noteId === n.id ? "active" : ""}`}
                   onClick={() => { onOpenSharedNote?.(n.id); onClose?.(); }}>
-                  <span className="sb-icon">{n.icon || ""}</span>
+                  <span className="sb-icon">{renderNoteIcon(n.icon, "0.85em") || <NoteIcon size="0.85em" />}</span>
                   <span className="sb-label">{n.title || "제목 없음"}</span>
                 </button>
               ))}
@@ -301,7 +302,7 @@ export default function Sidebar({
                             className={`sb-item ${view.type === "doc" && view.docId === d.doc_id ? "active" : ""}`}
                             onClick={() => go({ type: "doc", docId: d.doc_id, filename: d.filename, tab: "summary" })}
                             title={d.filename}>
-                            <span className="sb-icon">{d.status === "processing" ? "⏳" : d.status === "failed" ? "⚠️" : ""}</span>
+                            <span className="sb-icon">{d.status === "processing" ? "⏳" : d.status === "failed" ? <WarningIcon size="0.85em" /> : <DocIcon size="0.85em" />}</span>
                             <span className="sb-label">{d.filename.replace(/\.pdf$/i, "")}</span>
                           </button>
                         ));
@@ -317,7 +318,7 @@ export default function Sidebar({
                           onClick={() => go({ type: "doc", docId: d.doc_id, filename: d.filename, tab: active ? view.tab : "summary" })}
                           title={d.filename}>
                           <Caret open={isOpen(d.doc_id)} onClick={() => toggle(d.doc_id)} />
-                          <span className="sb-icon">{d.status === "processing" ? "⏳" : d.status === "failed" ? "⚠️" : ""}</span>
+                          <span className="sb-icon">{d.status === "processing" ? "⏳" : d.status === "failed" ? <WarningIcon size="0.85em" /> : <DocIcon size="0.85em" />}</span>
                           <span className="sb-label">{d.filename.replace(/\.pdf$/i, "")}</span>
                         </button>
                         {isOpen(d.doc_id) && (

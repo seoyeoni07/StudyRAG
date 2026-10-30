@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { PencilIcon, CopyIcon, TrashIcon, ArrowUpIcon, StarIcon, StarFilledIcon, NoteIcon } from "./Icons.jsx";
+import { PencilIcon, CopyIcon, TrashIcon, ArrowUpIcon, StarIcon, StarFilledIcon, NoteIcon, renderNoteIcon } from "./Icons.jsx";
 
 /** parent_id → 하위 페이지 목록 (만든 순서) */
 export function childrenMap(list) {
@@ -151,7 +151,7 @@ function MoveModal({ note, all, onPick, onClose }) {
             <button key={n.id} className={`nt-move-row ${note.parent_id === n.id ? "current" : ""}`}
               style={{ paddingLeft: 10 + (q ? 0 : depth * 16) }} disabled={note.parent_id === n.id}
               onClick={() => onPick(n.id)}>
-              <span>{n.icon || <NoteIcon size="0.9em" />}</span>{n.title || "제목 없음"}{note.parent_id === n.id && <em>지금 위치</em>}
+              <span>{renderNoteIcon(n.icon, "0.9em") || <NoteIcon size="0.9em" />}</span>{n.title || "제목 없음"}{note.parent_id === n.id && <em>지금 위치</em>}
             </button>
           ))}
           {shown.length === 0 && q && <p className="sb-empty">검색 결과 없음</p>}
@@ -196,7 +196,7 @@ export default function NoteTree({
           onClick={() => editing !== n.id && onOpen(n)}
           onKeyDown={e => { if (e.key === "Enter" && editing !== n.id && e.target === e.currentTarget) onOpen(n); }}>
           {!flat && <Caret open={open} hidden={!kids.length} onClick={() => kids.length && toggle(n.id)} />}
-          <span className="sb-icon">{n.icon || defaultIcon || <NoteIcon size="0.9em" />}</span>
+          <span className="sb-icon">{renderNoteIcon(n.icon, "0.9em") || defaultIcon || <NoteIcon size="0.9em" />}</span>
           {editing === n.id ? (
             <input className="nt-rename" autoFocus defaultValue={n.title || ""} maxLength={256}
               onClick={e => e.stopPropagation()}

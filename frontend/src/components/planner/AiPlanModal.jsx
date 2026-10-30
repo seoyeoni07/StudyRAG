@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../../api";
 import { COLORS, WEEKDAYS, addDays, fmtMin, prettyDate, today } from "./plannerUtils";
-import { DocIcon, NoteIcon, PaperclipIcon } from "../Icons.jsx";
+import { DocIcon, NoteIcon, PaperclipIcon, renderNoteIcon } from "../Icons.jsx";
 
 /**
  * ✨ AI로 계획 세우기
@@ -141,7 +141,7 @@ export default function AiPlanModal({ planner, startDate, onClose, onApplied, on
                         ))}
                         {linkables.notes.map(n => (
                           <label key={n.id}><input type="checkbox" checked={s.note_ids.includes(n.id)}
-                            onChange={() => setSubj(i, { note_ids: toggleIn(s.note_ids, n.id) })} /> {n.icon || <NoteIcon size="0.85em" />} {n.label}</label>
+                            onChange={() => setSubj(i, { note_ids: toggleIn(s.note_ids, n.id) })} /> {renderNoteIcon(n.icon, "0.85em") || <NoteIcon size="0.85em" />} {n.label}</label>
                         ))}
                         {!linkables.docs.length && !linkables.notes.length && <p className="pl-empty">연결할 자료·노트가 없어요</p>}
                         <p className="pl-muted">고른 자료의 핵심 개념·오답 수를 보고 계획을 짜고, 할 일에 자동으로 연결돼요.</p>

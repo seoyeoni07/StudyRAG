@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../../api";
-import { DocIcon, NoteIcon } from "../Icons.jsx";
+import { DocIcon, NoteIcon, renderNoteIcon } from "../Icons.jsx";
 
 /** 할 일에 연결할 자료·노트 고르기. 개인 플래너는 내 것, 스터디 플래너는 그룹 것. */
 export default function LinkPicker({ plannerId, current, onPick, onClose }) {
@@ -36,7 +36,7 @@ export default function LinkPicker({ plannerId, current, onPick, onClose }) {
             <p className="pl-link-group"><NoteIcon size="0.85em" /> 노트</p>
             {items.notes.filter(n => match(n.label)).map(n => (
               <button key={n.id} className="pl-link-row" onClick={() => onPick({ link_type: n.type, link_id: n.id, link_label: n.label })}>
-                {n.icon || <NoteIcon size="0.85em" />} {n.label}
+                {renderNoteIcon(n.icon, "0.85em") || <NoteIcon size="0.85em" />} {n.label}
               </button>
             ))}
             {items.notes.length === 0 && <p className="pl-empty">노트가 없어요</p>}

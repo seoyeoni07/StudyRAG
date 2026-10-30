@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../api";
 import NoteEditor, { useCollabDoc } from "./NoteEditor";
-import { NoteIcon } from "./Icons.jsx";
+import { NoteIcon, renderNoteIcon } from "./Icons.jsx";
 
 export default function GroupNotePage({ noteId, user, group, onSaved, onDeleted, pages }) {
   const { state, error } = useCollabDoc(noteId);
@@ -47,7 +47,7 @@ export default function GroupNotePage({ noteId, user, group, onSaved, onDeleted,
 
   return (
     <div className="note-page">
-      <div className="page-icon">{meta.icon || <NoteIcon size="1.4em" />}</div>
+      <div className="page-icon">{renderNoteIcon(meta.icon, "1.4em") || <NoteIcon size="1.4em" />}</div>
       <NoteEditor noteId={noteId} doc={state.doc} provider={state.provider} user={user} onSaved={onSaved} pages={pages}
         showVersions={showVersions && canSeeVersions} canRestore={canManage}
         onCloseVersions={() => setShowVersions(false)} />

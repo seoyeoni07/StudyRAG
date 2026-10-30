@@ -85,3 +85,53 @@ export const WarningIcon = svg(
 export const SpinnerIcon = svg(
   <><path d="M21 12a9 9 0 11-6.22-8.56" /></>
 );
+export const BookIcon = svg(
+  <><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></>
+);
+export const BookmarkIcon = svg(
+  <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
+);
+export const BulbIcon = svg(
+  <><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0018 8 6 6 0 006 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 018.91 14"/></>
+);
+export const PinIcon = svg(
+  <><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></>
+);
+export const TargetIcon = svg(
+  <><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></>
+);
+export const HashIcon = svg(
+  <><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></>
+);
+export const ClockIcon = svg(
+  <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>
+);
+
+/** 노트 아이콘 픽커 옵션 목록 */
+export const ICON_DEFS = [
+  { key: "note",     Comp: NoteIcon,      label: "노트" },
+  { key: "book",     Comp: BookIcon,      label: "책" },
+  { key: "doc",      Comp: DocIcon,       label: "문서" },
+  { key: "star",     Comp: StarFilledIcon,label: "별" },
+  { key: "bookmark", Comp: BookmarkIcon,  label: "책갈피" },
+  { key: "bulb",     Comp: BulbIcon,      label: "아이디어" },
+  { key: "pin",      Comp: PinIcon,       label: "핀" },
+  { key: "pencil",   Comp: PencilIcon,    label: "필기" },
+  { key: "target",   Comp: TargetIcon,    label: "목표" },
+  { key: "hash",     Comp: HashIcon,      label: "주제" },
+  { key: "clock",    Comp: ClockIcon,     label: "일정" },
+  { key: "sparkle",  Comp: SparkleIcon,   label: "핵심" },
+];
+
+/**
+ * 아이콘 키 → JSX 변환 헬퍼.
+ * - "note", "star" 등 키 문자열 → SVG 컴포넌트
+ * - "📝", "⭐" 등 이모지 문자열 → 그대로 반환 (레거시 데이터 호환)
+ * - null/undefined/"" → null
+ */
+export function renderNoteIcon(key, size = "0.9em") {
+  if (!key) return null;
+  const found = ICON_DEFS.find(d => d.key === key);
+  if (found) return <found.Comp size={size} />;
+  return key;
+}

@@ -2,9 +2,7 @@ import { useState, useEffect } from "react";
 import { apiFetch } from "../api";
 import NoteEditor, { useCollabDoc } from "./NoteEditor";
 import { sendBroadcast } from "../realtime/chatBus";
-import { NoteIcon } from "./Icons.jsx";
-
-const ICONS = ["📝", "📒", "📘", "📗", "📙", "💡", "⭐", "🔖", "🧠", "📌", "✏️", "🎯"];
+import { NoteIcon, ICON_DEFS, renderNoteIcon } from "./Icons.jsx";
 
 function ShareModal({ noteId, getTitle, getIcon, me, onClose }) {
   const [q, setQ] = useState("");
@@ -138,13 +136,15 @@ export default function NotePage({ noteId, user, pastDocs, onChanged, onDeleted,
     <div className="note-page">
       <div className="note-icon-wrap">
         <button className="note-icon" onClick={() => setIconOpen(o => !o)} title="아이콘 변경">
-          {props.icon || <NoteIcon size="1em" />}
+          {renderNoteIcon(props.icon, "1em") || <NoteIcon size="1em" />}
         </button>
         {iconOpen && (
           <div className="note-icon-picker" role="listbox">
-            {ICONS.map(ic => (
-              <button key={ic} className="note-icon-option"
-                onClick={() => { update({ icon: ic }); setIconOpen(false); }}>{ic}</button>
+            {ICON_DEFS.map(({ key, Comp, label }) => (
+              <button key={key} className={`note-icon-option ${props.icon === key ? "active" : ""}`}
+                title={label} onClick={() => { update({ icon: key }); setIconOpen(false); }}>
+                <Comp size="1.2em" />
+              </button>
             ))}
           </div>
         )}

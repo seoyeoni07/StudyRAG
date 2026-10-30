@@ -14,7 +14,7 @@ import SettingsPage from "./components/SettingsPage";
 import LoginPage from "./components/LoginPage";
 import Sidebar, { tabsFor } from "./components/Sidebar";
 import { ancestorsOf } from "./components/NoteTree";
-import { NoteIcon, DocIcon } from "./components/Icons.jsx";
+import { NoteIcon, DocIcon, renderNoteIcon } from "./components/Icons.jsx";
 import GroupHome, { GroupStart, timeAgo as groupTimeAgo } from "./components/GroupHome";
 import ChatApp from "./components/ChatApp";
 import ChatWidget from "./components/chat/ChatWidget";
@@ -717,7 +717,7 @@ export default function App() {
                       <div className="dash-side-list">
                         {notes.slice(0, 5).map(n => (
                           <button key={n.id} className="dash-side-row" onClick={() => setView({ type: "note", noteId: n.id })}>
-                            <span style={{ fontSize: 14, flexShrink: 0 }}>{n.icon || <NoteIcon size="0.9em" />}</span>
+                            <span style={{ fontSize: 14, flexShrink: 0 }}>{renderNoteIcon(n.icon, "0.9em") || <NoteIcon size="0.9em" />}</span>
                             <span className="dash-side-name">{n.title || "제목 없음"}</span>
                             <span style={{ fontSize: 12, color: "var(--text-4)", flexShrink: 0 }}>{timeAgo(n.updated_at)}</span>
                           </button>
@@ -842,7 +842,7 @@ export default function App() {
               <div className="doc-meta-row">
                 {docNotes.map(n => (
                   <button key={n.id} className="doc-note-chip" onClick={() => setView({ type: "note", noteId: n.id })}>
-                    {n.icon || <NoteIcon size="0.9em" />} {n.title || "제목 없음"}
+                    {renderNoteIcon(n.icon, "0.9em") || <NoteIcon size="0.9em" />} {n.title || "제목 없음"}
                   </button>
                 ))}
                 <button className="doc-note-chip doc-note-chip--add" onClick={() => createNote({ doc_id: docId })}>
