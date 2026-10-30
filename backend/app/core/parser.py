@@ -8,9 +8,9 @@ _SPLITTER = RecursiveCharacterTextSplitter(
 )
 
 _OPENROUTER_VISION_MODELS = [
-    "qwen/qwen3.8-27b:free",
-    "google/gemma-4-31b-it:free",
-    "google/gemma-4-26b-a4b-it:free",
+    "baidu/qianfan-ocr-fast:free",       # OCR 특화 무료 모델 (2026)
+    "google/gemma-3-27b-it:free",
+    "meta-llama/llama-4-scout:free",
 ]
 _RETRIABLE_VISION = ("overload", "503", "temporarily", "unavailable", "404")
 
@@ -39,7 +39,7 @@ def _gemini_vision(b64: str, prompt: str) -> str:
         from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.messages import HumanMessage
         from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
-        llm = ChatGoogleGenerativeAI(model="gemini-3.8-flash", google_api_key=settings.google_api_key)
+        llm = ChatGoogleGenerativeAI(model="gemini-3.6-flash", google_api_key=settings.google_api_key)
         msg = HumanMessage(content=[
             {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}},
             {"type": "text", "text": prompt},
