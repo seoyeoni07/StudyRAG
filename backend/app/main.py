@@ -136,6 +136,7 @@ async def startup():
             sources_json TEXT,
             created_at TIMESTAMP DEFAULT NOW()
         )""",
+        "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS photo_url VARCHAR(512)",
     ]
     try:
         from sqlalchemy import text

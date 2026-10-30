@@ -13,10 +13,12 @@ export function timeAgo(iso) {
   return new Date(t).toLocaleDateString("ko-KR");
 }
 
-export function Avatar({ name = "?", online, size = 22 }) {
+export function Avatar({ name = "?", photo, online, size = 22 }) {
   return (
     <span className={`avatar ${online ? "avatar--online" : ""}`} style={{ width: size, height: size, fontSize: size * 0.48 }} title={name}>
-      {name.slice(0, 1).toUpperCase()}
+      {photo
+        ? <img src={photo} alt={name} style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} referrerPolicy="no-referrer" />
+        : name.slice(0, 1).toUpperCase()}
     </span>
   );
 }
@@ -175,12 +177,11 @@ export default function GroupHome({
                 const v = viewingOf(m.user_id);
                 return (
                   <div key={m.user_id} className="group-member-card" title={v ? `${m.display_name} — 보는 중: ${v}` : undefined}>
-                    <Avatar name={m.display_name} online={realtime && isOnline} size={32} />
+                    <Avatar name={m.display_name} photo={m.photo_url || (m.user_id === me.uid ? me.photoURL : null)} online={realtime && isOnline} size={32} />
                     <div className="group-member-info">
                       <span className="group-member-name">{m.display_name}{m.user_id === me.uid && " (나)"}</span>
                       {m.role === "owner" && <span className="group-owner-tag">그룹장</span>}
                     </div>
-                    {realtime && isOnline && <span className="group-member-online" />}
                   </div>
                 );
               })}

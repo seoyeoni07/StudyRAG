@@ -60,6 +60,7 @@ export default function SettingsPage({ user, onUserRefresh }) {
       const { url } = await apiFetch("/notes/images", { method: "POST", body: form });
       const photoURL = (BASE || "") + url;
       await updateUserProfile(auth.currentUser.displayName || name, photoURL);
+      await apiFetch("/users/me", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ photo_url: photoURL }) });
       onUserRefresh?.();
       setNameMsg({ ok: true, text: "프로필 사진이 변경됐어요." });
     } catch (err) {

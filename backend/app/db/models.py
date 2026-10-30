@@ -184,6 +184,7 @@ class UserProfile(Base):
     uid = Column(String(128), primary_key=True)
     email = Column(String(256), nullable=True, index=True)
     display_name = Column(String(64), nullable=True)
+    photo_url = Column(String(512), nullable=True)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
 

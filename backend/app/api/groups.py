@@ -7,7 +7,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, File, Header, HTTPExcep
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from ..db.models import Document, GroupMessage, Note, StudyGroup, StudyGroupMember, StudyRoom, StudyRoomMember
+from ..db.models import Document, GroupMessage, Note, StudyGroup, StudyGroupMember, StudyRoom, StudyRoomMember, UserProfile
 from ..db.session import SessionLocal
 from .attachments import Attachment, ReadBody, attachment_out, mark_read, read_positions, validate_attachment
 from .documents import ingest_upload
@@ -185,10 +185,15 @@ def get_group(group_id: str, x_user_id: str | None = Header(default=None), db: S
         .order_by(StudyGroupMember.joined_at)
         .all()
     )
+    uids = [m.user_id for m in members]
+    profiles = {p.uid: p for p in db.query(UserProfile).filter(UserProfile.uid.in_(uids)).all()}
     return {
         **_group_dict(g, len(members), me.role),
         "members": [
-            {"user_id": m.user_id, "display_name": m.display_name, "role": m.role, "joined_at": _iso(m.joined_at)}
+            {
+                "user_id": m.user_id, "display_name": m.display_name, "role": m.role, "joined_at": _iso(m.joined_at),
+                "photo_url": profiles[m.user_id].photo_url if m.user_id in profiles else None,
+            }
             for m in members
         ],
     }

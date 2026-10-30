@@ -28,6 +28,7 @@ def _require_user(x_user_id: str | None) -> str:
 class ProfileUpdate(BaseModel):
     email: str | None = None
     display_name: str | None = None
+    photo_url: str | None = None
 
 
 @router.put("/me")
@@ -39,9 +40,11 @@ def upsert_profile(body: ProfileUpdate, x_user_id: str | None = Header(default=N
             p.email = body.email
         if body.display_name is not None:
             p.display_name = body.display_name
+        if body.photo_url is not None:
+            p.photo_url = body.photo_url
         p.updated_at = datetime.utcnow()
     else:
-        p = UserProfile(uid=user_id, email=body.email, display_name=body.display_name)
+        p = UserProfile(uid=user_id, email=body.email, display_name=body.display_name, photo_url=body.photo_url)
         db.add(p)
     db.commit()
     return {"ok": True}
