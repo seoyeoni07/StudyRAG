@@ -64,7 +64,7 @@ export default function LandingPage({ onStart }) {
       entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add("lp-revealed"); }),
       { threshold: 0.12 }
     );
-    document.querySelectorAll(".lp-step, .lp-section-title, .lp-bottom-cta, .lp-steps-section").forEach(el => obs.observe(el));
+    document.querySelectorAll(".lp-step, .lp-section-title, .lp-bottom-cta, .lp-steps-section, .lp-compare-section").forEach(el => obs.observe(el));
     return () => obs.disconnect();
   }, []);
 
@@ -150,6 +150,36 @@ export default function LandingPage({ onStart }) {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* ── 기존 방식 vs StudyRAG ── */}
+      <section className="lp-compare-section">
+        <h2 className="lp-section-title">기존 방식 vs StudyRAG</h2>
+        <table className="lp-compare-table">
+          <thead>
+            <tr>
+              <th>항목</th>
+              <th>기존 방식</th>
+              <th>StudyRAG</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[
+              ["자료 이해",    "직접 전부 읽기",                 "AI 요약 · RAG로 즉시 파악"],
+              ["질문 답변",    "검색 → 여러 사이트 헤매기",      "자료 기반 즉각 답변"],
+              ["문제 풀기",    "문제집 구매 · 수동 제작",         "자동 생성 · 난이도 조정"],
+              ["오답 관리",    "직접 오답 노트 작성",            "자동 분류 · 간격반복 일정"],
+              ["약점 분석",    "감각에 의존",                    "취약 유형 AI 분석 · 집중 출제"],
+              ["협업",         "카톡 파일 공유",                 "그룹 스터디 · 공동 노트"],
+            ].map(([item, old, rag]) => (
+              <tr key={item}>
+                <td>{item}</td>
+                <td className="lp-compare-old">{old}</td>
+                <td className="lp-compare-new">{rag}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </section>
 
       {/* ── 하단 CTA ── */}

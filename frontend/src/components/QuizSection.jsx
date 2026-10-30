@@ -200,6 +200,9 @@ export default function QuizSection({ docId, onGoToWrong, initialSession, onClea
     const scoreMsg = pct >= 80 ? "훌륭해요!" : pct >= 50 ? "절반 이상 맞혔어요" : "복습이 필요해요";
     return (
       <div>
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+          <span className="ai-badge">AI 생성 · {results.total}문제</span>
+        </div>
         <div className={`score-header ${scoreClass}`}>
           <span className="score-big">{pct}%</span>
           <div className="score-meta">

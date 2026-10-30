@@ -897,6 +897,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 .lp-mockup {
   width: 100%; max-width: 480px;
   border: 1px solid var(--border); border-radius: 12px;
+  overflow: hidden;
   overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,.1);
   background: var(--bg-card);
 }
@@ -912,7 +913,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 }
 .lp-mock-tabs {
   display: flex; gap: 0; border-bottom: 1px solid var(--border);
-  overflow-x: auto; padding: 0 16px;
+  overflow: hidden; padding: 0 16px;
 }
 .lp-mock-tab {
   font-size: 13px; font-weight: 500; color: var(--text-3);
@@ -966,6 +967,34 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 }
 .lp-step-title { font-size: 15px; font-weight: 600; color: var(--text-1); margin-bottom: 3px; }
 .lp-step-desc  { font-size: 13px; color: var(--text-3); line-height: 1.65; }
+
+/* 비교 섹션 */
+.lp-compare-section {
+  padding: 72px 48px; max-width: 1120px; margin: 0 auto; box-sizing: border-box;
+}
+.lp-compare-table {
+  width: 100%; border-collapse: collapse; margin-top: 32px;
+  font-size: 14px;
+}
+.lp-compare-table th {
+  padding: 12px 20px; text-align: left; font-weight: 700;
+  border-bottom: 2px solid var(--border);
+  color: var(--text-2);
+}
+.lp-compare-table th:first-child { color: var(--text-3); }
+.lp-compare-table th:last-child { color: var(--primary); }
+.lp-compare-table td {
+  padding: 12px 20px; border-bottom: 1px solid var(--border);
+  color: var(--text-2); vertical-align: top;
+}
+.lp-compare-table td:first-child { color: var(--text-3); font-weight: 500; }
+.lp-compare-table tr:last-child td { border-bottom: none; }
+.lp-compare-old { color: var(--red) !important; }
+.lp-compare-new { color: var(--green) !important; font-weight: 600; }
+@media (max-width: 640px) {
+  .lp-compare-section { padding: 56px 20px; }
+  .lp-compare-table th, .lp-compare-table td { padding: 10px 12px; font-size: 13px; }
+}
 
 /* 하단 CTA */
 .lp-bottom-cta {
@@ -1139,6 +1168,43 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
   .lp-bottom-cta .lp-bottom-sub,
   .lp-bottom-cta .lp-bottom-btn { opacity: 1; transform: none; transition: none; }
 }
+
+/* ── TechIntroPage ──────────────────────────── */
+.tech-page { max-width: 760px; margin: 0 auto; padding: 8px 0 48px; }
+.tech-hero { margin-bottom: 48px; }
+.tech-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--primary); margin: 0 0 10px; }
+.tech-headline { font-size: clamp(24px, 4vw, 36px); font-weight: 800; color: var(--text-1); margin: 0 0 12px; line-height: 1.2; }
+.tech-sub { font-size: 15px; color: var(--text-3); margin: 0; line-height: 1.6; }
+.tech-section {
+  display: flex; gap: 20px; padding: 28px 0;
+  border-bottom: 1px solid var(--border); align-items: flex-start;
+}
+.tech-step-badge {
+  flex-shrink: 0; width: 36px; height: 36px;
+  border-radius: 50%; background: var(--primary-light);
+  color: var(--primary); font-weight: 800; font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1.5px solid var(--primary-muted);
+}
+.tech-step-content { flex: 1; min-width: 0; }
+.tech-step-title { font-size: 17px; font-weight: 700; color: var(--text-1); margin: 0 0 8px; }
+.tech-step-desc { font-size: 14px; color: var(--text-2); line-height: 1.65; margin: 0 0 12px; }
+.tech-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.tech-chip {
+  font-size: 11.5px; color: var(--primary); background: var(--primary-light);
+  border-radius: var(--r-pill); padding: 3px 10px;
+  border: 1px solid var(--primary-muted);
+}
+.tech-stack-card {
+  margin-top: 36px; background: var(--bg-subtle);
+  border: 1px solid var(--border); border-radius: var(--r-lg);
+  padding: 24px 28px;
+}
+.tech-stack-title { font-size: 15px; font-weight: 700; color: var(--text-1); margin: 0 0 16px; }
+.tech-stack-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+.tech-stack-col { display: flex; flex-direction: column; gap: 4px; }
+.tech-stack-label { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-4); }
+.tech-stack-col span:last-child { font-size: 13px; color: var(--text-2); }
 
 /* ── Login ──────────────────────────────────── */
 .login-root {
@@ -1646,6 +1712,21 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 .launcher-tag {
   font-size: 11.5px; color: var(--text-3); background: var(--bg-subtle);
   border-radius: var(--r-sm); padding: 3px 9px;
+}
+.launcher-doc-snippet {
+  font-size: 12px; color: var(--text-3); line-height: 1.5;
+  margin: 0; overflow: hidden; display: -webkit-box;
+  -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+
+/* ── AI 배지 ───────────────────────────────── */
+.ai-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 600; letter-spacing: .02em;
+  color: var(--primary); background: var(--primary-light);
+  border-radius: var(--r-pill); padding: 2px 8px;
+  border: 1px solid var(--primary-muted);
+  white-space: nowrap;
 }
 
 /* note list */

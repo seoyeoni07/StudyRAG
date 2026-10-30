@@ -121,6 +121,9 @@ export default function QASection({ docId, onSaveNote }) {
               )}
             </div>
             <div className="qa-bubble qa-bubble--ai">
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                <span className="ai-badge">RAG 검색</span>
+              </div>
               <div className="answer-text">
                 <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
                   {t.answer}

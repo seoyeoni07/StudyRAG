@@ -400,15 +400,18 @@ def list_documents(x_user_id: str | None = Header(default=None), db: Session = D
         .all()
     )
     import json as _json
-    def _tags(r):
+    def _snippet(r):
         try:
             s = _json.loads(r.summary or "{}") if r.summary else {}
-            return (s.get("tags") or s.get("key_concepts") or s.get("keywords") or [])[:3]
+            overview = s.get("overview", "")
+            if not overview:
+                return ""
+            return overview[:90] + "…" if len(overview) > 90 else overview
         except Exception:
-            return []
+            return ""
     return [
         {"doc_id": r.id, "filename": r.filename, "chunks": r.chunks, "folder": r.folder,
          "status": r.status or "done", "created_at": r.created_at.isoformat(),
-         "tags": _tags(r)}
+         "snippet": _snippet(r)}
         for r in rows
     ]

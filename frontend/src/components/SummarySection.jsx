@@ -67,7 +67,10 @@ export default function SummarySection({ docId, onSaveNote }) {
   return (
     <div className="summary-wrap">
       <div className="summary-overview">
-        <h3 className="summary-title">강의 개요</h3>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+          <h3 className="summary-title" style={{ margin: 0 }}>강의 개요</h3>
+          <span className="ai-badge">RAG · AI 요약</span>
+        </div>
         <div className="summary-text"><Md>{summary.overview}</Md></div>
       </div>
 

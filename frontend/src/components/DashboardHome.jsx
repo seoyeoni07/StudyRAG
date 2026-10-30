@@ -143,12 +143,8 @@ export default function DashboardHome({
                 {d.status === "failed" && (
                   <span className="launcher-doc-processing" style={{ color: "var(--error, #e53)" }}>인식 실패 · 클릭해서 재시도</span>
                 )}
-                {d.tags?.length > 0 && d.status !== "failed" && (
-                  <div className="launcher-doc-chips" onClick={e => e.stopPropagation()}>
-                    {d.tags.map((tag, i) => (
-                      <span key={i} className="launcher-tag">{tag}</span>
-                    ))}
-                  </div>
+                {d.snippet && d.status !== "failed" && (
+                  <p className="launcher-doc-snippet">{d.snippet}</p>
                 )}
               </div>
             ))}
