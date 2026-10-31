@@ -138,6 +138,17 @@
 .fc-group-row { gap: 10px; }
 .fc-group-row .dash-doc-main { border: none; background: none; cursor: pointer; text-align: left; flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; }
 
+.fc-confirm { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 13px; color: var(--red); }
+.fc-confirm--row { display: flex; padding: 8px 16px; background: var(--red-bg); }
+.fc-delall { margin-left: auto; color: var(--text-3); }
+.fc-caret { width: 12px; color: var(--text-3); font-size: 11px; }
+.fc-group + .fc-group { border-top: 1px solid var(--border); }
+.fc-group .fc-group-row { border: none; }
+.fc-group-body { padding: 4px 16px 16px; background: var(--bg-subtle); }
+.fc-deck-head--compact { padding: 10px 12px; margin-top: 8px; }
+.fc-session-head > span { display: inline-flex; gap: 4px; }
+.fc-session-head .btn-ghost { display: inline-flex; align-items: center; gap: 4px; }
+
 /* 시험 대비 */
 .ex-detail-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .ex-detail-head .page-title { margin-bottom: 0; }

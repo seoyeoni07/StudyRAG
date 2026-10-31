@@ -134,6 +134,9 @@ export default function App() {
   const [quizInitialSession, setQuizInitialSession] = useState(null);
   const [source, setSource] = useState(null);       // 근거 보기 창 { docId, page, quote, filename }
   const [cardsDue, setCardsDue] = useState(0);      // 오늘 복습할 플래시카드
+  const [cardsSeen, setCardsSeen] = useState(() => {  // 플래시카드 화면에서 본 개수 { date, count }
+    try { return JSON.parse(localStorage.getItem("cardsSeen") || "null"); } catch { return null; }
+  });
   const [learnKey, setLearnKey] = useState(0);      // 약점 지도·카드 새로고침
   // 비로그인 상태에서 랜딩/로그인 전환
   const [preAuthView, setPreAuthView] = useState(() =>
@@ -243,6 +246,13 @@ export default function App() {
     }
     if (msg) { setToast(msg); pushNotif(msg, groupId, target, icon); }
   }, myGroupNameFor);
+
+  useEffect(() => {
+    if (view.type !== "cards") return;
+    const seen = { date: new Date().toLocaleDateString("sv-SE"), count: cardsDue };
+    setCardsSeen(seen);
+    try { localStorage.setItem("cardsSeen", JSON.stringify(seen)); } catch { /* 저장 못 해도 동작 */ }
+  }, [view.type, cardsDue]);
 
   // 그룹 멤버 목록을 불러오면 presence 이름을 그룹 표시 이름으로 맞춘다 (같은 이름이면 다시 안 보냄)
   useEffect(() => {
@@ -540,6 +550,10 @@ export default function App() {
     else selectDoc(docId, filename, tab);
   }
 
+  const todayStr = new Date().toLocaleDateString("sv-SE");
+  const cardsBadge = view.type === "cards" ? 0
+    : (!cardsSeen || cardsSeen.date !== todayStr || cardsDue > cardsSeen.count) ? cardsDue : 0;
+
   const refreshCardsDue = () => apiFetch("/learn/cards/summary").then(d => setCardsDue(d.due || 0)).catch(() => {});
 
   // 개념 하나만 / 고른 글로만 퀴즈 → 퀴즈 탭에서 바로 풀기
@@ -798,7 +812,7 @@ export default function App() {
         dmUnread={dmUnread}
         streak={streak}
         onNoteAction={noteAction}
-        cardsDue={cardsDue}
+        cardsDue={cardsBadge}
         theme={theme} onToggleTheme={() => setTheme(t => t === "dark" ? "auto" : "dark")}
       />
 
@@ -1179,7 +1193,7 @@ export default function App() {
                                 onGoQuiz={() => setView(v => ({ ...v, tab: "quiz" }))}
                                 onToast={setToast} />],
                   ["cards",   <CardDeck key="cards" docId={docId} refreshKey={learnKey}
-                                onToast={(m) => { setToast(m); refreshCardsDue(); }}
+                                onToast={(m) => { setToast(m); refreshCardsDue(); }} onChanged={refreshCardsDue}
                                 onOpenSource={(id, page) => setSource({ docId: id, page, filename: currentDoc?.filename })} />],
                   ...(groupId ? [["room", <StudyRoomSection key="room" docId={docId} userId={user?.uid}
                     groupId={groupId}

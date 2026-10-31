@@ -285,6 +285,25 @@ def edit_card(card_id: int, body: CardEdit, x_user_id: str | None = Header(defau
     return _card(c)
 
 
+@router.delete("/cards")
+def delete_cards(doc_id: str | None = None, note_id: str | None = None, etc: bool = False,
+                 x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    """한꺼번에 지우기: 자료 하나 / 노트 하나 / 직접 만든 카드(etc=1)의 카드 전부."""
+    user_id = _user(x_user_id)
+    q = db.query(Flashcard).filter(Flashcard.user_id == user_id)
+    if doc_id:
+        q = q.filter(Flashcard.doc_id == doc_id)
+    elif note_id:
+        q = q.filter(Flashcard.note_id == note_id)
+    elif etc:
+        q = q.filter(Flashcard.doc_id.is_(None), Flashcard.note_id.is_(None))
+    else:
+        raise HTTPException(400, "지울 카드 묶음을 골라주세요.")
+    n = q.delete(synchronize_session=False)
+    db.commit()
+    return {"deleted": n}
+
+
 @router.delete("/cards/{card_id}")
 def delete_card(card_id: int, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
     c = _own_card(db, card_id, _user(x_user_id))

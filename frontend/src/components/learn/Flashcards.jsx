@@ -8,7 +8,7 @@ const GRADE_LABELS = [["다시", "again"], ["어려움", "hard"], ["알맞음", 
 export const fmtInterval = (d) => (d <= 0 ? "10분" : d < 30 ? `${d}일` : d < 365 ? `${Math.round(d / 30)}달` : "1년");
 
 /** 카드 복습: 앞면 → 답 보기 → 다시/어려움/알맞음/쉬움. 키보드: Space 뒤집기, 1~4 평가 */
-export function ReviewSession({ cards: initial, onExit, onOpenSource }) {
+export function ReviewSession({ cards: initial, onExit, onOpenSource, onDeleted }) {
   const [queue, setQueue] = useState(initial);
   const [flipped, setFlipped] = useState(false);
   const [done, setDone] = useState({ total: 0, again: 0 });
@@ -28,6 +28,18 @@ export function ReviewSession({ cards: initial, onExit, onOpenSource }) {
     } catch (e) { setError(e.message); }
     finally { setBusy(false); }
   }, [card, busy]);
+
+  async function removeCard() {
+    if (!card || busy) return;
+    setBusy(true); setError("");
+    try {
+      await apiFetch(`/learn/cards/${card.id}`, { method: "DELETE" });
+      setQueue(q => q.filter(c => c.id !== card.id));
+      setFlipped(false);
+      onDeleted?.();
+    } catch (e) { setError(e.message); }
+    finally { setBusy(false); }
+  }
 
   useEffect(() => {
     const key = (e) => {
@@ -56,7 +68,12 @@ export function ReviewSession({ cards: initial, onExit, onOpenSource }) {
       <div className="fc-progress"><span style={{ width: `${pct}%` }} /></div>
       <div className="fc-session-head">
         <span className="lr-muted">남은 카드 {queue.length}장 · 복습 {done.total}장</span>
-        <button className="btn-ghost btn-sm" onClick={onExit}>그만하기</button>
+        <span>
+          <button className="btn-ghost btn-sm" disabled={busy} onClick={removeCard} title="이 카드를 지워요">
+            <TrashIcon size="1em" /> 이 카드 삭제
+          </button>
+          <button className="btn-ghost btn-sm" onClick={onExit}>그만하기</button>
+        </span>
       </div>
       <button className={`fc-card ${flipped ? "fc-card--flipped" : ""}`} onClick={() => setFlipped(f => !f)}
         aria-label={flipped ? "앞면 보기" : "답 보기"}>
@@ -118,7 +135,7 @@ function CardRow({ c, onSave, onDelete, onOpenSource }) {
 }
 
 /** 자료(또는 노트) 하나의 카드: 복습 시작, AI로 만들기, 직접 추가, 목록 */
-export function CardDeck({ docId, noteId, refreshKey = 0, onOpenSource, onToast }) {
+export function CardDeck({ docId, noteId, etc = false, refreshKey = 0, onOpenSource, onToast, onChanged, compact = false }) {
   const [cards, setCards] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -127,9 +144,12 @@ export function CardDeck({ docId, noteId, refreshKey = 0, onOpenSource, onToast 
   const [adding, setAdding] = useState(false);
   const [front, setFront] = useState("");
   const [back, setBack] = useState("");
-  const q = docId ? `doc_id=${docId}` : `note_id=${noteId}`;
+  const [confirmAll, setConfirmAll] = useState(false);
+  const q = docId ? `doc_id=${docId}` : noteId ? `note_id=${noteId}` : "";
 
-  const load = useCallback(() => apiFetch(`/learn/cards?${q}`).then(setCards).catch(e => setError(e.message)), [q]);
+  const load = useCallback(() => apiFetch(`/learn/cards?${q}`)
+    .then(cs => setCards(etc ? cs.filter(c => !c.doc_id && !c.note_id) : cs))
+    .catch(e => setError(e.message)), [q, etc]);
   useEffect(() => { load(); }, [load, refreshKey]);
 
   async function generate() {
@@ -156,17 +176,29 @@ export function CardDeck({ docId, noteId, refreshKey = 0, onOpenSource, onToast 
     setCards(cs => cs.map(x => (x.id === id ? c : x)));
   };
   const remove = async (id) => {
-    await apiFetch(`/learn/cards/${id}`, { method: "DELETE" });
-    setCards(cs => cs.filter(x => x.id !== id));
+    try {
+      await apiFetch(`/learn/cards/${id}`, { method: "DELETE" });
+      setCards(cs => cs.filter(x => x.id !== id));
+      onChanged?.();
+    } catch (e) { setError(e.message); }
   };
+  async function removeAll() {
+    try {
+      const r = await apiFetch(`/learn/cards?${etc ? "etc=1" : q}`, { method: "DELETE" });
+      setCards([]); setConfirmAll(false);
+      onToast?.(`카드 ${r.deleted}장을 지웠어요`);
+      onChanged?.();
+    } catch (e) { setError(e.message); }
+  }
 
-  if (session) return <ReviewSession cards={session} onOpenSource={onOpenSource} onExit={() => { setSession(null); load(); }} />;
+  if (session) return <ReviewSession cards={session} onOpenSource={onOpenSource} onDeleted={onChanged}
+    onExit={() => { setSession(null); load(); onChanged?.(); }} />;
   if (!cards) return error ? <div className="error-banner"><span>{error}</span></div> : <div className="loading-wrap"><div className="spinner" /></div>;
 
   const due = cards.filter(c => c.is_due);
   return (
     <div className="fc-deck">
-      <div className="fc-deck-head">
+      <div className={`fc-deck-head ${compact ? "fc-deck-head--compact" : ""}`}>
         <div>
           <strong className="fc-deck-count">{due.length}장</strong> 오늘 복습 · 전체 {cards.length}장
         </div>
@@ -183,6 +215,15 @@ export function CardDeck({ docId, noteId, refreshKey = 0, onOpenSource, onToast 
           {[5, 8, 12, 20].map(v => <option key={v} value={v}>{v}장</option>)}
         </select>
         <button className="btn-ghost btn-sm" onClick={() => setAdding(a => !a)}><PencilIcon size="1em" /> 직접 추가</button>
+        {cards.length > 0 && (confirmAll ? (
+          <span className="fc-confirm">
+            카드 {cards.length}장을 모두 지울까요?
+            <button className="btn-danger btn-sm" onClick={removeAll}>모두 삭제</button>
+            <button className="btn-ghost btn-sm" onClick={() => setConfirmAll(false)}>취소</button>
+          </span>
+        ) : (
+          <button className="btn-ghost btn-sm fc-delall" onClick={() => setConfirmAll(true)}><TrashIcon size="1em" /> 전체 삭제</button>
+        ))}
       </div>
       {adding && (
         <div className="fc-row fc-row--edit">
@@ -213,8 +254,22 @@ export default function FlashcardsPage({ onOpenDoc, onOpenNote, onOpenSource, on
   const [sum, setSum] = useState(null);
   const [session, setSession] = useState(null);
   const [error, setError] = useState("");
+  const [openKey, setOpenKey] = useState(null);   // 카드 목록을 펼친 묶음
+  const [confirmKey, setConfirmKey] = useState(null);
 
   const load = useCallback(() => apiFetch("/learn/cards/summary").then(setSum).catch(e => setError(e.message)), []);
+  const changed = () => { load(); onChanged?.(); };
+
+  async function removeGroup(g) {
+    setError("");
+    try {
+      const qs = g.kind === "doc" ? `doc_id=${g.id}` : g.kind === "note" ? `note_id=${g.id}` : "etc=1";
+      await apiFetch(`/learn/cards?${qs}`, { method: "DELETE" });
+      setConfirmKey(null);
+      if (openKey === g.key) setOpenKey(null);
+      changed();
+    } catch (e) { setError(e.message); }
+  }
   useEffect(() => { load(); }, [load]);
 
   async function start(group) {
@@ -226,7 +281,7 @@ export default function FlashcardsPage({ onOpenDoc, onOpenNote, onOpenSource, on
     } catch (e) { setError(e.message); }
   }
 
-  if (session) return <ReviewSession cards={session} onOpenSource={onOpenSource} onExit={() => { setSession(null); load(); onChanged?.(); }} />;
+  if (session) return <ReviewSession cards={session} onOpenSource={onOpenSource} onDeleted={changed} onExit={() => { setSession(null); changed(); }} />;
 
   return (
     <div className="fc-page">
@@ -253,15 +308,40 @@ export default function FlashcardsPage({ onOpenDoc, onOpenNote, onOpenSource, on
             <div className="dash-panel">
               <div className="dash-doc-table">
                 {sum.groups.map(g => (
-                  <div key={g.key} className="dash-doc-row fc-group-row">
-                    <button className="dash-doc-main" onClick={() => (g.kind === "doc" ? onOpenDoc?.(g.id, g.label) : g.kind === "note" ? onOpenNote?.(g.id) : null)}>
-                      {g.kind === "doc" ? <DocIcon size="1em" /> : g.kind === "note" ? <NoteIcon size="1em" /> : <BookIcon size="1em" />}
-                      <span className="dash-doc-name">{g.label.replace(/\.pdf$/i, "")}</span>
-                    </button>
-                    <span className="lr-muted">{g.total}장</span>
-                    <button className="btn-secondary btn-sm" disabled={!g.due} onClick={() => start(g)}>
-                      {g.due ? `복습 ${g.due}` : "완료"}
-                    </button>
+                  <div key={g.key} className="fc-group">
+                    <div className="dash-doc-row fc-group-row">
+                      <button className="dash-doc-main" onClick={() => setOpenKey(k => (k === g.key ? null : g.key))}
+                        aria-expanded={openKey === g.key} title="카드 목록 보기">
+                        <span className="fc-caret">{openKey === g.key ? "▾" : "▸"}</span>
+                        {g.kind === "doc" ? <DocIcon size="1em" /> : g.kind === "note" ? <NoteIcon size="1em" /> : <BookIcon size="1em" />}
+                        <span className="dash-doc-name">{g.label.replace(/\.pdf$/i, "")}</span>
+                      </button>
+                      <span className="lr-muted">{g.total}장</span>
+                      {g.kind !== "etc" && (
+                        <button className="btn-ghost btn-sm" onClick={() => (g.kind === "doc" ? onOpenDoc?.(g.id, g.label) : onOpenNote?.(g.id))}>
+                          {g.kind === "doc" ? "자료 열기" : "노트 열기"}
+                        </button>
+                      )}
+                      <button className="btn-secondary btn-sm" disabled={!g.due} onClick={() => start(g)}>
+                        {g.due ? `복습 ${g.due}` : "완료"}
+                      </button>
+                      <button className="lr-icon-btn" onClick={() => setConfirmKey(g.key)} aria-label={`${g.label} 카드 모두 삭제`} title="이 묶음 카드 모두 삭제">
+                        <TrashIcon size="1em" />
+                      </button>
+                    </div>
+                    {confirmKey === g.key && (
+                      <div className="fc-confirm fc-confirm--row">
+                        “{g.label.replace(/\.pdf$/i, "")}” 카드 {g.total}장을 모두 지울까요? (자료·노트는 그대로예요)
+                        <button className="btn-danger btn-sm" onClick={() => removeGroup(g)}>모두 삭제</button>
+                        <button className="btn-ghost btn-sm" onClick={() => setConfirmKey(null)}>취소</button>
+                      </div>
+                    )}
+                    {openKey === g.key && (
+                      <div className="fc-group-body">
+                        <CardDeck compact docId={g.kind === "doc" ? g.id : null} noteId={g.kind === "note" ? g.id : null}
+                          etc={g.kind === "etc"} onOpenSource={onOpenSource} onChanged={changed} />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
