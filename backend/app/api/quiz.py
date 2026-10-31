@@ -28,6 +28,8 @@ class GenerateRequest(BaseModel):
     doc_id: str
     n: int = 5
     focus_difficulty: str | None = None  # 적응형: 집중할 난이도
+    focus_concept: str | None = None     # 약점 지도: 이 개념만
+    context_text: str | None = None      # 자료에서 고른 부분으로만 출제
 
 
 class ReportRequest(BaseModel):
@@ -51,7 +53,7 @@ class GradeRequest(BaseModel):
 
 
 @router.post("/generate")
-async def generate(req: GenerateRequest, db: Session = Depends(get_db)):
+async def generate(req: GenerateRequest, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
     # 적응형: 자주 틀린 개념을 퀴즈 생성 힌트로 전달
     weak_hints: list[str] = []
     if req.focus_difficulty:
@@ -60,8 +62,13 @@ async def generate(req: GenerateRequest, db: Session = Depends(get_db)):
         counts = Counter(w.question for w in wrongs)
         weak_hints = [q for q, _ in counts.most_common(3)]
 
+    from ..core.learning import doc_concepts
+    doc = db.query(Document).filter(Document.id == req.doc_id).first()
+    concepts = doc_concepts(doc) if doc else []
     try:
-        questions = await asyncio.to_thread(generate_quiz, req.doc_id, req.n, req.focus_difficulty, weak_hints)
+        questions = await asyncio.to_thread(
+            generate_quiz, req.doc_id, max(1, min(15, req.n)), req.focus_difficulty, weak_hints,
+            concepts, (req.focus_concept or "").strip()[:120] or None, req.context_text)
     except ValueError as e:
         raise HTTPException(404, str(e))
 
@@ -85,7 +92,8 @@ async def generate(req: GenerateRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/grade")
-async def grade(req: GradeRequest, db: Session = Depends(get_db)):
+async def grade(req: GradeRequest, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    from ..core.learning import record_attempt
     session = db.get(QuizSession, req.session_id)
     if not session:
         raise HTTPException(404, "세션을 찾을 수 없습니다.")
@@ -102,12 +110,13 @@ async def grade(req: GradeRequest, db: Session = Depends(get_db)):
 
         if q["type"] == "multiple_choice":
             is_correct = user_ans.upper().strip() == correct_ans.upper().strip()
-            feedback = q["explanation"]
+            feedback = q.get("explanation", "")
         else:
             graded = grade_short_answer(q["question"], correct_ans, user_ans)
             is_correct = graded["correct"]
             feedback = graded["feedback"]
 
+        record_attempt(db, x_user_id, session.doc_id, q.get("concept"), is_correct, "quiz")
         if is_correct:
             correct_count += 1
         else:
@@ -117,7 +126,8 @@ async def grade(req: GradeRequest, db: Session = Depends(get_db)):
                 question=q["question"],
                 correct_answer=correct_ans,
                 user_answer=user_ans,
-                explanation=q["explanation"],
+                explanation=q.get("explanation", ""),
+                concept=(str(q.get("concept") or "")[:200] or None),
             ))
 
         results.append({
@@ -126,6 +136,7 @@ async def grade(req: GradeRequest, db: Session = Depends(get_db)):
             "correct_answer": correct_ans,
             "explanation": feedback,
             "user_answer": user_ans,
+            "concept": q.get("concept"),
         })
 
     db.add(QuizHistory(
@@ -267,6 +278,7 @@ def retry_wrongs(doc_id: str, db: Session = Depends(get_db)):
             "question": w.question,
             "answer": w.correct_answer,
             "explanation": w.explanation or f"정답은 '{w.correct_answer}'입니다.",
+            "concept": w.concept,
         }
         for i, w in enumerate(wrongs)
     ]

@@ -5,6 +5,24 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import { apiFetch } from "../api";
+import "./learn/learn.css";
+
+/** 답변 근거: 페이지별로 한 번씩 (누르면 근거 보기 창) */
+function Citations({ sources, onOpen }) {
+  const seen = new Map();
+  for (const s of sources || []) {
+    if (typeof s === "object" && s.page != null && !seen.has(s.page)) seen.set(s.page, s.text);
+  }
+  if (!seen.size || !onOpen) return null;
+  return (
+    <div className="source-cites">
+      <span>근거</span>
+      {[...seen.entries()].sort((a, b) => a[0] - b[0]).map(([page, text]) => (
+        <button key={page} className="source-cite" onClick={() => onOpen(page, text)} title="원본에서 보기">p.{page}</button>
+      ))}
+    </div>
+  );
+}
 
 const EXAMPLES = [
   "이 강의의 핵심 개념을 요약해주세요",
@@ -38,7 +56,7 @@ function FeedbackRow({ docId, question, onSave }) {
   );
 }
 
-export default function QASection({ docId, onSaveNote }) {
+export default function QASection({ docId, onSaveNote, onOpenSource }) {
   const [threads, setThreads] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -129,6 +147,7 @@ export default function QASection({ docId, onSaveNote }) {
                   {t.answer}
                 </ReactMarkdown>
               </div>
+              <Citations sources={t.sources} onOpen={onOpenSource} />
               {t.sources?.length > 0 && (
                 <details className="sources">
                   <summary>참조 구간 보기 ({t.sources.length})</summary>
@@ -137,7 +156,9 @@ export default function QASection({ docId, onSaveNote }) {
                     const page = typeof s === "object" && s.page != null ? s.page : null;
                     return (
                       <blockquote key={j} className="source-item">
-                        {page != null && <span className="source-page">p.{page}</span>}
+                        {page != null && (onOpenSource
+                          ? <button className="source-page source-cite" onClick={() => onOpenSource(page, text)}>p.{page}</button>
+                          : <span className="source-page">p.{page}</span>)}
                         {text}
                       </blockquote>
                     );

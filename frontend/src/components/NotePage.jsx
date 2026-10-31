@@ -148,7 +148,7 @@ function ShareModal({ noteId, getTitle, getIcon, me, onClose }) {
   );
 }
 
-export default function NotePage({ noteId, user, pastDocs, onChanged, onDeleted, onOpenDoc, pages }) {
+export default function NotePage({ noteId, user, pastDocs, onChanged, onDeleted, onOpenDoc, pages, onMakeCards, onOpenCards }) {
   const { state, error: loadError } = useCollabDoc(noteId);
   const [props, setProps] = useState(null); // 아이콘·연결된 자료·태그 등 (본문·제목은 에디터가 관리)
   const [error, setError] = useState("");
@@ -156,6 +156,8 @@ export default function NotePage({ noteId, user, pastDocs, onChanged, onDeleted,
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showVersions, setShowVersions] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [cardBusy, setCardBusy] = useState(false);
+  const [cardsMade, setCardsMade] = useState(false);
 
   useEffect(() => {
     if (state?.meta) setProps(state.meta);
@@ -259,6 +261,13 @@ export default function NotePage({ noteId, user, pastDocs, onChanged, onDeleted,
         <button className="btn-ghost" onClick={() => setShowVersions(v => !v)}>버전 기록</button>
         {isOwner && <button className="btn-ghost" onClick={() => setShowShare(true)}>공유</button>}
         <button className="btn-ghost" onClick={() => window.print()}>PDF 저장</button>
+        {onMakeCards && (
+          <button className="btn-ghost" disabled={cardBusy} title="이 노트 내용으로 플래시카드를 만들어요" onClick={async () => {
+            setCardBusy(true); setError("");
+            try { await onMakeCards(); setCardsMade(true); } catch (err) { setError(err.message); } finally { setCardBusy(false); }
+          }}>{cardBusy ? "카드 만드는 중… (최대 1분)" : "카드 만들기"}</button>
+        )}
+        {cardsMade && onOpenCards && <button className="btn-ghost" onClick={onOpenCards}>카드 복습하러 가기 →</button>}
         {isOwner && (confirmDelete ? (
           <>
             <span className="note-footer-text">

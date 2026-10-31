@@ -1,7 +1,7 @@
 ﻿import { useState, useRef } from "react";
 import { apiFetch } from "../api.js";
 import NoteTree, { isRoot } from "./NoteTree";
-import { DocIcon, NoteIcon, WarningIcon, renderNoteIcon, HomeIcon, CalendarIcon, BarChartIcon, ChatIcon, SettingsIcon, UploadIcon, UsersIcon, SparkleIcon } from "./Icons.jsx";
+import { DocIcon, NoteIcon, WarningIcon, renderNoteIcon, HomeIcon, CalendarIcon, BarChartIcon, ChatIcon, SettingsIcon, UploadIcon, UsersIcon, SparkleIcon, BookIcon, TargetIcon } from "./Icons.jsx";
 
 export const DOC_TABS = [
   ["summary", "요약",       "AI가 강의 전체를 핵심만 정리해드립니다", ""],
@@ -9,6 +9,8 @@ export const DOC_TABS = [
   ["tutor",   "AI 튜터",    "답 대신 이해할 때까지 가르쳐줍니다", ""],
   ["quiz",    "퀴즈",        "자동 문제 생성·채점", ""],
   ["wrong",   "오답노트",    "틀린 문제 복습", ""],
+  ["mastery", "이해도",      "개념마다 잘 아는지·헷갈리는지 — 퀴즈·카드 결과로 계산해요", ""],
+  ["cards",   "카드",        "외울 것을 카드로 만들고 잊어버릴 때쯤 다시 복습해요", ""],
   ["room",    "그룹 퀴즈",   "그룹 멤버와 같은 문제를 풀고 점수 비교", ""],
 ];
 
@@ -29,7 +31,7 @@ export default function Sidebar({
   onNewNote, onUpload, uploading, onLogout, open, onClose, collapsed = false,
   groups = [], groupData = {}, online = {}, onNewGroupNote,
   sharedNotes = [], onOpenSharedNote,
-  dmUnread = 0, streak = 0, onNoteAction,
+  dmUnread = 0, streak = 0, onNoteAction, cardsDue = 0,
   theme = "auto", onToggleTheme,
 }) {
   const [expanded, setExpanded] = useState({});
@@ -91,6 +93,13 @@ export default function Sidebar({
           </button>
           <button className={`sb-item ${view.type === "planner" && !view.groupId ? "active" : ""}`} onClick={() => go({ type: "planner" })}>
             <span className="sb-icon"><CalendarIcon size="1em" /></span><span className="sb-label">플래너</span>
+          </button>
+          <button className={`sb-item ${view.type === "cards" ? "active" : ""}`} onClick={() => go({ type: "cards" })}>
+            <span className="sb-icon"><BookIcon size="1em" /></span><span className="sb-label">플래시카드</span>
+            {cardsDue > 0 && <span className="sb-badge sb-badge-due" title="오늘 복습할 카드">{cardsDue > 99 ? "99+" : cardsDue}</span>}
+          </button>
+          <button className={`sb-item ${view.type === "exam" ? "active" : ""}`} onClick={() => go({ type: "exam" })}>
+            <span className="sb-icon"><TargetIcon size="1em" /></span><span className="sb-label">시험 대비</span>
           </button>
           <button className={`sb-item ${view.type === "stats" ? "active" : ""}`} onClick={() => go({ type: "stats" })}>
             <span className="sb-icon"><BarChartIcon size="1em" /></span><span className="sb-label">학습 통계</span>

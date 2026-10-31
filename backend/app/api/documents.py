@@ -35,6 +35,7 @@ def get_db():
 
 
 _IMAGE_EXTS = {"jpg", "jpeg", "png", "webp", "gif"}
+_MAX_PDF_KEEP = 25 * 1024 * 1024
 
 
 @router.get("/upload-status/{doc_id}")
@@ -92,6 +93,9 @@ def ingest_upload(
         if x_user_id:
             db.add(Document(id=doc_id, user_id=x_user_id, filename=fname, chunks=len(chunks),
                             group_id=group_id, status="done"))
+            # 원본도 DB에 둔다 — Render 디스크는 재배포 때 지워져서 '근거 보기'(원본 페이지)가 사라진다
+            if len(data) <= _MAX_PDF_KEEP:
+                db.add(DocumentFile(doc_id=doc_id, content_type="application/pdf", data=data))
             db.commit()
         return {"doc_id": doc_id, "filename": fname, "chunks": len(chunks), "status": "done"}
 
@@ -159,6 +163,7 @@ def _bg_image_ocr(doc_id: str):
 @router.get("/{doc_id}/file")
 def download_file(
     doc_id: str,
+    inline: bool = False,
     x_user_id: str | None = Header(default=None),
     db: Session = Depends(get_db),
 ):
@@ -170,7 +175,8 @@ def download_file(
 
     from urllib.parse import quote
     encoded = quote(doc.filename, safe="")
-    disposition = f"attachment; filename*=UTF-8''{encoded}"
+    # inline=1: 근거 보기 창에서 바로 연다 (PDF·이미지만이라 안전)
+    disposition = f"{'inline' if inline else 'attachment'}; filename*=UTF-8''{encoded}"
 
     # PDF: 디스크에 있음
     pdf_path = f"{UPLOAD_DIR}/{doc_id}.pdf"
@@ -182,9 +188,42 @@ def download_file(
     src = db.query(DocumentFile).filter(DocumentFile.doc_id == doc_id).first()
     if src:
         return Response(content=src.data, media_type=src.content_type,
-                        headers={"Content-Disposition": disposition})
+                        headers={"Content-Disposition": disposition, "X-Content-Type-Options": "nosniff"})
 
     raise HTTPException(404, "원본 파일을 찾을 수 없습니다.")
+
+
+@router.get("/{doc_id}/page/{page}")
+def page_text(doc_id: str, page: int, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    """근거 보기: 그 페이지에서 뽑은 글자 (드래그해서 노트·카드·퀴즈로 보낼 수 있게)."""
+    from ..core.learning import can_read_doc
+    from ..core.rag import get_vectorstore
+    doc = db.query(Document).filter(Document.id == doc_id).first()
+    if not can_read_doc(db, doc, x_user_id):
+        raise HTTPException(404, "문서를 찾을 수 없습니다.")
+    try:
+        hits = get_vectorstore(doc_id).similarity_search(" ", k=40, filter={"page": {"$eq": page}})
+    except Exception as e:
+        log.warning("page text failed: %s", e)
+        hits = []
+    hits.sort(key=lambda d: d.metadata.get("chunk_idx", 0))
+    # 조각끼리 150자 겹친다 — 앞 조각 끝과 겹치는 부분은 빼고 잇는다
+    text = ""
+    for h in hits:
+        t = h.page_content
+        if text:
+            for k in range(min(200, len(t), len(text)), 20, -1):
+                if text.endswith(t[:k]):
+                    t = t[k:]
+                    break
+            else:
+                t = "\n" + t
+        text += t
+    has_file = os.path.exists(f"{UPLOAD_DIR}/{doc_id}.pdf") or \
+        db.query(DocumentFile.doc_id).filter(DocumentFile.doc_id == doc_id).first() is not None
+    src = db.query(DocumentFile.content_type).filter(DocumentFile.doc_id == doc_id).first()
+    kind = "pdf" if os.path.exists(f"{UPLOAD_DIR}/{doc_id}.pdf") or (src and src[0] == "application/pdf") else ("image" if src else None)
+    return {"page": page, "text": text, "has_file": has_file, "kind": kind, "filename": doc.filename}
 
 
 @router.post("/{doc_id}/reprocess")
@@ -373,6 +412,12 @@ async def get_summary(doc_id: str, force: bool = False, db: Session = Depends(ge
         try:
             cached = json.loads(doc.summary)
             if cached.get("key_concepts"):
+                # 예전 요약에는 개념별 근거 페이지가 없다 — 한 번 계산해서 같이 저장
+                if "concept_pages" not in cached:
+                    from ..core.summarizer import concept_pages
+                    cached["concept_pages"] = await asyncio.to_thread(concept_pages, doc_id, cached["key_concepts"])
+                    doc.summary = json.dumps(cached, ensure_ascii=False)
+                    db.commit()
                 return cached
             # 예전에 저장된 실패 결과("요약을 생성할 수 없습니다")는 버리고 다시 만든다
         except Exception:

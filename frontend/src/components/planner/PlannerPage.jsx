@@ -15,6 +15,8 @@ import "./planner.css";
 export default function PlannerPage({ user, groupId, groupName, onOpenLink }) {
   const [planner, setPlanner] = useState(null);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [helperBusy, setHelperBusy] = useState("");
   const [date, setDate] = useState(today());
   const [mode, setMode] = useState("day");                 // day | week | month
   const [data, setData] = useState({ days: {}, tasks: [] }); // 지금 보는 범위
@@ -101,6 +103,24 @@ export default function PlannerPage({ user, groupId, groupName, onOpenLink }) {
     },
   };
 
+  // 플래너 도우미: 밀린 할 일 다시 배치 / 약점 복습 넣기
+  async function runHelper(kind) {
+    setHelperBusy(kind); setError(""); setNotice("");
+    try {
+      const json = (b) => ({ method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) });
+      if (kind === "reschedule") {
+        const r = await apiFetch(`/planner/${planner.id}/reschedule`, json({ today: today(), days: 7 }));
+        setNotice(r.moved ? `밀린 할 일 ${r.moved}개를 오늘부터 7일 동안 한가한 날에 다시 넣었어요.` : "지난 2주 동안 밀린 할 일이 없어요. 잘하고 있어요!");
+      } else {
+        const r = await apiFetch(`/planner/${planner.id}/weak-review`, json({ date, limit: 3 }));
+        setNotice(r.added ? `${prettyDate(date)}에 약점 복습 ${r.added}개를 넣었어요: ${r.tasks.map(t => t.title.replace("약점 복습: ", "")).join(", ")}`
+          : "넣을 약점이 없어요. 퀴즈·플래시카드를 풀면 헷갈리는 개념을 찾아줘요.");
+      }
+      load(); announce();
+    } catch (err) { setError(err.message); }
+    finally { setHelperBusy(""); }
+  }
+
   async function savePlanner(fields) {
     setPlanner(p => ({ ...p, ...fields }));
     try {
@@ -156,6 +176,10 @@ export default function PlannerPage({ user, groupId, groupName, onOpenLink }) {
             <button className={mode === "month" ? "active" : ""} onClick={() => setMode("month")}>한달</button>
           </div>
           <button className="btn-secondary btn-sm" onClick={() => setDecoOpen(o => !o)}>꾸미기·과목</button>
+          <button className="btn-secondary btn-sm" disabled={!!helperBusy} title="지난 2주 동안 못 끝낸 할 일을 오늘부터 한가한 날에 다시 넣어요"
+            onClick={() => runHelper("reschedule")}>{helperBusy === "reschedule" ? "옮기는 중…" : "밀린 할 일 재배치"}</button>
+          <button className="btn-secondary btn-sm" disabled={!!helperBusy} title="약점 지도에서 헷갈리는 개념을 골라 이 날 복습 할 일로 넣어요"
+            onClick={() => runHelper("weak")}>{helperBusy === "weak" ? "넣는 중…" : "약점 복습 넣기"}</button>
           <button className="btn-primary btn-sm" onClick={() => setAiOpen(true)}>AI 플랜</button>
         </div>
 
@@ -206,6 +230,7 @@ export default function PlannerPage({ user, groupId, groupName, onOpenLink }) {
         )}
       </header>
 
+      {notice && <div className="callout pl-notice"><span style={{ flex: 1 }}>{notice}</span><button className="btn-ghost btn-sm" onClick={() => setNotice("")}>닫기</button></div>}
       {error && <div className="error-banner"><span style={{ flex: 1 }}>{error}</span><button className="btn-ghost" onClick={() => setError("")}>닫기</button></div>}
 
       <div className="pl-paper">

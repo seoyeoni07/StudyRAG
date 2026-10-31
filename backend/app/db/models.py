@@ -48,6 +48,7 @@ class WrongAnswer(Base):
     reviewed = Column(Boolean, default=False, server_default="false")
     next_review = Column(DateTime, nullable=True)   # 스페이스드 리피티션
     review_count = Column(Integer, default=0, server_default="0")
+    concept = Column(String(200), nullable=True)    # 이 문제가 다루는 개념 (약점 지도용)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
@@ -306,4 +307,85 @@ class PlannerTask(Base):
     link_label = Column(String(256), nullable=True)
     source = Column(String(8), nullable=True)              # ai | user
     created_by = Column(String(128), nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+
+# ── 학습 관리: 개념 약점 지도 · 플래시카드 · 그룹 문제 · 시험 대비 ──
+
+class ConceptAttempt(Base):
+    """개념별 풀이 기록 (퀴즈 채점·플래시카드 복습·그룹 문제). 약점 지도의 근거."""
+    __tablename__ = "concept_attempts"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String(128), nullable=False, index=True)
+    doc_id = Column(String(36), nullable=True, index=True)
+    concept = Column(String(200), nullable=False)
+    correct = Column(Boolean, nullable=False)
+    source = Column(String(16), nullable=False, default="quiz")   # quiz | card | peer
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+
+class Flashcard(Base):
+    """간격 반복 플래시카드 (SM-2 방식)."""
+    __tablename__ = "flashcards"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String(128), nullable=False, index=True)
+    doc_id = Column(String(36), nullable=True, index=True)
+    note_id = Column(String(36), nullable=True, index=True)
+    concept = Column(String(200), nullable=True)
+    front = Column(Text, nullable=False)
+    back = Column(Text, nullable=False)
+    page = Column(Integer, nullable=True)                   # 근거 페이지
+    source = Column(String(16), nullable=False, default="ai")   # ai | user | selection
+    ease = Column(Integer, nullable=False, default=250)     # 쉬움 정도 ×100 (SM-2 EF 2.5)
+    interval = Column(Integer, nullable=False, default=0)   # 다음 복습까지 일수
+    reps = Column(Integer, nullable=False, default=0)
+    lapses = Column(Integer, nullable=False, default=0)
+    due = Column(DateTime, default=datetime.utcnow, index=True)
+    last_review = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class GroupQuestion(Base):
+    """그룹원이 직접 낸 문제. AI가 문제 품질을 검토한다."""
+    __tablename__ = "group_questions"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    group_id = Column(String(36), nullable=False, index=True)
+    doc_id = Column(String(36), nullable=True)
+    author_id = Column(String(128), nullable=False)
+    qtype = Column(String(16), nullable=False, default="short")   # mc | short
+    question = Column(Text, nullable=False)
+    options = Column(Text, nullable=True)        # JSON 배열 (객관식)
+    answer = Column(Text, nullable=False)
+    explanation = Column(Text, nullable=True)
+    concept = Column(String(200), nullable=True)
+    ai_review = Column(Text, nullable=True)      # JSON {score, verdict, comments, answer_ok}
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class GroupQuestionAttempt(Base):
+    __tablename__ = "group_question_attempts"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    question_id = Column(Integer, nullable=False, index=True)
+    user_id = Column(String(128), nullable=False, index=True)
+    answer = Column(Text, nullable=False)
+    correct = Column(Boolean, nullable=False)
+    feedback = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    __table_args__ = (UniqueConstraint("question_id", "user_id", name="uq_gq_attempt"),)
+
+
+class ExamPrep(Base):
+    """시험 대비 모드: 한 장 요약·예상 문제·기출 분석을 모아둔다."""
+    __tablename__ = "exam_preps"
+    id = Column(String(36), primary_key=True)
+    user_id = Column(String(128), nullable=False, index=True)
+    title = Column(String(128), nullable=False)
+    exam_date = Column(String(10), nullable=True)
+    doc_ids = Column(Text, nullable=False, default="[]")    # JSON
+    sheet = Column(Text, nullable=True)                     # 한 장 요약 (마크다운)
+    predicted = Column(Text, nullable=True)                 # JSON 예상 문제
+    past_text = Column(Text, nullable=True)                 # 기출 원문 (예상 문제에 참고)
+    past_analysis = Column(Text, nullable=True)             # JSON 출제 경향
+    past_filename = Column(String(256), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)

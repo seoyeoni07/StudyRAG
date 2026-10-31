@@ -29,6 +29,7 @@ _UNITS_PROMPT = """너는 대학생 공부 계획 코치야. 아래 과목들을
 - 처음 배우기 → 정리 → 문제 풀기 → 복습 순서. 시험일이 있는 과목은 마지막에 '총정리' 단위.
 - 제목은 구체적으로 (자료의 핵심 개념 이름을 써서). 20자 안팎.
 - 오답이 있는 과목은 '오답 복습' 단위를 넣어.
+- '약한 개념'이 있으면 그 개념 복습 단위를 앞쪽에 먼저 넣어 (예: "스택 약점 복습 30분").
 
 반드시 이 JSON 형식으로만 답해:
 {{"subjects": [{{"name": "과목명", "units": [{{"title": "단위 제목", "minutes": 60}}]}}]}}"""
@@ -49,6 +50,8 @@ def _daterange(start: date, end: date):
 def _fallback_units(subj: dict, budget: int) -> list[dict]:
     """AI 없이 만드는 기본 단위: 핵심 개념 → 문제 풀이 → 오답 복습 → 총정리."""
     units = []
+    for c in (subj.get("weak") or [])[:6]:
+        units.append({"title": f"{c} 약점 복습", "minutes": 30})
     for c in (subj.get("concepts") or [])[:12]:
         units.append({"title": f"{c} 정리", "minutes": 50})
     if subj.get("wrongs"):
@@ -71,6 +74,8 @@ def _ai_units(subjects: list[dict], budgets: dict, start: date, end: date, days:
         line += ")"
         if s.get("concepts"):
             line += " 핵심 개념: " + ", ".join(s["concepts"][:10])
+        if s.get("weak"):
+            line += " / 약한 개념(먼저 복습): " + ", ".join(s["weak"][:6])
         desc.append(line)
     prompt = _UNITS_PROMPT.format(
         start=start.isoformat(), end=end.isoformat(), days=days,

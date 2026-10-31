@@ -2,7 +2,7 @@
 import asyncio
 import json
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
@@ -370,7 +370,8 @@ async def ai_plan(planner_id: str, body: AiPlanBody, x_user_id: str | None = Hea
         name = s.name.strip()[:40]
         if not name:
             continue
-        concepts, wrongs, links = [], 0, []
+        concepts, wrongs, links, weak = [], 0, [], []
+        from ..core.learning import weak_concepts
         for doc_id in s.doc_ids[:5]:
             d = db.query(Document).filter(Document.id == doc_id).first()
             if not d:
@@ -384,13 +385,14 @@ async def ai_plan(planner_id: str, body: AiPlanBody, x_user_id: str | None = Hea
             except Exception:
                 pass
             wrongs += db.query(WrongAnswer).filter(WrongAnswer.doc_id == d.id, WrongAnswer.reviewed == False).count()  # noqa: E712
+            weak += weak_concepts(db, user_id, d.id, 4)   # 약점 지도: 헷갈림·모름 개념
         for note_id in s.note_ids[:5]:
             n = db.query(Note).filter(Note.id == note_id).first()
             if n:
                 links.append({"type": "gnote" if n.group_id else "note", "id": n.id, "label": n.title or "제목 없음"})
         subjects.append({"name": name, "color": colors.get(name), "priority": s.priority,
                          "exam_date": _check_date(s.exam_date) if s.exam_date else None,
-                         "concepts": concepts, "wrongs": wrongs, "links": links})
+                         "concepts": concepts, "wrongs": wrongs, "links": links, "weak": weak[:6]})
     try:
         plan = await asyncio.to_thread(
             build_plan, start=date.fromisoformat(_check_date(body.start)), end=date.fromisoformat(_check_date(body.end)),
@@ -442,3 +444,74 @@ def apply_plan(planner_id: str, body: ApplyBody, x_user_id: str | None = Header(
             d.updated_at = datetime.utcnow()
     db.commit()
     return {"ok": True, "added": added}
+
+
+class RescheduleBody(BaseModel):
+    today: str          # 사용자 기기 기준 오늘 (YYYY-MM-DD)
+    days: int = 7       # 오늘부터 며칠에 나눠 넣을지
+
+
+@router.post("/{planner_id}/reschedule")
+def reschedule(planner_id: str, body: RescheduleBody, x_user_id: str | None = Header(default=None),
+               db: Session = Depends(get_db)):
+    """밀린 할 일(지난 14일 동안 못 끝낸 것)을 오늘부터 할 일이 적은 날 순서로 다시 넣는다."""
+    user_id = _require_user(x_user_id)
+    p = _get_planner(db, planner_id, user_id)
+    today = date.fromisoformat(_check_date(body.today))
+    span = max(1, min(14, body.days))
+    past = [(today - timedelta(days=i)).isoformat() for i in range(1, 15)]
+    ahead = [(today + timedelta(days=i)).isoformat() for i in range(span)]
+    late = db.query(PlannerTask).filter(PlannerTask.planner_id == p.id, PlannerTask.date.in_(past),
+                                        PlannerTask.done == False).order_by(PlannerTask.date, PlannerTask.sort).all()  # noqa: E712
+    if not late:
+        return {"moved": 0, "tasks": []}
+    load = {d: 0 for d in ahead}
+    for t in db.query(PlannerTask).filter(PlannerTask.planner_id == p.id, PlannerTask.date.in_(ahead)).all():
+        load[t.date] += t.minutes or 30
+    moved = []
+    for t in late:
+        target = min(ahead, key=lambda d: (load[d], d))   # 가장 한가한 날, 같으면 이른 날
+        base = db.query(PlannerTask).filter(PlannerTask.planner_id == p.id, PlannerTask.date == target).count()
+        moved.append({"id": t.id, "from": t.date, "to": target, "title": t.title})
+        t.date, t.sort = target, base + 100
+        load[target] += t.minutes or 30
+    db.commit()
+    return {"moved": len(moved), "tasks": moved}
+
+
+class WeakReviewBody(BaseModel):
+    date: str
+    limit: int = 3
+
+
+@router.post("/{planner_id}/weak-review")
+def weak_review(planner_id: str, body: WeakReviewBody, x_user_id: str | None = Header(default=None),
+                db: Session = Depends(get_db)):
+    """약점 지도에서 헷갈림·모름 개념을 골라 그 날 복습 할 일로 넣는다 (자료에 연결)."""
+    from ..core.learning import concept_mastery
+    user_id = _require_user(x_user_id)
+    p = _get_planner(db, planner_id, user_id)
+    dstr = _check_date(body.date)
+    if p.owner_type == "group":
+        docs = db.query(Document).filter(Document.group_id == p.owner_id).all()
+    else:
+        docs = db.query(Document).filter(Document.user_id == user_id, Document.group_id.is_(None)).all()
+    by_id = {d.id: d for d in docs}
+    weak = [m for m in concept_mastery(db, user_id, list(by_id)) if m["level"] in ("weak", "mid")]
+    have = {t.title for t in db.query(PlannerTask).filter(PlannerTask.planner_id == p.id, PlannerTask.date == dstr).all()}
+    base = len(have)
+    added = []
+    for m in weak:
+        if len(added) >= max(1, min(8, body.limit)):
+            break
+        title = f"약점 복습: {m['concept']}"[:120]
+        if title in have:
+            continue
+        d = by_id[m["doc_id"]]
+        t = PlannerTask(planner_id=p.id, date=dstr, title=title, minutes=30 if m["level"] == "weak" else 20,
+                        sort=base + len(added), link_type="doc", link_id=d.id, link_label=d.filename,
+                        source="ai", created_by=user_id)
+        db.add(t)
+        added.append(t)
+    db.commit()
+    return {"added": len(added), "tasks": [_task_out(t) for t in added]}

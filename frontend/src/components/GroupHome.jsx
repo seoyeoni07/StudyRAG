@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect } from "react";
 import { apiFetch } from "../api.js";
+import { PeerQuestions, GroupRanking } from "./learn/GroupLearning";
 import { LockIcon, GlobeIcon, UsersIcon, DocIcon, NoteIcon, renderNoteIcon, WarningIcon, SpinnerIcon } from "./Icons.jsx";
 
 export function timeAgo(iso) {
@@ -80,6 +81,8 @@ export default function GroupHome({
     { key: "home", label: "홈" },
     { key: "docs", label: `자료 ${docs.length > 0 ? `(${docs.length})` : ""}` },
     { key: "notes", label: `노트 ${notes.length > 0 ? `(${notes.length})` : ""}` },
+    { key: "questions", label: "문제" },
+    { key: "ranking", label: "랭킹" },
     { key: "activity", label: "활동" },
   ];
 
@@ -320,6 +323,21 @@ export default function GroupHome({
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ── 문제 탭: 서로 문제 내고 풀기 ── */}
+      {tab === "questions" && (
+        <div className="group-tab-body">
+          <PeerQuestions groupId={group.id} me={me.uid} isOwner={group.my_role === "owner"}
+            docs={docs.filter(d => (d.status || "done") === "done")} />
+        </div>
+      )}
+
+      {/* ── 랭킹 탭: 이번 주 공부 시간·문제 ── */}
+      {tab === "ranking" && (
+        <div className="group-tab-body">
+          <GroupRanking groupId={group.id} me={me.uid} />
         </div>
       )}
 

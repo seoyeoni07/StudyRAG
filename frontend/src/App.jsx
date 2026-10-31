@@ -12,6 +12,11 @@ import DashboardHome from "./components/DashboardHome";
 import LandingPage from "./components/LandingPage";
 import PublicNotePage from "./components/PublicNotePage";
 import StatsSection from "./components/StatsSection";
+import SourceViewer from "./components/learn/SourceViewer";
+import MasteryMap from "./components/learn/MasteryMap";
+import WeakConcepts from "./components/learn/WeakConcepts";
+import { CardDeck } from "./components/learn/Flashcards";
+import { generateCards, generateQuiz } from "./components/learn/learnApi";
 import SettingsPage from "./components/SettingsPage";
 import LoginPage from "./components/LoginPage";
 import Sidebar, { tabsFor } from "./components/Sidebar";
@@ -33,6 +38,8 @@ function viewToHash(v) {
     case "home":        return "#home";
     case "planner":     return v.groupId ? `#group/${v.groupId}/planner` : "#planner";
     case "stats":       return "#stats";
+    case "cards":       return "#cards";
+    case "exam":        return v.prepId ? `#exam/${v.prepId}` : "#exam";
     case "settings":    return "#settings";
     case "chat":        return "#chat";
     case "group-start": return "#group-start";
@@ -53,6 +60,8 @@ function hashToView(hash) {
   switch (p[0]) {
     case "planner":     return { type: "planner" };
     case "stats":       return { type: "stats" };
+    case "cards":       return { type: "cards" };
+    case "exam":        return p[1] ? { type: "exam", prepId: p[1] } : { type: "exam" };
     case "settings":    return { type: "settings" };
     case "chat":        return { type: "chat" };
     case "group-start": return { type: "group-start" };
@@ -75,6 +84,8 @@ function hashToView(hash) {
 const GroupNotePage = lazy(() => import("./components/GroupNotePage"));
 const NotePage = lazy(() => import("./components/NotePage"));
 const PlannerPage = lazy(() => import("./components/planner/PlannerPage"));
+const FlashcardsPage = lazy(() => import("./components/learn/Flashcards"));
+const ExamPage = lazy(() => import("./components/learn/ExamPage"));
 
 // 같은 파일명이 여러 번 업로드된 경우 가장 최신 1개만 유지
 const dedupDocs = (docs) => {
@@ -121,6 +132,9 @@ export default function App() {
   const [streak, setStreak] = useState(0);
   const [wrongRefreshKey, setWrongRefreshKey] = useState(0);
   const [quizInitialSession, setQuizInitialSession] = useState(null);
+  const [source, setSource] = useState(null);       // 근거 보기 창 { docId, page, quote, filename }
+  const [cardsDue, setCardsDue] = useState(0);      // 오늘 복습할 플래시카드
+  const [learnKey, setLearnKey] = useState(0);      // 약점 지도·카드 새로고침
   // 비로그인 상태에서 랜딩/로그인 전환
   const [preAuthView, setPreAuthView] = useState(() =>
     window.location.hash === "#login" ? "login" : "landing"
@@ -370,6 +384,7 @@ export default function App() {
           });
         apiFetch("/notes/").then(setNotes).catch(() => {});
         apiFetch("/quiz/due-count").then(d => setReviewDue(d.count || 0)).catch(() => {});
+        apiFetch("/learn/cards/summary").then(d => setCardsDue(d.due || 0)).catch(() => {});
         apiFetch("/users/me", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -517,6 +532,45 @@ export default function App() {
       setView({ type: "note", noteId: t.link_id });
     }
   }
+
+  // 자료 열기 (개인·그룹 어디 있든) — 플래시카드·시험 대비·약한 개념에서 쓴다
+  function openAnyDoc(docId, filename, tab = "summary", gid) {
+    const g = gid || Object.keys(groupData).find(k => groupData[k]?.docs?.some(d => d.doc_id === docId));
+    if (g && !pastDocs.some(d => d.doc_id === docId)) setView({ type: "doc", docId, filename, groupId: g, tab });
+    else selectDoc(docId, filename, tab);
+  }
+
+  const refreshCardsDue = () => apiFetch("/learn/cards/summary").then(d => setCardsDue(d.due || 0)).catch(() => {});
+
+  // 개념 하나만 / 고른 글로만 퀴즈 → 퀴즈 탭에서 바로 풀기
+  async function quizFrom(docId, { concept, text } = {}) {
+    setToast("AI가 퀴즈를 만드는 중이에요… (최대 1분)");
+    try {
+      const s = await generateQuiz({ doc_id: docId, n: 5, focus_concept: concept || null, context_text: text || null });
+      setQuizInitialSession(s);
+      if (view.type === "doc" && view.docId === docId) setView(v => ({ ...v, tab: "quiz" }));
+      else {
+        const name = pastDocs.find(d => d.doc_id === docId)?.filename
+          || Object.values(groupData).flatMap(g => g?.docs || []).find(d => d.doc_id === docId)?.filename;
+        openAnyDoc(docId, name, "quiz");
+      }
+      setToast("");
+    } catch (err) { setError(err.message); setToast(""); }
+  }
+
+  async function cardsFrom(body) {
+    const made = await generateCards(body);
+    setToast(`플래시카드 ${made.length}장을 만들었어요`);
+    setLearnKey(k => k + 1);
+    refreshCardsDue();
+    return made.length;
+  }
+
+  const sourceActions = (docId) => ({
+    saveNote: (title, md) => createNote({ title, content: md, doc_id: docId }, false).then(n => n && setToast("노트로 저장했어요")),
+    makeCards: (text, page) => cardsFrom({ doc_id: docId, text, page, n: 6 }),
+    makeQuiz: (text) => quizFrom(docId, { text }),
+  });
 
   function selectDoc(id, name, targetTab = "summary") {
     setPreJoined(null);
@@ -706,6 +760,8 @@ export default function App() {
   const groupCrumb = group ? [["", group.detail.name]] : [];
   const crumbs = view.type === "home" ? [["", "홈"]]
     : view.type === "stats" ? [["", "학습 통계"]]
+    : view.type === "cards" ? [["", "플래시카드"]]
+    : view.type === "exam" ? [["", "시험 대비", view.prepId ? { type: "exam" } : undefined], ...(view.prepId ? [["", "상세"]] : [])]
     : view.type === "planner" ? (view.groupId ? [...groupCrumb, ["", "스터디 플래너"]] : [["", "개인 플래너"]])
     : view.type === "settings" ? [["", "설정"]]
     : view.type === "group-start" ? [["", "그룹 스터디"]]
@@ -742,8 +798,14 @@ export default function App() {
         dmUnread={dmUnread}
         streak={streak}
         onNoteAction={noteAction}
+        cardsDue={cardsDue}
         theme={theme} onToggleTheme={() => setTheme(t => t === "dark" ? "auto" : "dark")}
       />
+
+      {source && (
+        <SourceViewer docId={source.docId} page={source.page} quote={source.quote} filename={source.filename}
+          onClose={() => setSource(null)} actions={sourceActions(source.docId)} />
+      )}
 
       <div className="main">
         <div className="topbar">
@@ -907,8 +969,36 @@ export default function App() {
           {view.type === "stats" && (
             <>
               <h1 className="page-title">학습 통계</h1>
+              <WeakConcepts onOpenDoc={(id, name, gid) => openAnyDoc(id, name, "mastery", gid)} />
               <StatsSection />
             </>
+          )}
+
+          {view.type === "cards" && (
+            <Suspense fallback={<div className="loading-wrap"><div className="spinner" /></div>}>
+              <FlashcardsPage
+                onOpenDoc={(id, name) => openAnyDoc(id, name, "cards")}
+                onOpenNote={(noteId) => setView({ type: "note", noteId })}
+                onOpenSource={(docId, page) => setSource({ docId, page })}
+                onChanged={refreshCardsDue}
+              />
+            </Suspense>
+          )}
+
+          {view.type === "exam" && (
+            <Suspense fallback={<div className="loading-wrap"><div className="spinner" /></div>}>
+              <ExamPage
+                prepId={view.prepId || null}
+                docs={[
+                  ...pastDocs.filter(d => (d.status || "done") === "done"),
+                  ...groups.flatMap(g => (groupData[g.id]?.docs || []).map(d => ({ ...d, group: g.name }))),
+                ]}
+                onOpenPrep={(id) => setView(id ? { type: "exam", prepId: id } : { type: "exam" })}
+                onOpenDoc={(id, name, tab) => openAnyDoc(id, name, tab)}
+                onOpenSource={(docId, page) => setSource({ docId, page })}
+                onSaveNote={(title, md) => createNote({ title, content: md }, false).then(n => n && setToast("노트로 저장했어요"))}
+              />
+            </Suspense>
           )}
 
           {view.type === "settings" && (
@@ -986,6 +1076,8 @@ export default function App() {
                 lookup: (id) => notes.find(n => n.id === id) || sharedNotes.find(n => n.id === id) || (ownNote ? null : undefined),
               }}
               onOpenDoc={(id, name) => selectDoc(id, name, "summary")}
+              onMakeCards={() => cardsFrom({ note_id: view.noteId, n: 8 })}
+              onOpenCards={() => setView({ type: "cards" })}
             />
             </Suspense>
           )}
@@ -1063,8 +1155,10 @@ export default function App() {
 
               {(docStatusValue === "done" || docStatusValue === null) && <div key={docId}>
                 {[
-                  ["summary", <SummarySection key="summary" docId={docId} onSaveNote={saveToNote} />],
-                  ["qa",      <QASection key="qa" docId={docId} onSaveNote={saveToNote} />],
+                  ["summary", <SummarySection key="summary" docId={docId} onSaveNote={saveToNote}
+                                onOpenSource={(page, quote) => setSource({ docId, page, quote, filename: currentDoc?.filename })} />],
+                  ["qa",      <QASection key="qa" docId={docId} onSaveNote={saveToNote}
+                                onOpenSource={(page, quote) => setSource({ docId, page, quote, filename: currentDoc?.filename })} />],
                   ["tutor",   <TutorSection key="tutor" docId={docId} />],
                   ["quiz",    <QuizSection key="quiz" docId={docId}
                                 initialSession={quizInitialSession}
@@ -1078,6 +1172,15 @@ export default function App() {
                                   setQuizInitialSession(data);
                                   setView(v => ({ ...v, tab: "quiz" }));
                                 }} />],
+                  ["mastery", <MasteryMap key="mastery" docId={docId} filename={currentDoc?.filename}
+                                refreshKey={learnKey + wrongRefreshKey + (view.tab === "mastery" ? 1 : 0)}
+                                onQuiz={(concept) => quizFrom(docId, { concept })}
+                                onCards={(concept) => cardsFrom({ doc_id: docId, concept, n: 5 })}
+                                onGoQuiz={() => setView(v => ({ ...v, tab: "quiz" }))}
+                                onToast={setToast} />],
+                  ["cards",   <CardDeck key="cards" docId={docId} refreshKey={learnKey}
+                                onToast={(m) => { setToast(m); refreshCardsDue(); }}
+                                onOpenSource={(id, page) => setSource({ docId: id, page, filename: currentDoc?.filename })} />],
                   ...(groupId ? [["room", <StudyRoomSection key="room" docId={docId} userId={user?.uid}
                     groupId={groupId}
                     preJoined={preJoined?.doc_id === docId ? preJoined : null}

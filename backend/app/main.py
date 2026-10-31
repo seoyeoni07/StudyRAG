@@ -14,6 +14,9 @@ from .api.groups import router as groups_router
 from .api.users import router as users_router
 from .api.chat import router as chat_router
 from .api.planner import router as planner_router
+from .api.learning import router as learning_router
+from .api.exam import router as exam_router
+from .api.group_learning import router as group_learning_router
 from .db.models import Base  # noqa: F401
 from .db.session import engine
 
@@ -35,6 +38,7 @@ async def startup():
         "ALTER TABLE wrong_answers ADD COLUMN IF NOT EXISTS reviewed BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE wrong_answers ADD COLUMN IF NOT EXISTS next_review TIMESTAMP",
         "ALTER TABLE wrong_answers ADD COLUMN IF NOT EXISTS review_count INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE wrong_answers ADD COLUMN IF NOT EXISTS concept VARCHAR(200)",
         "ALTER TABLE documents ADD COLUMN IF NOT EXISTS folder VARCHAR(64)",
         "ALTER TABLE documents ADD COLUMN IF NOT EXISTS group_id VARCHAR(36)",
         "ALTER TABLE documents ADD COLUMN IF NOT EXISTS status VARCHAR(16) NOT NULL DEFAULT 'done'",
@@ -188,6 +192,9 @@ app.include_router(groups_router)
 app.include_router(users_router)
 app.include_router(chat_router)
 app.include_router(planner_router)
+app.include_router(learning_router)
+app.include_router(exam_router)
+app.include_router(group_learning_router)
 
 
 @app.get("/health")

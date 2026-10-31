@@ -5,6 +5,7 @@ import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import { apiFetch } from "../api";
 import { WarningIcon } from "./Icons.jsx";
+import "./learn/learn.css";
 
 const Md = ({ children }) => (
   <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
@@ -12,7 +13,7 @@ const Md = ({ children }) => (
   </ReactMarkdown>
 );
 
-export default function SummarySection({ docId, onSaveNote }) {
+export default function SummarySection({ docId, onSaveNote, onOpenSource }) {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -77,9 +78,19 @@ export default function SummarySection({ docId, onSaveNote }) {
       <div className="summary-section">
         <h4 className="summary-subtitle">핵심 개념</h4>
         <ol className="summary-concepts">
-          {(summary.key_concepts || []).map((c, i) => (
-            <li key={i}><Md>{c}</Md></li>
-          ))}
+          {(summary.key_concepts || []).map((c, i) => {
+            const page = summary.concept_pages?.[i];
+            return (
+              <li key={i}>
+                <div className="summary-concept-row">
+                  <Md>{c}</Md>
+                  {page != null && onOpenSource && (
+                    <button className="source-cite" onClick={() => onOpenSource(page)} title="이 개념의 근거 페이지 보기">p.{page}</button>
+                  )}
+                </div>
+              </li>
+            );
+          })}
         </ol>
       </div>
 
