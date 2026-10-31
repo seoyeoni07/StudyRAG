@@ -134,6 +134,8 @@ export default function App() {
   const [quizInitialSession, setQuizInitialSession] = useState(null);
   const [source, setSource] = useState(null);       // 근거 보기 창 { docId, page, quote, filename }
   const [cardsDue, setCardsDue] = useState(0);      // 오늘 복습할 플래시카드
+  const [cardDecks, setCardDecks] = useState([]);   // 사이드바 플래시카드 모음 (자료·노트별)
+  const [cardsKey, setCardsKey] = useState(0);      // 플래시카드 화면 새로고침
   const [cardsSeen, setCardsSeen] = useState(() => {  // 플래시카드 화면에서 본 개수 { date, count }
     try { return JSON.parse(localStorage.getItem("cardsSeen") || "null"); } catch { return null; }
   });
@@ -394,7 +396,7 @@ export default function App() {
           });
         apiFetch("/notes/").then(setNotes).catch(() => {});
         apiFetch("/quiz/due-count").then(d => setReviewDue(d.count || 0)).catch(() => {});
-        apiFetch("/learn/cards/summary").then(d => setCardsDue(d.due || 0)).catch(() => {});
+        apiFetch("/learn/cards/summary").then(d => { setCardsDue(d.due || 0); setCardDecks(d.groups || []); }).catch(() => {});
         apiFetch("/users/me", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -554,7 +556,22 @@ export default function App() {
   const cardsBadge = view.type === "cards" ? 0
     : (!cardsSeen || cardsSeen.date !== todayStr || cardsDue > cardsSeen.count) ? cardsDue : 0;
 
-  const refreshCardsDue = () => apiFetch("/learn/cards/summary").then(d => setCardsDue(d.due || 0)).catch(() => {});
+  const refreshCardsDue = () => apiFetch("/learn/cards/summary")
+    .then(d => { setCardsDue(d.due || 0); setCardDecks(d.groups || []); }).catch(() => {});
+
+  // 사이드바에서 플래시카드 모음 통째로 삭제
+  async function deleteDeck(g) {
+    const qs = g.kind === "doc" ? `doc_id=${g.id}` : g.kind === "note" ? `note_id=${g.id}` : "etc=1";
+    try {
+      const r = await apiFetch(`/learn/cards?${qs}`, { method: "DELETE" });
+      setToast(`“${g.label.replace(/\.pdf$/i, "")}” 카드 ${r.deleted}장을 지웠어요`);
+      setCardDecks(ds => ds.filter(d => d.key !== g.key));
+      refreshCardsDue();
+      setCardsKey(k => k + 1);
+      setLearnKey(k => k + 1);
+      if (view.type === "cards" && view.deck === g.key) setView({ type: "cards" });
+    } catch (err) { setError(err.message); }
+  }
 
   // 개념 하나만 / 고른 글로만 퀴즈 → 퀴즈 탭에서 바로 풀기
   async function quizFrom(docId, { concept, text } = {}) {
@@ -813,6 +830,8 @@ export default function App() {
         streak={streak}
         onNoteAction={noteAction}
         cardsDue={cardsBadge}
+        cardDecks={cardDecks}
+        onDeleteDeck={deleteDeck}
         theme={theme} onToggleTheme={() => setTheme(t => t === "dark" ? "auto" : "dark")}
       />
 
@@ -991,6 +1010,8 @@ export default function App() {
           {view.type === "cards" && (
             <Suspense fallback={<div className="loading-wrap"><div className="spinner" /></div>}>
               <FlashcardsPage
+                key={cardsKey}
+                openDeck={view.deck || null}
                 onOpenDoc={(id, name) => openAnyDoc(id, name, "cards")}
                 onOpenNote={(noteId) => setView({ type: "note", noteId })}
                 onOpenSource={(docId, page) => setSource({ docId, page })}

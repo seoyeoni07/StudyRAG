@@ -250,11 +250,12 @@ export function CardDeck({ docId, noteId, etc = false, refreshKey = 0, onOpenSou
 }
 
 /** 사이드바 '플래시카드': 오늘 복습할 카드 전체 + 자료·노트별 묶음 */
-export default function FlashcardsPage({ onOpenDoc, onOpenNote, onOpenSource, onChanged }) {
+export default function FlashcardsPage({ onOpenDoc, onOpenNote, onOpenSource, onChanged, openDeck = null }) {
   const [sum, setSum] = useState(null);
   const [session, setSession] = useState(null);
   const [error, setError] = useState("");
-  const [openKey, setOpenKey] = useState(null);   // 카드 목록을 펼친 묶음
+  const [openKey, setOpenKey] = useState(openDeck);   // 카드 목록을 펼친 묶음 (사이드바에서 고른 모음)
+  useEffect(() => { if (openDeck) setOpenKey(openDeck); }, [openDeck]);
   const [confirmKey, setConfirmKey] = useState(null);
 
   const load = useCallback(() => apiFetch("/learn/cards/summary").then(setSum).catch(e => setError(e.message)), []);

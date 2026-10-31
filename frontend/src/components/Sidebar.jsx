@@ -1,7 +1,7 @@
 ﻿import { useState, useRef } from "react";
 import { apiFetch } from "../api.js";
 import NoteTree, { isRoot } from "./NoteTree";
-import { DocIcon, NoteIcon, WarningIcon, renderNoteIcon, HomeIcon, CalendarIcon, BarChartIcon, ChatIcon, SettingsIcon, UploadIcon, UsersIcon, SparkleIcon, BookIcon, TargetIcon } from "./Icons.jsx";
+import { DocIcon, NoteIcon, WarningIcon, renderNoteIcon, HomeIcon, CalendarIcon, BarChartIcon, ChatIcon, SettingsIcon, UploadIcon, UsersIcon, SparkleIcon, BookIcon, TargetIcon, TrashIcon } from "./Icons.jsx";
 
 export const DOC_TABS = [
   ["summary", "요약",       "AI가 강의 전체를 핵심만 정리해드립니다", ""],
@@ -31,13 +31,15 @@ export default function Sidebar({
   onNewNote, onUpload, uploading, onLogout, open, onClose, collapsed = false,
   groups = [], groupData = {}, online = {}, onNewGroupNote,
   sharedNotes = [], onOpenSharedNote,
-  dmUnread = 0, streak = 0, onNoteAction, cardsDue = 0,
+  dmUnread = 0, streak = 0, onNoteAction, cardsDue = 0, cardDecks = [], onDeleteDeck,
   theme = "auto", onToggleTheme,
 }) {
   const [expanded, setExpanded] = useState({});
   const [docsOpen, setDocsOpen] = useState(true);
   const [notesOpen, setNotesOpen] = useState(true);
   const [groupsOpen, setGroupsOpen] = useState(true);
+  const [decksOpen, setDecksOpen] = useState(false);       // 플래시카드 모음 펼치기
+  const [deckConfirm, setDeckConfirm] = useState(null);    // 삭제 확인 중인 모음
   const [noteSearch, setNoteSearch] = useState("");
   const [searchResults, setSearchResults] = useState(null); // null = 검색 전
   const searchTimer = useRef(null);
@@ -94,10 +96,38 @@ export default function Sidebar({
           <button className={`sb-item ${view.type === "planner" && !view.groupId ? "active" : ""}`} onClick={() => go({ type: "planner" })}>
             <span className="sb-icon"><CalendarIcon size="1em" /></span><span className="sb-label">플래너</span>
           </button>
-          <button className={`sb-item ${view.type === "cards" ? "active" : ""}`} onClick={() => go({ type: "cards" })}>
+          <button className={`sb-item ${view.type === "cards" && !view.deck ? "active" : ""}`} onClick={() => go({ type: "cards" })}>
+            {cardDecks.length > 0 && <Caret open={decksOpen} onClick={() => setDecksOpen(o => !o)} />}
             <span className="sb-icon"><BookIcon size="1em" /></span><span className="sb-label">플래시카드</span>
             {cardsDue > 0 && <span className="sb-badge sb-badge-due" title="오늘 복습할 카드">{cardsDue > 99 ? "99+" : cardsDue}</span>}
           </button>
+          {decksOpen && cardDecks.length > 0 && (
+            <div className="sb-children">
+              {cardDecks.map(g => (
+                <div key={g.key}>
+                  <div className={`sb-item sb-child nt-row ${view.type === "cards" && view.deck === g.key ? "active" : ""}`}
+                    role="button" tabIndex={0} title={`${g.label} · ${g.total}장`}
+                    onClick={() => go({ type: "cards", deck: g.key })}
+                    onKeyDown={e => { if (e.key === "Enter" && e.target === e.currentTarget) go({ type: "cards", deck: g.key }); }}>
+                    <span className="sb-icon">{g.kind === "doc" ? <DocIcon size="1em" /> : g.kind === "note" ? <NoteIcon size="1em" /> : <BookIcon size="1em" />}</span>
+                    <span className="sb-label">{g.label.replace(/\.pdf$/i, "")}</span>
+                    <span className="sb-deck-count">{g.due > 0 ? `${g.due}/${g.total}` : g.total}</span>
+                    <span className="nt-actions">
+                      <button className="nt-btn" title="이 모음 카드 모두 삭제" aria-label={`${g.label} 카드 모두 삭제`}
+                        onClick={e => { e.stopPropagation(); setDeckConfirm(g.key); }}><TrashIcon size="0.95em" /></button>
+                    </span>
+                  </div>
+                  {deckConfirm === g.key && (
+                    <div className="sb-deck-confirm">
+                      <span>카드 {g.total}장을 모두 지울까요?</span>
+                      <button className="btn-danger btn-sm" onClick={() => { setDeckConfirm(null); onDeleteDeck?.(g); }}>삭제</button>
+                      <button className="btn-ghost btn-sm" onClick={() => setDeckConfirm(null)}>취소</button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
           <button className={`sb-item ${view.type === "exam" ? "active" : ""}`} onClick={() => go({ type: "exam" })}>
             <span className="sb-icon"><TargetIcon size="1em" /></span><span className="sb-label">시험 대비</span>
           </button>
