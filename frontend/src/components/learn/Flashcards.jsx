@@ -124,7 +124,7 @@ function CardRow({ c, onSave, onDelete, onOpenSource }) {
         <span className="fc-row-back">{c.back}</span>
         <span className="fc-row-meta">
           {c.concept && <span className="lr-chip">{c.concept}</span>}
-          {c.is_due ? <span className="lr-chip lr-chip--due">오늘 복습</span> : <span className="lr-muted">다음 복습 {new Date(c.due + (c.due?.endsWith("Z") ? "" : "Z")).toLocaleDateString("ko-KR")}</span>}
+          {c.is_due ? <span className="lr-chip lr-chip--due">오늘 복습</span> : c.due ? <span className="lr-muted">다음 복습 {new Date(c.due + (c.due.endsWith("Z") ? "" : "Z")).toLocaleDateString("ko-KR")}</span> : null}
           {c.page && c.doc_id && onOpenSource && <button className="lr-link" onClick={() => onOpenSource(c.doc_id, c.page)}>p.{c.page}</button>}
         </span>
       </div>

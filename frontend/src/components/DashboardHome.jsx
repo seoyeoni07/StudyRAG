@@ -25,11 +25,12 @@ export default function DashboardHome({
   const fileRef = useRef();
   const [dragOver, setDragOver] = useState(false);
 
+  const today = new Date().toDateString();
   useEffect(() => {
     apiFetch("/planner/today-summary")
       .then(setPlanner)
       .catch(() => setPlanner({ tasks: [], goal: null, color_map: {} }));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [today]);
 
   function handleFile(e) {
     const file = e.target.files?.[0];

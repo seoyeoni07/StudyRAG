@@ -36,6 +36,22 @@ export default function QuizSection({ docId, onGoToWrong, initialSession, onClea
   // -1 = 결과 요약, 0..n-1 = 해당 문제
   const [currentIdx, setCurrentIdx] = useState(0);
 
+  // 문서가 바뀌면 퀴즈 상태 초기화
+  useEffect(() => {
+    clearInterval(stepTimerRef.current);
+    setQuestions([]);
+    setSessionId(null);
+    setAnswers({});
+    setResults(null);
+    setError("");
+    setReportedIds(new Set());
+    setCurrentIdx(0);
+    setLoading(false);
+  }, [docId]);
+
+  // 언마운트 시 인터벌 정리
+  useEffect(() => () => clearInterval(stepTimerRef.current), []);
+
   useEffect(() => {
     if (initialSession) {
       setQuestions(initialSession.questions);
