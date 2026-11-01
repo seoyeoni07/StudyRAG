@@ -88,11 +88,10 @@ export default function LandingPage({ onStart }) {
         <div className="lp-hero-text">
           <p className="lp-eyebrow lp-animate-1">강의자료 AI 학습 도구</p>
           <h1 className="lp-headline lp-animate-2">
-            자료 올리면<br />요약·퀴즈·오답까지<br /><span>다 이어집니다.</span>
+            강의자료 하나로<br />요약·퀴즈·오답까지<br /><span>한 번에.</span>
           </h1>
           <p className="lp-sub lp-animate-3">
-            AI가 요약하고, 질문에 답하고, 퀴즈를 내고, 오답을 추적합니다.
-            자료 하나로 시험까지 끊기지 않습니다.
+            AI가 요약하고, 질문에 답하고, 퀴즈를 내고, 오답을 정리합니다. 자료 하나로 시험까지 끊기지 않습니다.
           </p>
           <button className="btn-primary lp-cta-btn lp-animate-4" onClick={onStart}>무료로 시작하기</button>
         </div>
