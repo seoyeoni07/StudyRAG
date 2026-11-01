@@ -88,11 +88,11 @@ export default function LandingPage({ onStart }) {
         <div className="lp-hero-text">
           <p className="lp-eyebrow lp-animate-1">강의자료 AI 학습 도구</p>
           <h1 className="lp-headline lp-animate-2">
-            이해만으로는<br />부족합니다.<br /><span>기억까지.</span>
+            자료 올리면<br />요약·퀴즈·오답까지<br /><span>다 이어집니다.</span>
           </h1>
           <p className="lp-sub lp-animate-3">
-            자료를 올리면 AI가 요약하고, 질문에 답하고, 퀴즈를 내고, 오답을 추적합니다.
-            자료에서 시험까지, 끊기지 않는 학습 루프.
+            AI가 요약하고, 질문에 답하고, 퀴즈를 내고, 오답을 추적합니다.
+            자료 하나로 시험까지 끊기지 않습니다.
           </p>
           <button className="btn-primary lp-cta-btn lp-animate-4" onClick={onStart}>무료로 시작하기</button>
         </div>
@@ -138,8 +138,8 @@ export default function LandingPage({ onStart }) {
           {[
             { n: "01", title: "자료 업로드",      desc: "PDF·이미지 강의자료를 올리면 AI가 전체를 읽고 분석합니다." },
             { n: "02", title: "요약 · Q&A",       desc: "자동 생성 요약 확인, 모르는 부분은 바로 질문합니다." },
-            { n: "03", title: "AI 튜터 대화",     desc: "답을 주지 않고 스스로 이해하게 유도하는 소크라테스식 학습." },
-            { n: "04", title: "퀴즈 · 오답 복습", desc: "자동 생성 퀴즈, 오답 추적, SM-2 간격반복으로 완전히 기억합니다." },
+            { n: "03", title: "AI 튜터 대화",     desc: "답을 바로 주지 않고 단계별 힌트로 스스로 이해하게 합니다." },
+            { n: "04", title: "퀴즈 · 오답 복습", desc: "자동 생성 퀴즈, 오답 추적, 틀린 문제는 복습 날짜가 자동으로 잡힙니다." },
             { n: "05", title: "그룹 스터디",      desc: "팀과 같은 자료로 실시간 그룹 퀴즈를 풀고 순위를 확인합니다." },
           ].map((s, i) => (
             <div key={s.n} className="lp-step" style={{ transitionDelay: `${i * 80}ms` }}>
@@ -160,7 +160,7 @@ export default function LandingPage({ onStart }) {
           {[
             { icon: <DocIcon size="1.1em" />,      title: "RAG — 자료 기반 검색",  desc: "질문하면 강의자료 안에서 관련 내용만 골라 LLM에게 전달합니다. 엉뚱한 답변 없이 자료에 근거한 답만 나옵니다." },
             { icon: <SparkleIcon size="1.1em" />,  title: "LLM — 자동 요약·퀴즈", desc: "AI가 전체 자료를 읽고 핵심 개념·요약·퀴즈를 자동 생성합니다. 어렵거나 자주 틀린 유형은 더 많이 출제됩니다." },
-            { icon: <CalendarIcon size="1.1em" />, title: "SM-2 간격반복",         desc: "틀린 문제는 망각곡선에 따라 복습 날짜를 자동 계산합니다. 기억이 사라지기 직전에 다시 알려줍니다." },
+            { icon: <CalendarIcon size="1.1em" />, title: "간격 반복 복습",         desc: "틀린 문제는 복습 날짜를 자동으로 계산합니다. 맞힌 문제는 간격을 늘리고, 틀린 문제는 빨리 다시 봅니다." },
           ].map(({ icon, title, desc }) => (
             <div key={title} className="lp-tech-card">
               <span className="lp-tech-icon">{icon}</span>
