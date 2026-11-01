@@ -97,9 +97,9 @@ export default function Sidebar({
             <span className="sb-icon"><CalendarIcon size="1em" /></span><span className="sb-label">플래너</span>
           </button>
           <button className={`sb-item ${view.type === "cards" && !view.deck ? "active" : ""}`} onClick={() => go({ type: "cards" })}>
-            {cardDecks.length > 0 && <Caret open={decksOpen} onClick={() => setDecksOpen(o => !o)} />}
             <span className="sb-icon"><BookIcon size="1em" /></span><span className="sb-label">플래시카드</span>
             {cardsDue > 0 && <span className="sb-badge sb-badge-due" title="오늘 복습할 카드">{cardsDue > 99 ? "99+" : cardsDue}</span>}
+            {cardDecks.length > 0 && <Caret open={decksOpen} onClick={() => setDecksOpen(o => !o)} />}
           </button>
           {decksOpen && cardDecks.length > 0 && (
             <div className="sb-children">
