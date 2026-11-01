@@ -795,6 +795,7 @@ export default function App() {
     : view.type === "exam" ? [["", "시험 대비", view.prepId ? { type: "exam" } : undefined], ...(view.prepId ? [["", "상세"]] : [])]
     : view.type === "planner" ? (view.groupId ? [...groupCrumb, ["", "스터디 플래너"]] : [["", "개인 플래너"]])
     : view.type === "settings" ? [["", "설정"]]
+    : view.type === "chat" ? [["", "채팅"]]
     : view.type === "group-start" ? [["", "그룹 스터디"]]
     : view.type === "group" ? groupCrumb
     : view.type === "gnote" ? [
