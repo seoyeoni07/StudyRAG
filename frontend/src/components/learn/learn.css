@@ -150,7 +150,7 @@
 .fc-session-head .btn-ghost { display: inline-flex; align-items: center; gap: 4px; }
 
 /* 시험 대비 */
-.ex-detail-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ex-detail-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
 .ex-detail-head .page-title { margin-bottom: 0; }
 .ex-dday { background: var(--red-bg); color: var(--red); font-weight: 700; font-size: 13px; padding: 2px 10px; border-radius: 999px; }
 .ex-docchips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 14px; }
