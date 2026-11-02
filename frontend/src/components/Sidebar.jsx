@@ -47,6 +47,7 @@ export default function Sidebar({
   const [docsOpen, setDocsOpen] = useState(true);
   const [notesOpen, setNotesOpen] = useState(false);
   const [groupsOpen, setGroupsOpen] = useState(false);
+  const [sharedOpen, setSharedOpen] = useState(false);
   const [decksOpen, setDecksOpen] = useState(false);       // 플래시카드 모음 펼치기
   const [deckConfirm, setDeckConfirm] = useState(null);    // 삭제 확인 중인 모음
   const [noteSearch, setNoteSearch] = useState("");
@@ -314,9 +315,9 @@ export default function Sidebar({
           {sharedNotes.length > 0 && (
             <div className="sb-section">
               <div className="sb-section-head">
-                <span className="sb-section-title">공유받은 노트</span>
+                <button className="sb-section-title" onClick={() => setSharedOpen(o => !o)}>공유받은 노트</button>
               </div>
-              {sharedNotes.map(n => (
+              {sharedOpen && sharedNotes.map(n => (
                 <button key={n.id} className={`sb-item ${view.type === "note" && view.noteId === n.id ? "active" : ""}`}
                   onClick={() => { onOpenSharedNote?.(n.id); onClose?.(); }}>
                   <span className="sb-icon">{renderNoteIcon(n.icon, "0.85em") || <NoteIcon size="0.85em" />}</span>

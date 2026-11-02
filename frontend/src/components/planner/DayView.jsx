@@ -78,7 +78,12 @@ function TaskList({ date, tasks, subjects, colorOf, api, plannerId, onOpenLink }
             onLink={() => setLinking(t)}
             onOpenLink={onOpenLink} />
         ))}
-        {tasks.length === 0 && <li className="pl-empty">할 일을 추가하거나 AI로 계획을 세워보세요</li>}
+        {tasks.length === 0 && (
+          <li className="pl-task-empty">
+            <span className="pl-task-empty-title">오늘 할 일이 없어요</span>
+            <span className="pl-task-empty-hint">아래 입력창에서 바로 추가하거나, 헤더의 <strong>AI 플랜</strong>으로 한 번에 만들어보세요</span>
+          </li>
+        )}
       </ul>
       <div className="pl-add-task">
         <select value={subject} onChange={e => setSubject(e.target.value)} aria-label="과목">
@@ -186,7 +191,7 @@ function Timeline({ timeline, subjects, colorOf, onChange }) {
             {s.name}
           </button>
         ))}
-        {subjects.length === 0 && <span className="pl-muted">위쪽 ‘과목’에서 과목을 먼저 추가하세요</span>}
+        {subjects.length === 0 && <span className="pl-muted">헤더의 <strong>꾸미기·과목</strong>에서 과목을 추가하면 시간표를 칠할 수 있어요</span>}
         <span className="pl-brush-kind">
           <button className={brush.kind === "plan" ? "active" : ""} onClick={() => setBrush(b => ({ ...b, kind: "plan" }))} title="계획 (연하게)">계획</button>
           <button className={brush.kind === "done" ? "active" : ""} onClick={() => setBrush(b => ({ ...b, kind: "done" }))} title="실제로 한 시간 (진하게)">실제</button>

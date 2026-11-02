@@ -184,6 +184,11 @@ export default function AiPlanModal({ planner, startDate, onClose, onApplied, on
             <label className="pl-check"><input type="checkbox" checked={useAi} onChange={e => setUseAi(e.target.checked)} />
               AI로 공부 단위 만들기 (끄면 자료의 핵심 개념으로 바로 배치 — 더 빠름)</label>
 
+            {!chosen.length && (
+              <p className="pl-muted" style={{ color: "var(--amber)" }}>
+                과목을 하나 이상 추가하거나 체크해야 계획을 만들 수 있어요.
+              </p>
+            )}
             <div className="pl-modal-foot">
               <button className="btn-primary" onClick={generate} disabled={busy || !chosen.length || !start || !end || end < start}>
                 {busy ? "계획 세우는 중… (최대 1분)" : "계획 만들기"}

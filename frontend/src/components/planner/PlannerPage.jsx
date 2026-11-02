@@ -22,6 +22,7 @@ export default function PlannerPage({ user, groupId, groupName, onOpenLink }) {
   const [data, setData] = useState({ days: {}, tasks: [] }); // 지금 보는 범위
   const [aiOpen, setAiOpen] = useState(false);
   const [decoOpen, setDecoOpen] = useState(false);
+  const [helperMenuOpen, setHelperMenuOpen] = useState(false);
   const [editTitle, setEditTitle] = useState(null);
   const ws = weekStart(date);
   const rangeStart = mode === "month" ? monthStart(date) : ws;
@@ -176,10 +177,24 @@ export default function PlannerPage({ user, groupId, groupName, onOpenLink }) {
             <button className={mode === "month" ? "active" : ""} onClick={() => setMode("month")}>한달</button>
           </div>
           <button className="btn-secondary btn-sm" onClick={() => setDecoOpen(o => !o)}>꾸미기·과목</button>
-          <button className="btn-secondary btn-sm" disabled={!!helperBusy} title="지난 2주 동안 못 끝낸 할 일을 오늘부터 한가한 날에 다시 넣어요"
-            onClick={() => runHelper("reschedule")}>{helperBusy === "reschedule" ? "옮기는 중…" : "밀린 할 일 재배치"}</button>
-          <button className="btn-secondary btn-sm" disabled={!!helperBusy} title="약점 지도에서 헷갈리는 개념을 골라 이 날 복습 할 일로 넣어요"
-            onClick={() => runHelper("weak")}>{helperBusy === "weak" ? "넣는 중…" : "약점 복습 넣기"}</button>
+            <div className="pl-helper-wrap">
+            <button className="btn-secondary btn-sm" disabled={!!helperBusy}
+              onClick={() => setHelperMenuOpen(o => !o)}>
+              {helperBusy ? "처리 중…" : "도우미 ▾"}
+            </button>
+            {helperMenuOpen && (
+              <div className="pl-helper-menu">
+                <button disabled={!!helperBusy} title="지난 2주 동안 못 끝낸 할 일을 오늘부터 한가한 날에 다시 넣어요"
+                  onClick={() => { runHelper("reschedule"); setHelperMenuOpen(false); }}>
+                  밀린 할 일 재배치
+                </button>
+                <button disabled={!!helperBusy} title="약점 지도에서 헷갈리는 개념을 골라 이 날 복습 할 일로 넣어요"
+                  onClick={() => { runHelper("weak"); setHelperMenuOpen(false); }}>
+                  약점 복습 넣기
+                </button>
+              </div>
+            )}
+          </div>
           <button className="btn-primary btn-sm" onClick={() => setAiOpen(true)}>AI 플랜</button>
         </div>
 
@@ -250,7 +265,14 @@ export default function PlannerPage({ user, groupId, groupName, onOpenLink }) {
       {aiOpen && (
         <AiPlanModal planner={planner} startDate={date} onClose={() => setAiOpen(false)}
           onSubjectsChange={(subs) => savePlanner({ subjects: subs })}
-          onApplied={(first) => { setAiOpen(false); if (first) setDate(first); load(weekStart(first || date)); announce(); }} />
+          onApplied={(first) => {
+            setAiOpen(false);
+            const target = weekStart(first || date);
+            rangeRef.current = target;   // load의 stale-ref early-return 방지
+            if (first) setDate(first);
+            load(target);
+            announce();
+          }} />
       )}
     </div>
   );
