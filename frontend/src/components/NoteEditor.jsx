@@ -21,6 +21,23 @@ import { noteSchema, notePageSlashItem, setNotePageActions } from "./NotePageBlo
 
 const COLORS = ["#e03e3e", "#d9730d", "#cb912f", "#0f7b6c", "#2383e2", "#6940a5", "#ad1a72"];
 const colorFor = (uid = "") => COLORS[[...uid].reduce((a, c) => a + c.charCodeAt(0), 0) % COLORS.length];
+
+function useIsDark() {
+  const check = () => {
+    const t = document.documentElement.dataset.theme;
+    return t === "dark" || (t !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  };
+  const [dark, setDark] = useState(check);
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const update = () => setDark(check());
+    const obs = new MutationObserver(update);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    mq.addEventListener("change", update);
+    return () => { obs.disconnect(); mq.removeEventListener("change", update); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return dark;
+}
 const fromB64 = (b64) => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
 
 const MAX_UPLOAD = 10 * 1024 * 1024;
@@ -144,6 +161,7 @@ export default function NoteEditor({
   migrateMarkdown, showVersions, canRestore, onCloseVersions, children,
   pages, // { create(): Promise<note>, open(id), lookup(id) → note | null(삭제됨) | undefined(모름) }
 }) {
+  const isDark = useIsDark();
   const name = user.displayName || user.email?.split("@")[0] || "멤버";
   const [title, setTitle] = useState(() => doc.getMap("meta").get("title") || "");
   const [peers, setPeers] = useState([]);
@@ -310,7 +328,7 @@ export default function NoteEditor({
       {children}
 
       <div className="collab-editor">
-        <BlockNoteView editor={editor} theme="light" slashMenu={false}>
+        <BlockNoteView editor={editor} theme={isDark ? "dark" : "light"} slashMenu={false}>
           <SuggestionMenuController triggerCharacter="/"
             getItems={async (query) => filterSuggestionItems([
               ...(pages?.create ? [notePageSlashItem(editor, () => pagesRef.current.create())] : []),

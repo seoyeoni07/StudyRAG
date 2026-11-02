@@ -2041,7 +2041,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
   font-size: 40px; font-weight: 700; line-height: 1.2; letter-spacing: -.02em;
   color: var(--text-1); padding: 0; margin-bottom: 14px;
 }
-.note-title::placeholder { color: rgba(55, 53, 47, .2); }
+.note-title::placeholder { color: var(--text-4); }
 @media (max-width: 900px) { .note-title { font-size: 30px; } .note-icon { font-size: 48px; } }
 
 .note-props { display: flex; flex-direction: column; gap: 2px; padding-bottom: 14px; margin-bottom: 18px; border-bottom: 1px solid var(--border); }
