@@ -48,6 +48,7 @@ export default function Sidebar({
   const [notesOpen, setNotesOpen] = useState(false);
   const [groupsOpen, setGroupsOpen] = useState(false);
   const [sharedOpen, setSharedOpen] = useState(false);
+  const [sharedSearch, setSharedSearch] = useState("");
   const [decksOpen, setDecksOpen] = useState(false);       // 플래시카드 모음 펼치기
   const [deckConfirm, setDeckConfirm] = useState(null);    // 삭제 확인 중인 모음
   const [noteSearch, setNoteSearch] = useState("");
@@ -317,13 +318,28 @@ export default function Sidebar({
               <div className="sb-section-head">
                 <button className="sb-section-title" onClick={() => setSharedOpen(o => !o)}>공유받은 노트</button>
               </div>
-              {sharedOpen && sharedNotes.map(n => (
-                <button key={n.id} className={`sb-item ${view.type === "note" && view.noteId === n.id ? "active" : ""}`}
-                  onClick={() => { onOpenSharedNote?.(n.id); onClose?.(); }}>
-                  <span className="sb-icon">{renderNoteIcon(n.icon, "0.85em") || <NoteIcon size="0.85em" />}</span>
-                  <span className="sb-label">{n.title || "제목 없음"}</span>
-                </button>
-              ))}
+              {sharedOpen && (
+              <>
+                <div className="sb-search-wrap">
+                  <input className="sb-search-input" value={sharedSearch} placeholder="공유 노트 검색…"
+                    onChange={e => setSharedSearch(e.target.value)} />
+                  {sharedSearch && <button className="sb-search-clear" onClick={() => setSharedSearch("")}>×</button>}
+                </div>
+                {(() => {
+                  const list = sharedSearch
+                    ? sharedNotes.filter(n => (n.title || "").toLowerCase().includes(sharedSearch.toLowerCase()))
+                    : sharedNotes;
+                  if (list.length === 0) return <p className="sb-empty">검색 결과 없음</p>;
+                  return list.map(n => (
+                    <button key={n.id} className={`sb-item ${view.type === "note" && view.noteId === n.id ? "active" : ""}`}
+                      onClick={() => { onOpenSharedNote?.(n.id); onClose?.(); }}>
+                      <span className="sb-icon">{renderNoteIcon(n.icon, "0.85em") || <NoteIcon size="0.85em" />}</span>
+                      <span className="sb-label">{n.title || "제목 없음"}</span>
+                    </button>
+                  ));
+                })()}
+              </>
+            )}
             </div>
           )}
 

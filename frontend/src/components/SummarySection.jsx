@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
@@ -17,24 +17,33 @@ export default function SummarySection({ docId, onSaveNote, onOpenSource }) {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const cancelledRef = useRef(false);
 
   useEffect(() => {
+    cancelledRef.current = true; // cancel any in-flight load from previous docId
     setSummary(null);
     setError("");
-    load();
+    setLoading(false);
+    cancelledRef.current = false;
   }, [docId]);
 
   async function load(force = false) {
+    cancelledRef.current = false;
     setLoading(true);
     setError("");
     try {
       const data = await apiFetch(`/documents/${docId}/summary${force ? "?force=true" : ""}`);
-      setSummary(data);
+      if (!cancelledRef.current) setSummary(data);
     } catch (err) {
-      setError(err.message);
+      if (!cancelledRef.current) setError(err.message);
     } finally {
-      setLoading(false);
+      if (!cancelledRef.current) setLoading(false);
     }
+  }
+
+  function cancel() {
+    cancelledRef.current = true;
+    setLoading(false);
   }
 
   if (loading) {
@@ -45,6 +54,7 @@ export default function SummarySection({ docId, onSaveNote, onOpenSource }) {
           AI가 강의 전체를 분석 중입니다...
         </span>
         <span style={{ fontSize: 12, color: "var(--text-4)" }}>보통 15~30초 걸려요</span>
+        <button className="btn-secondary" style={{ marginTop: 8 }} onClick={cancel}>요약 중지</button>
       </div>
     );
   }
@@ -60,7 +70,10 @@ export default function SummarySection({ docId, onSaveNote, onOpenSource }) {
         <p className="empty" style={{ marginBottom: 20 }}>
           강의자료 전체를 AI가 분석해 핵심만 정리해드립니다.
         </p>
-        <button className="btn-primary" onClick={load}>강의 요약 생성</button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button className="btn-primary" onClick={() => load(false)}>이전 요약 불러오기</button>
+          <button className="btn-secondary" onClick={() => load(true)}>새로 생성</button>
+        </div>
       </div>
     );
   }

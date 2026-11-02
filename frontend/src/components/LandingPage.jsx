@@ -201,8 +201,8 @@ export default function LandingPage({ onStart }) {
 
       {/* ── 하단 CTA ── */}
       <section className="lp-bottom-cta">
-        <h2 className="lp-bottom-headline">아직 강의자료를 혼자 읽고 있나요?</h2>
-        <p className="lp-bottom-sub">무료로 시작해서 다음 시험에 써보세요.</p>
+        <h2 className="lp-bottom-headline">PDF 하나면 충분합니다.</h2>
+        <p className="lp-bottom-sub">업로드하고 3분 안에 요약·퀴즈를 시작하세요.</p>
         <button className="lp-bottom-btn" onClick={onStart}>무료로 시작하기</button>
       </section>
 
