@@ -892,7 +892,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 .lp-hero::after {
   content: ""; position: absolute; bottom: -60px; left: -60px;
   width: 320px; height: 320px; border-radius: 50%; pointer-events: none; z-index: 0;
-  background: radial-gradient(circle, rgba(250,204,21,.08) 0%, transparent 68%);
+  background: radial-gradient(circle, rgba(34,197,94,.07) 0%, transparent 68%);
 }
 
 .lp-hero-text { display: flex; flex-direction: column; align-items: flex-start; position: relative; z-index: 1; }
@@ -903,14 +903,14 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
   color: var(--text-1); margin: 0 0 22px;
 }
 .lp-hl-mark {
-  background: linear-gradient(transparent 56%, rgba(250,204,21,.45) 56%);
+  background: linear-gradient(transparent 56%, rgba(34,197,94,.38) 56%);
   padding-right: 2px;
 }
 @media (prefers-color-scheme: dark) {
-  .lp-hl-mark { background: linear-gradient(transparent 56%, rgba(250,204,21,.22) 56%); }
+  .lp-hl-mark { background: linear-gradient(transparent 56%, rgba(34,197,94,.2) 56%); }
 }
-:root[data-theme="dark"] .lp-hl-mark { background: linear-gradient(transparent 56%, rgba(250,204,21,.22) 56%); }
-:root[data-theme="light"] .lp-hl-mark { background: linear-gradient(transparent 56%, rgba(250,204,21,.45) 56%); }
+:root[data-theme="dark"] .lp-hl-mark { background: linear-gradient(transparent 56%, rgba(34,197,94,.2) 56%); }
+:root[data-theme="light"] .lp-hl-mark { background: linear-gradient(transparent 56%, rgba(34,197,94,.38) 56%); }
 .lp-sub {
   font-size: 16px; color: var(--text-3); line-height: 1.75;
   margin: 0 0 32px; max-width: 460px;

@@ -95,7 +95,7 @@ export default function LandingPage({ onStart }) {
           <button className="btn-primary lp-cta-btn lp-animate-4" onClick={onStart}>무료로 시작하기</button>
           <div className="lp-social-proof lp-animate-4">
             <span className="lp-sp-dot" />
-            대학생 학습 도구 · AI 공모전 출품작
+            2026 AID 아이디어 공모전 출품작 · AI+학습
           </div>
         </div>
 
