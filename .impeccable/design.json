@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-02T00:00:00Z",
+  "title": "Design System: StudyRAG",
+  "extensions": {
+    "colorMeta": {
+      "primary":        { "role": "primary",  "displayName": "Slate Blue",       "canonical": "#6D8196", "tonalRamp": ["#2a3540","#3a4d5c","#4d6070","#5c6e82","#6D8196","#8fa8bf","#a8c0d0","#c4d6e2","#dde8f0","#f0f4f7"] },
+      "primary-dark":   { "role": "primary",  "displayName": "Slate Blue Dark",   "canonical": "#5c6e82" },
+      "text-1":         { "role": "neutral",  "displayName": "Charcoal",          "canonical": "#4A4A4A", "tonalRamp": ["#1a1a1a","#2e2e2e","#3c3c3c","#4a4a4a","#5e5e5e","#777777","#999999","#bbbbbb","#d8d8d8","#f0f0f0"] },
+      "text-3":         { "role": "neutral",  "displayName": "Ash",               "canonical": "#8a8a8a" },
+      "text-4":         { "role": "neutral",  "displayName": "Mist",              "canonical": "#CBCBCB" },
+      "bg-page":        { "role": "neutral",  "displayName": "Page Wash",         "canonical": "#f2f2f2" },
+      "border":         { "role": "neutral",  "displayName": "Hairline",          "canonical": "#CBCBCB" },
+      "green":          { "role": "semantic", "displayName": "Study Green",        "canonical": "#4a8c6a", "tonalRamp": ["#1a3326","#22422e","#2e5a3e","#3a7050","#4a8c6a","#60a882","#80c09c","#a0d4b8","#c4e8d4","#e6f4ee"] },
+      "amber":          { "role": "semantic", "displayName": "Caution Amber",      "canonical": "#a07830", "tonalRamp": ["#3e2c06","#604010","#7a5420","#8c6828","#a07830","#c09448","#d4ae6c","#e4c890","#f2e0b8","#faf3e0"] },
+      "red":            { "role": "semantic", "displayName": "Error Red",          "canonical": "#b04a4a", "tonalRamp": ["#401414","#601c1c","#802828","#983636","#b04a4a","#cc6666","#d88888","#e8aaaa","#f4cccc","#faeaea"] }
+    },
+    "typographyMeta": {
+      "headline": { "displayName": "Headline", "purpose": "섹션 제목, 패널 헤더. 페이지당 1-2개." },
+      "body":     { "displayName": "Body",     "purpose": "모든 본문. 14px, 한국어 ~65자 폭." },
+      "label":    { "displayName": "Label",    "purpose": "badge, 상태 pill, 메타 정보." }
+    },
+    "shadows": [
+      { "name": "shadow-sm", "value": "0 1px 3px rgba(74,74,74,.10), 0 1px 2px rgba(74,74,74,.06)", "purpose": "카드 hover, 미세한 인터랙션 들림" },
+      { "name": "shadow-md", "value": "0 4px 16px rgba(74,74,74,.12), 0 1px 4px rgba(74,74,74,.07)", "purpose": "드롭다운, 팝오버, 모달" },
+      { "name": "shadow-lg", "value": "0 10px 40px rgba(74,74,74,.14), 0 2px 8px rgba(74,74,74,.08)", "purpose": "전체화면 오버레이, 사이드 시트" }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(.4,0,.2,1)", "purpose": "사이드바 슬라이드, 탭 전환 등 표준 전환" },
+      { "name": "duration-fast",  "value": "100ms", "purpose": "버튼 active, hover" },
+      { "name": "duration-base",  "value": "150ms", "purpose": "패널 fade, 탭 전환" },
+      { "name": "duration-enter", "value": "250ms", "purpose": "사이드바, 모달 진입" }
+    ],
+    "breakpoints": [
+      { "name": "mobile", "value": "768px", "note": "사이드바 오버레이로 전환, 16px 좌우 padding" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "주요 액션. 퀴즈 생성, 저장, 제출 등.",
+      "html": "<button class=\"ds-btn-primary\">퀴즈 생성</button>",
+      "css": ".ds-btn-primary { background: #6D8196; color: #fff; padding: 7px 16px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background .1s, box-shadow .1s, transform .1s; font-family: 'Pretendard Variable', Pretendard, sans-serif; } .ds-btn-primary:hover { background: #5c6e82; box-shadow: 0 2px 6px rgba(109,129,150,.40); } .ds-btn-primary:active { background: #4d5e70; transform: scale(0.96); } .ds-btn-primary:disabled { opacity: .4; cursor: not-allowed; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "보조 액션. 취소, 이전, 다시 풀기 등.",
+      "html": "<button class=\"ds-btn-secondary\">다시 풀기</button>",
+      "css": ".ds-btn-secondary { background: #fff; color: #4A4A4A; border: 1px solid #CBCBCB; padding: 6px 14px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: background .1s, border-color .1s, transform .1s; font-family: 'Pretendard Variable', Pretendard, sans-serif; } .ds-btn-secondary:hover { background: #f7f7f7; border-color: #ababab; } .ds-btn-secondary:active { transform: scale(0.96); } .ds-btn-secondary:disabled { opacity: .4; cursor: not-allowed; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "텍스트 수준 보조. 닫기, 편집, 더보기.",
+      "html": "<button class=\"ds-btn-ghost\">닫기</button>",
+      "css": ".ds-btn-ghost { background: transparent; border: none; padding: 5px 10px; border-radius: 8px; font-size: 13px; color: #8a8a8a; cursor: pointer; transition: background .1s, color .1s; font-family: 'Pretendard Variable', Pretendard, sans-serif; } .ds-btn-ghost:hover { background: rgba(74,74,74,.05); color: #4A4A4A; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "검색, 답변 입력, 설정 필드 등 단일 행 텍스트 입력.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"답변을 입력하세요\" />",
+      "css": ".ds-input { width: 100%; padding: 7px 11px; border: 1px solid #CBCBCB; border-radius: 8px; font-size: 14px; line-height: 1.6; background: #fff; color: #4A4A4A; font-family: 'Pretendard Variable', Pretendard, sans-serif; transition: border-color .1s, box-shadow .1s; outline: none; box-sizing: border-box; } .ds-input::placeholder { color: #CBCBCB; } .ds-input:focus { border-color: #6D8196; box-shadow: 0 0 0 3px rgba(109,129,150,.12); }"
+    },
+    {
+      "name": "Status Pill",
+      "kind": "chip",
+      "description": "복습 대기, 정답, 오답 등 학습 상태 표시. 텍스트 + 배경색 조합.",
+      "html": "<span class=\"ds-pill ds-pill--amber\">복습 3개</span><span class=\"ds-pill ds-pill--green\">정답</span><span class=\"ds-pill ds-pill--red\">오답</span>",
+      "css": ".ds-pill { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; font-family: 'Pretendard Variable', Pretendard, sans-serif; } .ds-pill--amber { background: #faf3e0; color: #a07830; } .ds-pill--green { background: #e6f4ee; color: #4a8c6a; } .ds-pill--red { background: #faeaea; color: #b04a4a; } .ds-pill--primary { background: rgba(109,129,150,.12); color: #6D8196; }"
+    },
+    {
+      "name": "Content Card",
+      "kind": "card",
+      "description": "자료 카드, 퀴즈 옵션, 학습 아이템. 기본은 flat, hover에서 미세한 들림.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-title\">경영학원론 6장</div><div class=\"ds-card-meta\">3분 전</div></div>",
+      "css": ".ds-card { background: #fff; border: 1px solid #CBCBCB; border-radius: 8px; padding: 16px; cursor: pointer; transition: box-shadow .15s, border-color .15s; font-family: 'Pretendard Variable', Pretendard, sans-serif; } .ds-card:hover { box-shadow: 0 1px 3px rgba(74,74,74,.10); border-color: #ababab; } .ds-card-title { font-size: 14px; font-weight: 600; color: #4A4A4A; margin-bottom: 4px; } .ds-card-meta { font-size: 12px; color: #8a8a8a; }"
+    },
+    {
+      "name": "Sidebar Nav Item",
+      "kind": "nav",
+      "description": "사이드바 탐색 아이템. 아이콘 + 레이블 항상 함께.",
+      "html": "<button class=\"ds-sb-item ds-sb-item--active\"><span class=\"ds-sb-icon\">📋</span><span class=\"ds-sb-label\">요약</span></button>",
+      "css": ".ds-sb-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 8px; border: none; border-radius: 8px; background: transparent; color: #5e5e5e; font-size: 13px; cursor: pointer; transition: background .1s, color .1s; font-family: 'Pretendard Variable', Pretendard, sans-serif; text-align: left; } .ds-sb-item:hover { background: rgba(74,74,74,.05); color: #4A4A4A; } .ds-sb-item--active { background: rgba(74,74,74,.09); color: #4A4A4A; font-weight: 500; } .ds-sb-icon { font-size: 1em; flex-shrink: 0; } .ds-sb-label { flex: 1; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Clean Study Lab",
+    "overview": "StudyRAG는 분석 도구다. 랩처럼 깔끔하고, 필요한 것만 있고, 방해하지 않는다. 학생이 공부에 집중할 때 인터페이스는 투명해야 한다. 도구가 주인공이 되면 안 된다.\n\n팔레트는 절제됐다. 주색(steel-slate #6D8196)은 중립적이고 신뢰감 있다. 채도가 높지 않아서 학습 상태 신호색(정답·오답·복습 알림)이 화면 위에서 선명하게 보인다.",
+    "keyCharacteristics": [
+      "절제된 색상 — 주색은 일하는 색, 튀지 않는 색",
+      "학습 상태 색상 시스템 — 정답(green), 오답(red), 복습 대기(amber)",
+      "반응형 위계 — 동일한 shadow 어휘, 일관된 radius",
+      "한국어 타이포 기반 — Pretendard, 14px body, 1.6 line-height",
+      "정보 중심 레이아웃 — 장식보다 구조"
+    ],
+    "rules": [
+      { "name": "The Working Color Rule", "body": "Primary(#6D8196)는 화면 면적의 10% 미만에서만 사용한다. 버튼 하나, 포커스 링, 활성 탭 — 거기까지다.", "section": "colors" },
+      { "name": "The Semantic Exclusivity Rule", "body": "green·amber·red는 학습 상태 피드백 전용이다. 브랜딩이나 장식에 쓰지 않는다.", "section": "colors" },
+      { "name": "The Flat-By-Default Rule", "body": "그림자는 인터랙션 레이어를 나타낸다. 항상 떠있는 카드, 항상 shadow 있는 요소는 금지.", "section": "elevation" },
+      { "name": "The No Side-Tab Rule", "body": "border-left: 3-4px solid accent stripe는 쓰지 않는다. 카드 구분은 배경색 + border 전체 테두리로.", "section": "shapes" },
+      { "name": "The Size Discipline Rule", "body": "본문에서 20px 이상 텍스트를 쓰는 곳은 섹션 헤더뿐이다.", "section": "typography" }
+    ],
+    "dos": [
+      "Do 학습 상태 색(green/amber/red)은 실제 학습 피드백에만 쓴다.",
+      "Do 버튼·입력·카드 radius는 항상 --r-md (8px)를 기본으로 한다.",
+      "Do 사이드바 아이템에 항상 텍스트 레이블을 같이 쓴다.",
+      "Do 포커스 상태는 반드시 표시한다 — 0 0 0 3px --primary-light glow ring.",
+      "Do 그림자는 레이어 분리가 필요할 때(모달, 드롭다운)만 쓴다."
+    ],
+    "donts": [
+      "Don't border-left: 3px+ solid accent stripe를 카드/아이템에 붙인다.",
+      "Don't primary 색을 배경 전체에 깐다.",
+      "Don't 텍스트 크기를 20px 초과로 올린다 (섹션 제목 제외).",
+      "Don't semantic 색을 브랜딩·장식에 쓴다.",
+      "Don't 호버 없이 항상 shadow가 있는 카드를 만든다."
+    ]
+  }
+}

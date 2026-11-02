@@ -43,12 +43,12 @@
 .lr-legend button:disabled { opacity: .4; cursor: default; }
 .lr-concepts { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; margin-top: 14px; }
 .lr-concept {
-  border: 1px solid var(--border); border-left: 4px solid var(--border); border-radius: var(--r-md);
+  border: 1px solid var(--border); border-radius: var(--r-md);
   background: var(--bg-card); padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; min-width: 0;
 }
-.lr-concept--good { border-left-color: var(--green); }
-.lr-concept--mid { border-left-color: var(--amber); }
-.lr-concept--weak { border-left-color: var(--red); }
+.lr-concept--good { background: color-mix(in srgb, var(--green) 8%, var(--bg-card)); border-color: color-mix(in srgb, var(--green) 35%, var(--border)); }
+.lr-concept--mid  { background: color-mix(in srgb, var(--amber) 8%, var(--bg-card)); border-color: color-mix(in srgb, var(--amber) 35%, var(--border)); }
+.lr-concept--weak { background: color-mix(in srgb, var(--red)   8%, var(--bg-card)); border-color: color-mix(in srgb, var(--red)   35%, var(--border)); }
 .lr-concept-top { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .lr-concept-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lr-concept-lv { font-size: 11.5px; color: var(--text-3); flex-shrink: 0; }
@@ -193,7 +193,7 @@
 .ex-q > .btn-sm { align-self: flex-start; margin-left: 28px; }
 .ex-weak { margin-bottom: 14px; }
 .ex-weak-list { display: flex; flex-wrap: wrap; gap: 6px; }
-.ex-weak-chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); border-left-width: 4px; background: var(--bg-card); border-radius: var(--r-md); padding: 4px 10px; cursor: pointer; font-size: 13px; }
+.ex-weak-chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); background: var(--bg-card); border-radius: var(--r-md); padding: 4px 10px; cursor: pointer; font-size: 13px; }
 .ex-weak-chip small { color: var(--text-3); }
 .ex-mgroup { border: 1px solid var(--border); border-radius: var(--r-md); background: var(--bg-card); margin-bottom: 8px; overflow: hidden; }
 .ex-mgroup-head { width: 100%; display: flex; align-items: center; gap: 8px; padding: 10px 14px; border: none; background: none; cursor: pointer; text-align: left; font: inherit; color: inherit; }

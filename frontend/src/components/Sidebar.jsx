@@ -17,6 +17,15 @@ export const DOC_TABS = [
 /** 개인 자료에는 그룹 퀴즈 탭이 없다. */
 export const tabsFor = (isGroupDoc) => DOC_TABS.filter(([k]) => isGroupDoc || k !== "room");
 
+function Spin() {
+  return (
+    <svg className="sb-spin" width="0.85em" height="0.85em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <circle cx="12" cy="12" r="10" opacity=".25"/>
+      <path d="M12 2a10 10 0 0 1 10 10"/>
+    </svg>
+  );
+}
+
 function Caret({ open, onClick }) {
   return (
     <span className={`sb-caret ${open ? "open" : ""}`} role="button" aria-label={open ? "접기" : "펼치기"}
@@ -36,8 +45,8 @@ export default function Sidebar({
 }) {
   const [expanded, setExpanded] = useState({});
   const [docsOpen, setDocsOpen] = useState(true);
-  const [notesOpen, setNotesOpen] = useState(true);
-  const [groupsOpen, setGroupsOpen] = useState(true);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [groupsOpen, setGroupsOpen] = useState(false);
   const [decksOpen, setDecksOpen] = useState(false);       // 플래시카드 모음 펼치기
   const [deckConfirm, setDeckConfirm] = useState(null);    // 삭제 확인 중인 모음
   const [noteSearch, setNoteSearch] = useState("");
@@ -87,6 +96,14 @@ export default function Sidebar({
         <div className="sb-workspace">
           <span className="sb-ws-icon">{name.slice(0, 1).toUpperCase()}</span>
           <span className="sb-ws-name">{name}의 StudyRAG</span>
+        </div>
+
+        <div className="sb-upload-wrap">
+          <label className="sb-upload-btn">
+            <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.gif" hidden disabled={uploading}
+              onChange={e => { if (e.target.files?.[0]) { onUpload([e.target.files[0]]); e.target.value = ""; onClose?.(); } }} />
+            <UploadIcon size="1em" />{uploading ? "분석 중…" : "PDF 업로드"}
+          </label>
         </div>
 
         <nav className="sb-scroll">
@@ -141,12 +158,6 @@ export default function Sidebar({
 <button className={`sb-item ${view.type === "settings" ? "active" : ""}`} onClick={() => go({ type: "settings" })}>
             <span className="sb-icon"><SettingsIcon size="1em" /></span><span className="sb-label">설정</span>
           </button>
-          <label className="sb-item">
-            <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.gif" hidden disabled={uploading}
-              onChange={e => { if (e.target.files?.[0]) { onUpload([e.target.files[0]]); e.target.value = ""; onClose?.(); } }} />
-            <span className="sb-icon"><UploadIcon size="1em" /></span><span className="sb-label">{uploading ? "분석 중…" : "PDF 업로드"}</span>
-          </label>
-
           {/* ── 즐겨찾기 ── */}
           {pinned.length > 0 && (
             <div className="sb-section">
@@ -163,7 +174,7 @@ export default function Sidebar({
             </div>
             {groupsOpen && (groups.length === 0 ? (
               <button className={`sb-item sb-muted ${view.type === "group-start" ? "active" : ""}`} onClick={() => go({ type: "group-start" })}>
-                <span className="sb-icon">＋</span><span className="sb-label">그룹 만들기·참가</span>
+                <span className="sb-icon">+</span><span className="sb-label">그룹 만들기·참가</span>
               </button>
             ) : (
               <>
@@ -221,7 +232,7 @@ export default function Sidebar({
                                   return (
                                     <button key={d.doc_id} className={`sb-item sb-child ${active ? "active" : ""}`} title={`${d.filename} · ${d.uploader_name}`}
                                       onClick={() => go({ type: "doc", docId: d.doc_id, filename: d.filename, groupId: g.id, tab: active ? view.tab : "summary" })}>
-                                      <span className="sb-icon">{d.status === "processing" ? "⏳" : d.status === "failed" ? <WarningIcon size="0.85em" /> : <DocIcon size="0.85em" />}</span>
+                                      <span className="sb-icon">{d.status === "processing" ? <Spin /> : d.status === "failed" ? <WarningIcon size="0.85em" /> : <DocIcon size="0.85em" />}</span>
                                       <span className="sb-label">{d.filename.replace(/\.pdf$/i, "")}</span>
                                     </button>
                                   );
@@ -242,7 +253,7 @@ export default function Sidebar({
                                   onAction={(kind, n, extra) => onNoteAction?.(kind, { ...n, group_id: g.id }, extra)}
                                   canDelete={(n) => n.created_by === user.uid || data.detail?.my_role === "owner"} />
                                 <button className="sb-item sb-child sb-muted" onClick={() => { onNewGroupNote?.(g.id); onClose?.(); }}>
-                                  <span className="sb-icon">＋</span><span className="sb-label">공동 노트 추가</span>
+                                  <span className="sb-icon">+</span><span className="sb-label">공동 노트 추가</span>
                                 </button>
                               </div>
                             )}
@@ -288,7 +299,7 @@ export default function Sidebar({
                   const list = tagFilter ? base.filter(n => (n.tags || []).includes(tagFilter)) : base;
                   if (list.length === 0 && !noteSearch) return (
                     <button className="sb-item sb-muted" onClick={() => { onNewNote(); onClose?.(); }}>
-                      <span className="sb-icon">＋</span><span className="sb-label">새 노트 만들기</span>
+                      <span className="sb-icon">+</span><span className="sb-label">새 노트 만들기</span>
                     </button>
                   );
                   if (list.length === 0) return <p className="sb-empty">검색 결과 없음</p>;
@@ -342,7 +353,7 @@ export default function Sidebar({
                             className={`sb-item ${view.type === "doc" && view.docId === d.doc_id ? "active" : ""}`}
                             onClick={() => go({ type: "doc", docId: d.doc_id, filename: d.filename, tab: "summary" })}
                             title={d.filename}>
-                            <span className="sb-icon">{d.status === "processing" ? "⏳" : d.status === "failed" ? <WarningIcon size="0.85em" /> : <DocIcon size="0.85em" />}</span>
+                            <span className="sb-icon">{d.status === "processing" ? <Spin /> : d.status === "failed" ? <WarningIcon size="0.85em" /> : <DocIcon size="0.85em" />}</span>
                             <span className="sb-label">{d.filename.replace(/\.pdf$/i, "")}</span>
                           </button>
                         ));
@@ -358,7 +369,7 @@ export default function Sidebar({
                           onClick={() => go({ type: "doc", docId: d.doc_id, filename: d.filename, tab: active ? view.tab : "summary" })}
                           title={d.filename}>
                           <Caret open={isOpen(d.doc_id)} onClick={() => toggle(d.doc_id)} />
-                          <span className="sb-icon">{d.status === "processing" ? "⏳" : d.status === "failed" ? <WarningIcon size="0.85em" /> : <DocIcon size="0.85em" />}</span>
+                          <span className="sb-icon">{d.status === "processing" ? <Spin /> : d.status === "failed" ? <WarningIcon size="0.85em" /> : <DocIcon size="0.85em" />}</span>
                           <span className="sb-label">{d.filename.replace(/\.pdf$/i, "")}</span>
                         </button>
                         {isOpen(d.doc_id) && (
@@ -375,7 +386,7 @@ export default function Sidebar({
                             <NoteTree {...treeProps} child roots={docNotes.filter(n => isRoot(n, notes))} all={notes}
                               activeId={noteId} onOpen={openNote} />
                             <button className="sb-item sb-child sb-muted" onClick={() => { onNewNote(d.doc_id); onClose?.(); }}>
-                              <span className="sb-icon">＋</span><span className="sb-label">이 자료에 노트 추가</span>
+                              <span className="sb-icon">+</span><span className="sb-label">이 자료에 노트 추가</span>
                             </button>
                           </div>
                         )}

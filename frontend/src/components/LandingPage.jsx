@@ -86,7 +86,6 @@ export default function LandingPage({ onStart }) {
       {/* ── 히어로 ── */}
       <section className="lp-hero">
         <div className="lp-hero-text">
-          <p className="lp-eyebrow lp-animate-1">강의자료 AI 학습 도구</p>
           <h1 className="lp-headline lp-animate-2">
             강의자료 하나로<br />요약·퀴즈·오답까지<br /><span>한 번에.</span>
           </h1>
