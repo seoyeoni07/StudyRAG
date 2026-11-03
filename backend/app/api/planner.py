@@ -327,10 +327,13 @@ def linkables(planner_id: str, x_user_id: str | None = Header(default=None), db:
                 "notes": [{"id": n.id, "label": n.title or "제목 없음", "icon": n.icon, "type": "gnote"} for n in notes]}
     docs = (db.query(Document).filter(Document.user_id == user_id, Document.group_id.is_(None))
             .order_by(Document.created_at.desc()).all())
+    group_ids = [m.group_id for m in db.query(StudyGroupMember).filter(StudyGroupMember.user_id == user_id).all()]
+    group_docs = (db.query(Document).filter(Document.group_id.in_(group_ids))
+                  .order_by(Document.created_at.desc()).all()) if group_ids else []
     mine = db.query(Note).filter(Note.user_id == user_id, Note.group_id.is_(None)).order_by(Note.updated_at.desc()).all()
     shared_ids = [s.note_id for s in db.query(NoteShare).filter(NoteShare.shared_with == user_id).all()]
     shared = db.query(Note).filter(Note.id.in_(shared_ids or ["-"])).all()
-    return {"docs": [{"id": d.id, "label": d.filename} for d in docs],
+    return {"docs": [{"id": d.id, "label": d.filename} for d in docs + group_docs],
             "notes": [{"id": n.id, "label": n.title or "제목 없음", "icon": n.icon, "type": "note"} for n in mine + shared]}
 
 
@@ -381,7 +384,8 @@ async def ai_plan(planner_id: str, body: AiPlanBody, x_user_id: str | None = Hea
                 continue
             links.append({"type": "doc", "id": d.id, "label": d.filename})
             try:
-                concepts += (json.loads(d.summary or "{}").get("key_concepts") or [])[:8]
+                s_data = json.loads(d.summary or "{}")
+                concepts += (s_data.get("key_concepts") or s_data.get("concepts") or [])[:8]
             except Exception:
                 pass
             wrongs += db.query(WrongAnswer).filter(WrongAnswer.doc_id == d.id, WrongAnswer.reviewed == False).count()  # noqa: E712
