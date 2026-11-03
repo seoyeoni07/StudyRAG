@@ -716,6 +716,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 .badge-correct { background: var(--green-bg); color: var(--green); }
 .badge-wrong   { background: var(--red-bg); color: var(--red); }
 .correct-ans { color: var(--green); font-weight: 500; }
+.correct-ans p { display: inline; margin: 0; }
 .result-item .explanation { color: var(--text-2); line-height: 1.7; margin-top: 6px; }
 
 .wrong-saved {

@@ -283,12 +283,12 @@ export default function WrongAnswerBook({ docId, refreshKey = 0, onCountLoaded, 
                     <CalendarIcon size="0.85em" /> 다음 복습: {new Date(item.next_review + (item.next_review.endsWith("Z") ? "" : "Z")).toLocaleDateString("ko-KR")}
                   </span>
                   {addedToPlanner.has(item.id) ? (
-                    <span style={{ fontSize: 11, color: "var(--green, #2fb67c)" }}>✓ 플래너에 추가됨</span>
+                    <span style={{ fontSize: 12, color: "var(--green, #2fb67c)", fontWeight: 600 }}>✓ 추가됨</span>
                   ) : (
-                    <button className="btn-secondary btn-sm" style={{ fontSize: 11, padding: "2px 8px" }}
+                    <button className="btn-primary" style={{ fontSize: 12, padding: "3px 10px" }}
                       disabled={addingToPlanner === item.id}
                       onClick={() => addToPlanner(item)}>
-                      {addingToPlanner === item.id ? "추가 중…" : <><CalendarIcon size="0.8em" /> 플래너에 추가</>}
+                      {addingToPlanner === item.id ? "추가 중…" : <><CalendarIcon size="0.85em" /> 플래너에 추가</>}
                     </button>
                   )}
                 </div>
