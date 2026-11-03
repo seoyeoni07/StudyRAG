@@ -27,6 +27,9 @@ export default function WrongAnswerBook({ docId, refreshKey = 0, onCountLoaded, 
   const [detailLoading, setDetailLoading] = useState(false);
   const [explaining, setExplaining] = useState(null); // item id
   const [retrying, setRetrying] = useState(false);
+  const [plannerId, setPlannerId] = useState(null);
+  const [addedToPlanner, setAddedToPlanner] = useState(new Set()); // item ids
+  const [addingToPlanner, setAddingToPlanner] = useState(null); // item id | "batch"
 
   useEffect(() => {
     setLoading(true);
@@ -97,6 +100,46 @@ export default function WrongAnswerBook({ docId, refreshKey = 0, onCountLoaded, 
       );
     }
     return result;
+  }
+
+  async function getPlannerId() {
+    if (plannerId) return plannerId;
+    const data = await apiFetch("/planner/mine");
+    setPlannerId(data.id);
+    return data.id;
+  }
+
+  async function addToPlanner(item) {
+    setAddingToPlanner(item.id);
+    try {
+      const pid = await getPlannerId();
+      const dateStr = item.next_review.slice(0, 10);
+      const title = `오답 복습: ${item.question.length > 40 ? item.question.slice(0, 40) + "…" : item.question}`;
+      await apiFetch(`/planner/${pid}/tasks`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: dateStr, title, minutes: 20 }),
+      });
+      setAddedToPlanner(prev => new Set([...prev, item.id]));
+    } catch (err) { setError(err.message); }
+    finally { setAddingToPlanner(null); }
+  }
+
+  async function addAllTodayToPlanner(visibleItems) {
+    setAddingToPlanner("batch");
+    try {
+      const pid = await getPlannerId();
+      const todayStr = new Date().toLocaleDateString("en-CA");
+      for (const item of visibleItems) {
+        if (addedToPlanner.has(item.id)) continue;
+        const title = `오답 복습: ${item.question.length > 40 ? item.question.slice(0, 40) + "…" : item.question}`;
+        await apiFetch(`/planner/${pid}/tasks`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ date: todayStr, title, minutes: 20 }),
+        });
+      }
+      setAddedToPlanner(prev => new Set([...prev, ...visibleItems.map(i => i.id)]));
+    } catch (err) { setError(err.message); }
+    finally { setAddingToPlanner(null); }
   }
 
   async function aiExplain(item) {
@@ -174,7 +217,7 @@ export default function WrongAnswerBook({ docId, refreshKey = 0, onCountLoaded, 
       )}
 
       {view === "wrong" && items.filter(i => !i.reviewed).length > 0 && (
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginBottom: 4 }}>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginBottom: 4, flexWrap: "wrap" }}>
           {onRetryWrongs && (
             <button className="btn-primary" style={{ fontSize: 12, padding: "3px 12px" }}
               disabled={retrying} onClick={handleRetryWrongs}>
@@ -188,6 +231,22 @@ export default function WrongAnswerBook({ docId, refreshKey = 0, onCountLoaded, 
           )}
         </div>
       )}
+      {view === "wrong" && filter === "today" && (() => {
+        const todayItems = filteredItems();
+        const notAdded = todayItems.filter(i => !addedToPlanner.has(i.id));
+        if (!todayItems.length || !notAdded.length) return null;
+        return (
+          <div style={{ background: "var(--hover)", borderRadius: 8, padding: "10px 12px", marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
+            <CalendarIcon size="1em" />
+            <span style={{ fontSize: 13, flex: 1 }}>오늘 복습 예정 <strong>{notAdded.length}개</strong>를 플래너 오늘 할 일로 추가할 수 있어요.</span>
+            <button className="btn-primary" style={{ fontSize: 12, padding: "4px 12px", whiteSpace: "nowrap" }}
+              disabled={addingToPlanner === "batch"}
+              onClick={() => addAllTodayToPlanner(notAdded)}>
+              {addingToPlanner === "batch" ? "추가 중…" : "플래너에 일괄 추가"}
+            </button>
+          </div>
+        );
+      })()}
 
       {view === "wrong" && (() => {
         const visible = filteredItems();
@@ -219,9 +278,20 @@ export default function WrongAnswerBook({ docId, refreshKey = 0, onCountLoaded, 
                   </button>
               }
               {item.reviewed && item.next_review && (
-                <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>
-                  <CalendarIcon size="0.85em" /> 다음 복습: {new Date(item.next_review + (item.next_review.endsWith("Z") ? "" : "Z")).toLocaleDateString("ko-KR")}
-                </p>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                    <CalendarIcon size="0.85em" /> 다음 복습: {new Date(item.next_review + (item.next_review.endsWith("Z") ? "" : "Z")).toLocaleDateString("ko-KR")}
+                  </span>
+                  {addedToPlanner.has(item.id) ? (
+                    <span style={{ fontSize: 11, color: "var(--green, #2fb67c)" }}>✓ 플래너에 추가됨</span>
+                  ) : (
+                    <button className="btn-secondary btn-sm" style={{ fontSize: 11, padding: "2px 8px" }}
+                      disabled={addingToPlanner === item.id}
+                      onClick={() => addToPlanner(item)}>
+                      {addingToPlanner === item.id ? "추가 중…" : <><CalendarIcon size="0.8em" /> 플래너에 추가</>}
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           ));
