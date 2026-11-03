@@ -1200,7 +1200,7 @@ export default function App() {
                                 initialSession={quizInitialSession}
                                 onClearInitial={() => setQuizInitialSession(null)}
                                 onGoToWrong={() => { setView(v => ({ ...v, tab: "wrong" })); setWrongRefreshKey(k => k + 1); }} />],
-                  ["wrong",   <WrongAnswerBook key="wrong" docId={docId} refreshKey={wrongRefreshKey}
+                  ["wrong",   <WrongAnswerBook key="wrong" docId={docId} docName={currentDoc?.filename} refreshKey={wrongRefreshKey}
                                 onCountLoaded={setWrongCount}
                                 onGoToQuiz={() => setView(v => ({ ...v, tab: "quiz" }))}
                                 onRetryWrongs={async () => {

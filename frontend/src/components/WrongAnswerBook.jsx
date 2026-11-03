@@ -14,7 +14,7 @@ const Md = ({ children }) => (
 
 const FILTERS = [["all", "전체"], ["pending", "미복습"], ["today", "오늘 복습"]];
 
-export default function WrongAnswerBook({ docId, refreshKey = 0, onCountLoaded, onGoToQuiz, onRetryWrongs }) {
+export default function WrongAnswerBook({ docId, docName, refreshKey = 0, onCountLoaded, onGoToQuiz, onRetryWrongs }) {
   const [items, setItems] = useState([]);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -117,7 +117,7 @@ export default function WrongAnswerBook({ docId, refreshKey = 0, onCountLoaded, 
       const title = `오답 복습: ${item.question.length > 40 ? item.question.slice(0, 40) + "…" : item.question}`;
       await apiFetch(`/planner/${pid}/tasks`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: dateStr, title, minutes: 20 }),
+        body: JSON.stringify({ date: dateStr, title, minutes: 20, link_type: "doc", link_id: docId, link_label: docName || docId }),
       });
       setAddedToPlanner(prev => new Set([...prev, item.id]));
     } catch (err) { setError(err.message); }
@@ -134,7 +134,7 @@ export default function WrongAnswerBook({ docId, refreshKey = 0, onCountLoaded, 
         const title = `오답 복습: ${item.question.length > 40 ? item.question.slice(0, 40) + "…" : item.question}`;
         await apiFetch(`/planner/${pid}/tasks`, {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ date: todayStr, title, minutes: 20 }),
+          body: JSON.stringify({ date: todayStr, title, minutes: 20, link_type: "doc", link_id: docId, link_label: docName || docId }),
         });
       }
       setAddedToPlanner(prev => new Set([...prev, ...visibleItems.map(i => i.id)]));
