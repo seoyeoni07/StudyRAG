@@ -22,6 +22,7 @@ const LOADING_STEPS = [
 
 export default function QuizSection({ docId, onGoToWrong, initialSession, onClearInitial }) {
   const [n, setN] = useState(5);
+  const [selectedDifficulty, setSelectedDifficulty] = useState(null); // null=혼합
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const stepTimerRef = useRef(null);
@@ -88,7 +89,7 @@ export default function QuizSection({ docId, onGoToWrong, initialSession, onClea
       const data = await apiFetch("/quiz/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ doc_id: docId, n, focus_difficulty }),
+        body: JSON.stringify({ doc_id: docId, n, focus_difficulty, selected_difficulty: selectedDifficulty }),
       });
       setQuestions(data.questions);
       setSessionId(data.session_id);
@@ -192,6 +193,20 @@ export default function QuizSection({ docId, onGoToWrong, initialSession, onClea
             {[3, 5, 7, 10].map(v => (
               <button key={v} className={n === v ? "btn-primary" : "btn-secondary"}
                 style={{ padding: "4px 14px" }} onClick={() => setN(v)}>{v}문제</button>
+            ))}
+          </div>
+          <span className="generate-label" style={{ marginTop: 8 }}>난이도</span>
+          <div className="n-btn-group">
+            {[
+              { value: null, label: "혼합" },
+              { value: "기본", label: "기본" },
+              { value: "응용", label: "응용" },
+              { value: "심화", label: "심화" },
+            ].map(({ value, label }) => (
+              <button key={label}
+                className={selectedDifficulty === value ? "btn-primary" : "btn-secondary"}
+                style={{ padding: "4px 14px" }}
+                onClick={() => setSelectedDifficulty(value)}>{label}</button>
             ))}
           </div>
           <button className="btn-primary" onClick={handleGenerate}>퀴즈 생성</button>
