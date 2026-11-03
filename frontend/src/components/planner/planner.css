@@ -183,6 +183,7 @@
 .pl-field--grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
 .pl-field--grid label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: var(--text-3); }
 .pl-field--grid .input { width: 90px; }
+.pl-field--grid input[type="time"].input { width: 130px; }
 .pl-chip { border: 1px solid var(--border); background: var(--bg); border-radius: 999px; padding: 3px 10px; font-size: 12px; cursor: pointer; color: var(--text-2); }
 .pl-chip:hover { background: var(--hover); }
 .pl-chip.active { background: var(--text-1); color: var(--bg); border-color: var(--text-1); }
