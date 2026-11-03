@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import LinkPicker from "./LinkPicker";
-import { DocIcon, NoteIcon, LinkIcon } from "../Icons.jsx";
+import { DocIcon, NoteIcon, LinkIcon, renderNoteIcon } from "../Icons.jsx";
 import {
   HOURS, DAY_START_HOUR, STICKERS, fmtMin, prettyDate, slotLabel, timelineTotals,
 } from "./plannerUtils";
@@ -264,7 +264,7 @@ export default function DayView({ date, day, tasks, subjects, colorOf, api, plan
           {stickerOpen && (
             <div className="pl-sticker-palette">
               {STICKERS.map(s => (
-                <button key={s} onClick={() => api.saveDay(date, { stickers: [...stickers, s].slice(-30) })}>{s}</button>
+                <button key={s} onClick={() => api.saveDay(date, { stickers: [...stickers, s].slice(-30) })}>{renderNoteIcon(s, "1.4em")}</button>
               ))}
             </div>
           )}
@@ -272,7 +272,7 @@ export default function DayView({ date, day, tasks, subjects, colorOf, api, plan
             <div className="pl-stickers">
               {stickers.map((s, i) => (
                 <button key={i} title="눌러서 떼기"
-                  onClick={() => api.saveDay(date, { stickers: stickers.filter((_, j) => j !== i) })}>{s}</button>
+                  onClick={() => api.saveDay(date, { stickers: stickers.filter((_, j) => j !== i) })}>{renderNoteIcon(s, "1.4em")}</button>
               ))}
             </div>
           )}

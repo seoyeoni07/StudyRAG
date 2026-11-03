@@ -7,7 +7,7 @@ export const SLOTS = HOURS * 6;
 
 export const WEEKDAYS = ["월", "화", "수", "목", "금", "토", "일"];
 export const COLORS = ["#4f8cff", "#2fb67c", "#f2994a", "#bb6bd9", "#eb5757", "#00a3bf", "#e2b93b", "#6c7a89"];
-export const STICKERS = ["🔥", "⭐", "💯", "📚", "✏️", "☕", "🎯", "💪", "🌱", "🍀", "😴", "🥳", "❤️", "🌙", "☀️", "🧠"];
+export const STICKERS = ["star", "target", "sparkle", "book", "pencil", "bulb", "bookmark", "clock", "pin", "note", "hash", "doc"];
 export const THEMES = [
   ["basic", "기본"], ["pastel", "파스텔"], ["grid", "모눈종이"], ["kraft", "크라프트지"], ["dark", "다크"],
 ];

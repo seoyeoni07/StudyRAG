@@ -1,4 +1,5 @@
 import { addDays, fromKey, monthEnd, monthStart, today, toKey, WEEKDAYS } from "./plannerUtils";
+import { renderNoteIcon } from "../Icons.jsx";
 
 export default function MonthView({ date, days, tasks, colorOf, onPickDay }) {
   const ms = monthStart(date);
@@ -28,7 +29,7 @@ export default function MonthView({ date, days, tasks, colorOf, onPickDay }) {
           const done = dayTasks.filter(t => t.done).length;
           const total = dayTasks.length;
           const day = days[k];
-          const sticker = day?.sticker;
+          const sticker = day?.stickers?.[0];
           const isToday = k === todayKey;
           const isSelected = k === date;
 
@@ -39,7 +40,7 @@ export default function MonthView({ date, days, tasks, colorOf, onPickDay }) {
             <button key={k} className={`pl-month-cell ${isToday ? "pl-month-cell--today" : ""} ${isSelected ? "pl-month-cell--selected" : ""}`}
               onClick={() => onPickDay(k)}>
               <span className="pl-month-day">{fromKey(k).getDate()}</span>
-              {sticker && <span className="pl-month-sticker">{sticker}</span>}
+              {sticker && <span className="pl-month-sticker">{renderNoteIcon(sticker, "0.85em")}</span>}
               {subjectColors.length > 0 && (
                 <span className="pl-month-dots">
                   {subjectColors.map((c, ci) => <span key={ci} className="pl-month-dot" style={{ background: c }} />)}
