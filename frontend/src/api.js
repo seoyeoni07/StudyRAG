@@ -43,3 +43,25 @@ export async function apiFetch(url, options = {}, timeoutMs = 120_000) {
     clearTimeout(timer);
   }
 }
+
+/** 파일 내려받기 (CSV 등) — 로그인 헤더가 필요해서 <a href> 대신 fetch로 받는다 */
+export async function apiDownload(url, fallbackName = "download") {
+  const headers = {};
+  if (_uid) headers["X-User-ID"] = _uid;
+  const res = await fetch(BASE + url, { headers });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.detail || `오류 ${res.status}`);
+  }
+  const cd = res.headers.get("Content-Disposition") || "";
+  const m = cd.match(/filename\*=UTF-8''([^;]+)/i);
+  const name = m ? decodeURIComponent(m[1]) : fallbackName;
+  const blob = await res.blob();
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}

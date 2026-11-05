@@ -241,6 +241,7 @@ export default function App() {
     if (ev.event === "doc-added")     msg = `${ev.by_name}님이 "${ev.filename}" 자료를 올렸어요`;
     else if (ev.event === "note-added")   { msg = `${ev.by_name}님이 새 공동 노트를 만들었어요`; icon = "note"; }
     else if (ev.event === "member-joined") msg = `${ev.by_name}님이 그룹에 참가했어요`;
+    else if (ev.event === "assessment-open") msg = `${ev.by_name}님이 역량 평가 "${ev.title}"를 열었어요 — 그룹 홈 '평가' 탭에서 볼 수 있어요`;
     else if (ev.event === "quiz-room") {
       setGroupQuiz(q => ({ ...q, [groupId]: ev }));
       msg = `${ev.by_name}님이 그룹 퀴즈 방을 열었어요 (코드 ${ev.code})`;
@@ -1068,6 +1069,7 @@ export default function App() {
               onReload={() => loadGroup(groupId)}
               onOpenPlanner={() => setView({ type: "planner", groupId })}
               onToast={setToast}
+              onNotify={(event, payload) => notify(groupId, event, payload)}
             />
           ) : <div className="loading-wrap"><div className="spinner" /></div>)}
 

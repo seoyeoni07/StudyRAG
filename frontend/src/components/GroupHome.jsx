@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect } from "react";
 import { apiFetch } from "../api.js";
 import { PeerQuestions, GroupRanking } from "./learn/GroupLearning";
+import Assessments, { AssessmentBanner } from "./learn/Assessments";
 import { LockIcon, GlobeIcon, UsersIcon, DocIcon, NoteIcon, renderNoteIcon, WarningIcon, SpinnerIcon } from "./Icons.jsx";
 
 export function timeAgo(iso) {
@@ -27,7 +28,7 @@ export function Avatar({ name = "?", photo, online, size = 22 }) {
 export default function GroupHome({
   group, docs, notes, online, me, realtime,
   uploading, onUpload, onOpenDoc, onOpenNote, onNewNote, onDeleteDoc, onLeave,
-  quiz, onJoinQuiz, onReload, onOpenPlanner, onToast,
+  quiz, onJoinQuiz, onReload, onOpenPlanner, onToast, onNotify,
 }) {
   const [tab, setTab] = useState("home");
   const [copied, setCopied] = useState(false);
@@ -81,6 +82,7 @@ export default function GroupHome({
     { key: "home", label: "홈" },
     { key: "docs", label: `자료 ${docs.length > 0 ? `(${docs.length})` : ""}` },
     { key: "notes", label: `노트 ${notes.length > 0 ? `(${notes.length})` : ""}` },
+    { key: "assess", label: "평가" },
     { key: "questions", label: "문제" },
     { key: "ranking", label: "랭킹" },
     { key: "activity", label: "활동" },
@@ -120,6 +122,8 @@ export default function GroupHome({
           <button className="btn-primary" onClick={() => onJoinQuiz(quiz)}>참가하기</button>
         </div>
       )}
+
+      {tab !== "assess" && <AssessmentBanner groupId={group.id} onOpen={() => setTab("assess")} />}
 
       {/* 탭 */}
       <div className="group-tabs">
@@ -323,6 +327,14 @@ export default function GroupHome({
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ── 평가 탭: 사전·사후 역량 평가 ── */}
+      {tab === "assess" && (
+        <div className="group-tab-body">
+          <Assessments groupId={group.id} isOwner={group.my_role === "owner"}
+            docs={docs.filter(d => (d.status || "done") === "done")} onNotify={onNotify} />
         </div>
       )}
 

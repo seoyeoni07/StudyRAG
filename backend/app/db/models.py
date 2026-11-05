@@ -389,3 +389,34 @@ class ExamPrep(Base):
     past_filename = Column(String(256), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
+
+
+class Assessment(Base):
+    """그룹 역량 평가: 같은 문제로 사전·사후 평가. 그룹장이 날짜를 정한다."""
+    __tablename__ = "assessments"
+    id = Column(String(36), primary_key=True)
+    group_id = Column(String(36), nullable=False, index=True)
+    title = Column(String(128), nullable=False)
+    doc_ids = Column(Text, nullable=False, default="[]")      # JSON
+    questions = Column(Text, nullable=False, default="[]")    # JSON [{id, question, options[4], answer(0~3), explanation, difficulty, concept, doc_id, page}]
+    excluded = Column(Text, nullable=False, default="[]")     # JSON 채점에서 뺀 문항 id
+    status = Column(String(12), nullable=False, default="draft")   # draft | open
+    pre_open = Column(String(10), nullable=True)               # YYYY-MM-DD (한국 날짜)
+    pre_close = Column(String(10), nullable=True)
+    post_open = Column(String(10), nullable=True)
+    post_close = Column(String(10), nullable=True)
+    created_by = Column(String(128), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class AssessmentAttempt(Base):
+    __tablename__ = "assessment_attempts"
+    __table_args__ = (UniqueConstraint("assessment_id", "user_id", "phase", name="uq_assessment_attempt"),)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    assessment_id = Column(String(36), nullable=False, index=True)
+    user_id = Column(String(128), nullable=False, index=True)
+    phase = Column(String(4), nullable=False)                  # pre | post
+    answers = Column(Text, nullable=False, default="{}")       # JSON {문항id: {"c": 보기번호, "f": "sure"|"unsure"|"guess"}}
+    started_at = Column(DateTime, nullable=True)
+    submitted_at = Column(DateTime, default=datetime.utcnow)
+    seconds = Column(Integer, nullable=True)                   # 푸는 데 걸린 시간
