@@ -1,7 +1,11 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { auth, updateUserProfile, changePassword } from "../firebase";
 import { apiFetch, BASE } from "../api";
 import { PencilIcon } from "./Icons.jsx";
+
+const USER_TYPES = ["대학생", "고등학생", "자격증 준비", "직장인", "기타"];
+const PURPOSES = ["시험 준비", "수업 복습", "자기계발", "취업 준비"];
+const LEVELS = ["입문", "중급", "고급"];
 
 const FIREBASE_ERRORS = {
   "auth/wrong-password":        "현재 비밀번호가 틀렸어요.",
@@ -37,6 +41,45 @@ export default function SettingsPage({ user, onUserRefresh }) {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const fileRef = useRef();
+
+  // 학습 프로필
+  const [userType, setUserType] = useState("");
+  const [userTypeCustom, setUserTypeCustom] = useState("");
+  const [majorOrGoal, setMajorOrGoal] = useState("");
+  const [purpose, setPurpose] = useState("");
+  const [level, setLevel] = useState("");
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileMsg, setProfileMsg] = useState(null);
+
+  useEffect(() => {
+    apiFetch("/users/me").then(p => {
+      if (p.user_type) setUserType(p.user_type === "기타" ? "기타" : USER_TYPES.find(t => t.replace(" ", "") === p.user_type) || p.user_type);
+      if (p.user_type_custom) setUserTypeCustom(p.user_type_custom);
+      if (p.major_or_goal) setMajorOrGoal(p.major_or_goal);
+      if (p.learning_purpose) setPurpose(p.learning_purpose);
+      if (p.skill_level) setLevel(p.skill_level);
+    }).catch(() => {});
+  }, []);
+
+  async function saveProfile() {
+    setProfileSaving(true); setProfileMsg(null);
+    try {
+      const typeValue = userType === "기타" ? "기타" : userType.replace(" ", "");
+      await apiFetch("/users/me", {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_type: typeValue || null,
+          user_type_custom: userType === "기타" ? userTypeCustom.trim() || null : null,
+          major_or_goal: majorOrGoal.trim() || null,
+          learning_purpose: purpose || null,
+          skill_level: level || null,
+        }),
+      });
+      setProfileMsg({ ok: true, text: "저장됐어요." });
+    } catch (err) {
+      setProfileMsg({ ok: false, text: err.message });
+    } finally { setProfileSaving(false); }
+  }
 
   // 비밀번호
   const [curPw, setCurPw] = useState("");
@@ -135,6 +178,70 @@ export default function SettingsPage({ user, onUserRefresh }) {
           </button>
         </form>
         <StatusMsg ok={nameMsg?.ok} msg={nameMsg?.text} />
+      </Section>
+
+      {/* 학습 프로필 */}
+      <Section title="학습 프로필">
+        <p className="settings-provider-note" style={{ marginBottom: 16 }}>
+          퀴즈 출제와 AI 공부 계획에 반영돼요. 언제든 수정할 수 있어요.
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+
+          <div className="settings-profile-row">
+            <label className="settings-label">학습자 유형</label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
+              {USER_TYPES.map(t => (
+                <button key={t} className={userType === t ? "btn-primary" : "btn-secondary"}
+                  style={{ fontSize: 13, padding: "5px 16px" }} onClick={() => setUserType(t)}>{t}</button>
+              ))}
+            </div>
+            {userType === "기타" && (
+              <input className="input" style={{ marginTop: 8, maxWidth: 280 }}
+                placeholder="직접 입력해주세요"
+                value={userTypeCustom} onChange={e => setUserTypeCustom(e.target.value)} />
+            )}
+          </div>
+
+          <div className="settings-profile-row">
+            <label className="settings-label">
+              {userType === "자격증 준비" ? "목표 자격증" : "전공 / 주요 공부 분야"}
+              <span style={{ fontWeight: 400, color: "var(--text-muted)", fontSize: 12 }}> (선택)</span>
+            </label>
+            <input className="input" style={{ marginTop: 6, maxWidth: 320 }}
+              placeholder={
+                userType === "자격증 준비" ? "예: 정보처리기사, 공인중개사" :
+                userType === "고등학생" ? "예: 수능, 이과, 문과" : "예: 컴퓨터공학, 경영학"
+              }
+              value={majorOrGoal} onChange={e => setMajorOrGoal(e.target.value)} />
+          </div>
+
+          <div className="settings-profile-row">
+            <label className="settings-label">학습 목적</label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
+              {PURPOSES.map(p => (
+                <button key={p} className={purpose === p ? "btn-primary" : "btn-secondary"}
+                  style={{ fontSize: 13, padding: "5px 16px" }} onClick={() => setPurpose(p)}>{p}</button>
+              ))}
+            </div>
+          </div>
+
+          <div className="settings-profile-row">
+            <label className="settings-label">현재 수준</label>
+            <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+              {LEVELS.map(l => (
+                <button key={l} className={level === l ? "btn-primary" : "btn-secondary"}
+                  style={{ fontSize: 13, padding: "5px 20px" }} onClick={() => setLevel(l)}>{l}</button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 12, paddingTop: 4 }}>
+            <button className="btn-primary" disabled={profileSaving} onClick={saveProfile}>
+              {profileSaving ? "저장 중…" : "저장"}
+            </button>
+            <StatusMsg ok={profileMsg?.ok} msg={profileMsg?.text} />
+          </div>
+        </div>
       </Section>
 
       {/* 비밀번호 변경 */}
