@@ -30,12 +30,10 @@ export default function OnboardingModal({ onDone }) {
   }
 
   return (
-    <div className="modal-backdrop">
-      <div className="modal" style={{ maxWidth: 420 }}>
-        <div className="modal-head">
-          <span className="modal-title">반가워요! 먼저 간단히 알려주세요</span>
-        </div>
-        <div className="modal-body" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+    <div className="share-modal-overlay">
+      <div className="share-modal" style={{ maxWidth: 440 }}>
+        <div className="share-modal-header">반가워요! 먼저 간단히 알려주세요</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
             <p style={{ fontSize: 13, marginBottom: 8, color: "var(--text-muted)" }}>나는 어떤 학습자인가요?</p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -60,8 +58,6 @@ export default function OnboardingModal({ onDone }) {
               "예: 컴퓨터공학, 경영학"
             } value={majorOrGoal} onChange={e => setMajorOrGoal(e.target.value)} />
           </div>
-        </div>
-        <div className="modal-foot">
           <button className="btn-primary" disabled={!userType || saving} onClick={save}>
             {saving ? "저장 중…" : "시작하기"}
           </button>
