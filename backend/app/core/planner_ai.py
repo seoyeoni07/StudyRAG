@@ -17,8 +17,9 @@ SLOT_MIN = 10            # 시간표 한 칸 = 10분
 DAY_START_HOUR = 6       # 시간표는 06:00부터
 SLOTS_PER_DAY = 20 * 6   # 06:00 ~ 다음날 02:00
 
-_UNITS_PROMPT = """너는 대학생 공부 계획 코치야. 아래 과목들을 공부할 '공부 단위' 목록을 과목별로 순서대로 만들어.
+_UNITS_PROMPT = """너는 학습 계획 코치야. 아래 과목들을 공부할 '공부 단위' 목록을 과목별로 순서대로 만들어.
 
+학습자 정보: {user_profile_line}
 기간: {start} ~ {end} (공부하는 날 {days}일)
 과목별로 쓸 수 있는 총 시간(분): {budgets}
 {subjects}
@@ -62,7 +63,7 @@ def _fallback_units(subj: dict, budget: int) -> list[dict]:
     return units
 
 
-def _ai_units(subjects: list[dict], budgets: dict, start: date, end: date, days: int, request: str) -> dict:
+def _ai_units(subjects: list[dict], budgets: dict, start: date, end: date, days: int, request: str, user_profile: dict | None = None) -> dict:
     from .rag import _llm, _PRIMARY_MODEL, _FALLBACK_MODELS
     desc = []
     for s in subjects:
@@ -77,10 +78,15 @@ def _ai_units(subjects: list[dict], budgets: dict, start: date, end: date, days:
         if s.get("weak"):
             line += " / 약한 개념(먼저 복습): " + ", ".join(s["weak"][:6])
         desc.append(line)
+    p = user_profile or {}
+    parts = [p.get("user_type_custom") or p.get("user_type", ""), p.get("major_or_goal", ""),
+             p.get("learning_purpose", ""), p.get("skill_level", "")]
+    user_profile_line = " / ".join(x for x in parts if x) or "일반 학습자"
     prompt = _UNITS_PROMPT.format(
         start=start.isoformat(), end=end.isoformat(), days=days,
         budgets=json.dumps(budgets, ensure_ascii=False),
         subjects="\n".join(desc), request=(request or "없음")[:300],
+        user_profile_line=user_profile_line,
     )
     for model in [_PRIMARY_MODEL] + _FALLBACK_MODELS:
         try:
@@ -103,7 +109,7 @@ def _ai_units(subjects: list[dict], budgets: dict, start: date, end: date, days:
 
 def build_plan(*, start: date, end: date, subjects: list[dict], daily_minutes: int,
                weekend_minutes: int | None, off_days: list[int], start_time: str,
-               request: str = "", use_ai: bool = True) -> dict:
+               request: str = "", use_ai: bool = True, user_profile: dict | None = None) -> dict:
     """
     subjects: [{name, color, priority(1~3), exam_date?, links:[{type,id,label}], concepts:[...], wrongs:int}]
     반환: {"days": [{date, tasks:[{subject,title,minutes,link_type,link_id,link_label}], blocks:{slot:{s,k}}}],
@@ -142,7 +148,7 @@ def build_plan(*, start: date, end: date, subjects: list[dict], daily_minutes: i
             totals[s["name"]] += budget_of(d) * s["_w"] / wsum
     budgets = {k: int(round(v / SLOT_MIN) * SLOT_MIN) for k, v in totals.items()}
 
-    ai_units = _ai_units(subjects, budgets, start, end, len(study_days), request) if use_ai else {}
+    ai_units = _ai_units(subjects, budgets, start, end, len(study_days), request, user_profile) if use_ai else {}
 
     # 과목별 단위 큐 — AI 결과가 모자라면 기본 단위·복습으로 채우고, 넘치면 자른다
     queues, final_q = {}, {}

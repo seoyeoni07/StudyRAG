@@ -364,8 +364,13 @@ async def ai_plan(planner_id: str, body: AiPlanBody, x_user_id: str | None = Hea
                   db: Session = Depends(get_db)):
     """미리보기용 계획을 만든다 (저장하지 않음). 적용은 /apply."""
     from ..core.planner_ai import build_plan
+    from ..db.models import UserProfile
     user_id = _require_user(x_user_id)
     p = _get_planner(db, planner_id, user_id)
+    up = db.query(UserProfile).filter(UserProfile.uid == user_id).first()
+    user_profile = {"user_type": up.user_type, "user_type_custom": up.user_type_custom,
+                    "major_or_goal": up.major_or_goal, "learning_purpose": up.learning_purpose,
+                    "skill_level": up.skill_level} if up else None
     colors = {s["name"]: s["color"] for s in _settings(p)["subjects"]}
 
     subjects = []
@@ -403,7 +408,7 @@ async def ai_plan(planner_id: str, body: AiPlanBody, x_user_id: str | None = Hea
             subjects=subjects, daily_minutes=max(10, min(960, body.daily_minutes)),
             weekend_minutes=None if body.weekend_minutes is None else max(0, min(960, body.weekend_minutes)),
             off_days=[d for d in body.off_days if 0 <= d <= 6], start_time=body.start_time,
-            request=body.request, use_ai=body.use_ai,
+            request=body.request, use_ai=body.use_ai, user_profile=user_profile,
         )
     except ValueError as e:
         raise HTTPException(400, str(e))
