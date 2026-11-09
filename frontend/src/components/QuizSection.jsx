@@ -23,6 +23,8 @@ const LOADING_STEPS = [
 export default function QuizSection({ docId, onGoToWrong, initialSession, onClearInitial }) {
   const [n, setN] = useState(5);
   const [selectedDifficulty, setSelectedDifficulty] = useState(null); // null=혼합
+  const [questionType, setQuestionType] = useState(null); // null=혼합
+  const [prevScorePct, setPrevScorePct] = useState(null); // 오답 재시험 직전 점수
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const stepTimerRef = useRef(null);
@@ -57,6 +59,7 @@ export default function QuizSection({ docId, onGoToWrong, initialSession, onClea
     if (initialSession) {
       setQuestions(initialSession.questions);
       setSessionId(initialSession.session_id);
+      setPrevScorePct(initialSession.prevScorePct ?? null);
       setAnswers({});
       setResults(null);
       setError("");
@@ -89,7 +92,7 @@ export default function QuizSection({ docId, onGoToWrong, initialSession, onClea
       const data = await apiFetch("/quiz/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ doc_id: docId, n, focus_difficulty, selected_difficulty: selectedDifficulty }),
+        body: JSON.stringify({ doc_id: docId, n, focus_difficulty, selected_difficulty: selectedDifficulty, question_type: questionType }),
       });
       setQuestions(data.questions);
       setSessionId(data.session_id);
@@ -195,6 +198,19 @@ export default function QuizSection({ docId, onGoToWrong, initialSession, onClea
                 style={{ padding: "4px 14px" }} onClick={() => setN(v)}>{v}문제</button>
             ))}
           </div>
+          <span className="generate-label" style={{ marginTop: 8 }}>문제 유형</span>
+          <div className="n-btn-group">
+            {[
+              { value: null, label: "혼합" },
+              { value: "multiple_choice", label: "객관식만" },
+              { value: "short_answer", label: "단답형만" },
+            ].map(({ value, label }) => (
+              <button key={label}
+                className={questionType === value ? "btn-primary" : "btn-secondary"}
+                style={{ padding: "4px 14px" }}
+                onClick={() => setQuestionType(value)}>{label}</button>
+            ))}
+          </div>
           <span className="generate-label" style={{ marginTop: 8 }}>난이도</span>
           <div className="n-btn-group">
             {[
@@ -239,6 +255,11 @@ export default function QuizSection({ docId, onGoToWrong, initialSession, onClea
           <div className="score-meta">
             <span className="score-fraction">{results.score}/{results.total} 정답</span>
             <span className="score-label">{scoreMsg}</span>
+            {prevScorePct != null && (
+              <span style={{ fontSize: 12, color: pct > prevScorePct ? "var(--green, #2fb67c)" : pct < prevScorePct ? "var(--red, #ef4444)" : "var(--text-muted)" }}>
+                {pct > prevScorePct ? `▲ ${pct - prevScorePct}%p 향상` : pct < prevScorePct ? `▼ ${prevScorePct - pct}%p 하락` : "이전과 동일"}
+              </span>
+            )}
           </div>
         </div>
         <ErrorBox msg={error} />

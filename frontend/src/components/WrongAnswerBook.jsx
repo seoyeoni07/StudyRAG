@@ -14,7 +14,7 @@ const Md = ({ children }) => (
 
 const FILTERS = [["all", "전체"], ["pending", "미복습"], ["today", "오늘 복습"]];
 
-export default function WrongAnswerBook({ docId, docName, refreshKey = 0, onCountLoaded, onGoToQuiz, onRetryWrongs }) {
+export default function WrongAnswerBook({ docId, docName, refreshKey = 0, onCountLoaded, onGoToQuiz, onRetryWrongs, onGoToDoc }) {
   const [items, setItems] = useState([]);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -73,7 +73,8 @@ export default function WrongAnswerBook({ docId, docName, refreshKey = 0, onCoun
     if (!onRetryWrongs) return;
     setRetrying(true);
     try {
-      await onRetryWrongs();
+      const prevScorePct = history.length > 0 ? history[0].score_pct : undefined;
+      await onRetryWrongs(prevScorePct);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -195,6 +196,15 @@ export default function WrongAnswerBook({ docId, docName, refreshKey = 0, onCoun
             학습 이력 ({history.length})
           </button>
         </div>
+        {items.length > 0 && (() => {
+          const reviewed = items.filter(i => i.reviewed).length;
+          const pct = Math.round((reviewed / items.length) * 100);
+          return (
+            <span style={{ fontSize: 12, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+              복습 완료 {reviewed}/{items.length} ({pct}%)
+            </span>
+          );
+        })()}
         {view === "wrong" && items.length > 0 && (
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
             {FILTERS.map(([k, l]) => (
@@ -222,6 +232,11 @@ export default function WrongAnswerBook({ docId, docName, refreshKey = 0, onCoun
             <button className="btn-primary" style={{ fontSize: 12, padding: "3px 12px" }}
               disabled={retrying} onClick={handleRetryWrongs}>
               {retrying ? "준비 중…" : "오답만 다시 풀기"}
+            </button>
+          )}
+          {onGoToDoc && (
+            <button className="btn-secondary" style={{ fontSize: 12, padding: "3px 12px" }} onClick={onGoToDoc}>
+              자료 보기 →
             </button>
           )}
           {onGoToQuiz && (

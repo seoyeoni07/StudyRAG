@@ -18,7 +18,7 @@ _GENERATE_PROMPT = """\
 - {difficulty_instruction}
 - 객관식 오답 선택지는 헷갈릴 수 있는 그럴듯한 내용으로 만드세요.
 - 같은 개념이 반복되지 않도록 다양한 주제를 다루세요.
-- 각 문제의 "concept"에는 그 문제가 확인하는 개념 이름을 짧게(2~15글자) 쓰세요.{concept_rule}
+- 각 문제의 "concept"에는 그 문제가 확인하는 개념 이름을 짧게(2~15글자) 쓰세요.{concept_rule}{type_instruction}
 - ⚠️ 그림, 도표, 도식, 수식 그림 등을 직접 참조하는 문제("그림 3에서...", "아래 표를 보고..." 등)는 절대 출제하지 마세요. 학생에게 이미지가 표시되지 않으므로 텍스트만으로 풀 수 있는 문제여야 합니다.
 
 학습자 정보: {user_profile_line}
@@ -66,7 +66,7 @@ _GRADE_PROMPT = """\
 def generate_quiz(doc_id: str, n: int = 5, focus_difficulty: str | None = None, weak_hints: list[str] | None = None,
                   concepts: list[str] | None = None, focus_concept: str | None = None,
                   context_text: str | None = None, selected_difficulty: str | None = None,
-                  user_profile: dict | None = None) -> list[dict]:
+                  user_profile: dict | None = None, question_type: str | None = None) -> list[dict]:
     """context_text: 학생이 자료에서 고른 부분만으로 출제. focus_concept: 그 개념 위주로 출제."""
     if context_text and context_text.strip():
         context = context_text.strip()[:6000]
@@ -86,6 +86,13 @@ def generate_quiz(doc_id: str, n: int = 5, focus_difficulty: str | None = None, 
                                    "  * 기본: 핵심 용어·정의 확인\n"
                                    "  * 응용: 개념을 새로운 상황에 적용\n"
                                    "  * 심화: 비교·분석·추론 필요")
+
+    if question_type == "multiple_choice":
+        type_instruction = "\n- 모든 문제를 객관식(4지선다)으로만 출제하세요. 단답형은 출제하지 마세요."
+    elif question_type == "short_answer":
+        type_instruction = "\n- 모든 문제를 단답형으로만 출제하세요. 객관식은 출제하지 마세요."
+    else:
+        type_instruction = ""
 
     adaptive_note = ""
     if focus_difficulty and not selected_difficulty:
@@ -108,7 +115,8 @@ def generate_quiz(doc_id: str, n: int = 5, focus_difficulty: str | None = None, 
     from .learning import parse_json
     prompt = _GENERATE_PROMPT.format(n=n, context=context, concept_rule=concept_rule,
                                      difficulty_instruction=difficulty_instruction,
-                                     user_profile_line=user_profile_line) + adaptive_note
+                                     user_profile_line=user_profile_line,
+                                     type_instruction=type_instruction) + adaptive_note
     for model in [_PRIMARY_MODEL] + _FALLBACK_MODELS:
         try:
             response = _llm(model).invoke(prompt)
@@ -125,6 +133,10 @@ def generate_quiz(doc_id: str, n: int = 5, focus_difficulty: str | None = None, 
                 if focus_concept:
                     q["concept"] = focus_concept
                 out.append(q)
+            if question_type == "multiple_choice":
+                out = [q for q in out if q.get("type") == "multiple_choice"]
+            elif question_type == "short_answer":
+                out = [q for q in out if q.get("type") == "short_answer"]
             if out:
                 return out
         except Exception as e:

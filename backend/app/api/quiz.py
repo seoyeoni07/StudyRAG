@@ -31,6 +31,7 @@ class GenerateRequest(BaseModel):
     selected_difficulty: str | None = None # 수동 선택 난이도 (전체를 해당 난이도로)
     focus_concept: str | None = None      # 약점 지도: 이 개념만
     context_text: str | None = None       # 자료에서 고른 부분으로만 출제
+    question_type: str | None = None      # "mixed"|"multiple_choice"|"short_answer"
 
 
 class ReportRequest(BaseModel):
@@ -74,7 +75,7 @@ async def generate(req: GenerateRequest, x_user_id: str | None = Header(default=
         questions = await asyncio.to_thread(
             generate_quiz, req.doc_id, max(1, min(15, req.n)), req.focus_difficulty, weak_hints,
             concepts, (req.focus_concept or "").strip()[:120] or None, req.context_text,
-            req.selected_difficulty, user_profile)
+            req.selected_difficulty, user_profile, req.question_type)
     except ValueError as e:
         raise HTTPException(404, str(e))
 

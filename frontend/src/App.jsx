@@ -140,6 +140,7 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem("cardsSeen") || "null"); } catch { return null; }
   });
   const [learnKey, setLearnKey] = useState(0);      // 약점 지도·카드 새로고침
+  const [profileIncomplete, setProfileIncomplete] = useState(false);
   // 비로그인 상태에서 랜딩/로그인 전환
   const [preAuthView, setPreAuthView] = useState(() =>
     window.location.hash === "#login" ? "login" : "landing"
@@ -402,7 +403,7 @@ export default function App() {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: u.email, display_name: u.displayName || u.email?.split("@")[0] }),
-        }).catch(() => {});
+        }).then(p => setProfileIncomplete(!p?.user_type)).catch(() => {});
         loadGroups();
       } else {
         setUserId(null);
@@ -819,6 +820,7 @@ export default function App() {
       <Sidebar
         user={user} view={view} onNavigate={setView}
         pastDocs={pastDocs} notes={notes} wrongCount={wrongCount} reviewDue={reviewDue}
+        profileIncomplete={profileIncomplete}
         onNewNote={(doc_id) => createNote({ doc_id: doc_id || null })}
         onUpload={handleFilesAccepted} uploading={uploading}
         onLogout={logout}
@@ -1044,6 +1046,7 @@ export default function App() {
               <SettingsPage
                 user={user}
                 onUserRefresh={() => setUser({ ...auth.currentUser })}
+                onProfileSaved={() => setProfileIncomplete(false)}
               />
             </>
           )}
@@ -1205,9 +1208,10 @@ export default function App() {
                   ["wrong",   <WrongAnswerBook key="wrong" docId={docId} docName={currentDoc?.filename} refreshKey={wrongRefreshKey}
                                 onCountLoaded={setWrongCount}
                                 onGoToQuiz={() => setView(v => ({ ...v, tab: "quiz" }))}
-                                onRetryWrongs={async () => {
+                                onGoToDoc={() => setView(v => ({ ...v, tab: "summary" }))}
+                                onRetryWrongs={async (prevScorePct) => {
                                   const data = await apiFetch(`/quiz/retry-wrongs?doc_id=${docId}`, { method: "POST" });
-                                  setQuizInitialSession(data);
+                                  setQuizInitialSession({ ...data, prevScorePct });
                                   setView(v => ({ ...v, tab: "quiz" }));
                                 }} />],
                   ["mastery", <MasteryMap key="mastery" docId={docId} filename={currentDoc?.filename}

@@ -30,7 +30,7 @@ function StatusMsg({ ok, msg }) {
   return <p className={`settings-msg ${ok ? "settings-msg--ok" : "settings-msg--err"}`}>{msg}</p>;
 }
 
-export default function SettingsPage({ user, onUserRefresh }) {
+export default function SettingsPage({ user, onUserRefresh, onProfileSaved }) {
   const isEmailUser = user.providerData?.some(p => p.providerId === "password");
   const isGoogleUser = user.providerData?.some(p => p.providerId === "google.com");
 
@@ -76,6 +76,7 @@ export default function SettingsPage({ user, onUserRefresh }) {
         }),
       });
       setProfileMsg({ ok: true, text: "저장됐어요." });
+      onProfileSaved?.();
     } catch (err) {
       setProfileMsg({ ok: false, text: err.message });
     } finally { setProfileSaving(false); }

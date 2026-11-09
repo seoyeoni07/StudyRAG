@@ -41,7 +41,7 @@ export default function Sidebar({
   groups = [], groupData = {}, online = {}, onNewGroupNote,
   sharedNotes = [], onOpenSharedNote,
   dmUnread = 0, streak = 0, onNoteAction, cardsDue = 0, cardDecks = [], onDeleteDeck,
-  theme = "auto", onToggleTheme,
+  theme = "auto", onToggleTheme, profileIncomplete = false,
 }) {
   const [expanded, setExpanded] = useState({});
   const [docsOpen, setDocsOpen] = useState(true);
@@ -158,7 +158,8 @@ export default function Sidebar({
             {dmUnread > 0 && <span className="sb-badge">{dmUnread > 99 ? "99+" : dmUnread}</span>}
           </button>
 <button className={`sb-item ${view.type === "settings" ? "active" : ""}`} onClick={() => go({ type: "settings" })}>
-            <span className="sb-icon"><SettingsIcon size="1em" /></span><span className="sb-label">설정</span>
+            <span className="sb-icon"><SettingsIcon size="1em" /></span><span className="sb-label">프로필</span>
+            {profileIncomplete && <span className="sb-badge" style={{ background: "var(--amber, #f59e0b)", borderRadius: "50%", width: 8, height: 8, minWidth: 0, padding: 0 }} title="학습 프로필을 입력하면 맞춤 퀴즈를 받을 수 있어요" />}
           </button>
           {/* ── 즐겨찾기 ── */}
           {pinned.length > 0 && (

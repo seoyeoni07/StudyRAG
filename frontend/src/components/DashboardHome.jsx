@@ -69,7 +69,7 @@ export default function DashboardHome({
           )}
           {plannerTotal > 0 && (
             <button className="launcher-status-pill launcher-status-pill--planner" onClick={onOpenPlanner}>
-              오늘 할 일 {plannerDone}/{plannerTotal}
+              오늘 할 일 {plannerDone}/{plannerTotal} ({Math.round(plannerDone / plannerTotal * 100)}%)
               {plannerDone === plannerTotal && " ✓"}
             </button>
           )}
