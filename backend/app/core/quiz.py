@@ -101,7 +101,8 @@ def generate_quiz(doc_id: str, n: int = 5, focus_difficulty: str | None = None, 
         concept_rule = " 가능하면 다음 목록의 이름 중 하나를 그대로 쓰세요: " + ", ".join(concepts[:10])
 
     p = user_profile or {}
-    parts = [p.get("user_type", ""), p.get("major_or_goal", "")]
+    ut = p.get("user_type_custom") or p.get("user_type", "")
+    parts = [ut, p.get("major_or_goal", ""), p.get("learning_purpose", ""), p.get("skill_level", "")]
     user_profile_line = " / ".join(x for x in parts if x) or "일반 학습자"
 
     from .learning import parse_json

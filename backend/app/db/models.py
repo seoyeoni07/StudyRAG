@@ -187,8 +187,11 @@ class UserProfile(Base):
     email = Column(String(256), nullable=True, index=True)
     display_name = Column(String(64), nullable=True)
     photo_url = Column(String(512), nullable=True)
-    user_type = Column(String(32), nullable=True)   # 대학생/고등학생/자격증준비/직장인/기타
-    major_or_goal = Column(String(128), nullable=True)  # 전공 or 목표 자격증
+    user_type = Column(String(32), nullable=True)        # 대학생/고등학생/자격증준비/직장인/기타
+    user_type_custom = Column(String(64), nullable=True) # 기타 직접 입력
+    major_or_goal = Column(String(128), nullable=True)   # 전공 or 목표 자격증
+    learning_purpose = Column(String(32), nullable=True) # 시험준비/수업복습/자기계발/취업준비
+    skill_level = Column(String(16), nullable=True)      # 입문/중급/고급
     updated_at = Column(DateTime, default=datetime.utcnow)
 
 

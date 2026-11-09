@@ -67,7 +67,9 @@ async def generate(req: GenerateRequest, x_user_id: str | None = Header(default=
     doc = db.query(Document).filter(Document.id == req.doc_id).first()
     concepts = doc_concepts(doc) if doc else []
     up = db.query(UserProfile).filter(UserProfile.uid == (x_user_id or "")).first()
-    user_profile = {"user_type": up.user_type, "major_or_goal": up.major_or_goal} if up else None
+    user_profile = {"user_type": up.user_type, "user_type_custom": up.user_type_custom,
+                    "major_or_goal": up.major_or_goal, "learning_purpose": up.learning_purpose,
+                    "skill_level": up.skill_level} if up else None
     try:
         questions = await asyncio.to_thread(
             generate_quiz, req.doc_id, max(1, min(15, req.n)), req.focus_difficulty, weak_hints,
