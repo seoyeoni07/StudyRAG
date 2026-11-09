@@ -495,7 +495,7 @@ export default function App() {
     }} />;
   }
 
-  if (showOnboarding) return <OnboardingModal onDone={() => setShowOnboarding(false)} />;
+  if (showOnboarding) return <OnboardingModal onDone={() => setShowOnboarding(false)} onSkip={() => setShowOnboarding(false)} />;
 
   async function handleDeleteDoc(doc_id) {
     try {

@@ -5,7 +5,7 @@ const USER_TYPES = ["대학생", "고등학생", "자격증 준비", "직장인"
 const PURPOSES = ["시험 준비", "수업 복습", "자기계발", "취업 준비"];
 const LEVELS = ["입문", "중급", "고급"];
 
-export default function OnboardingModal({ onDone }) {
+export default function OnboardingModal({ onDone, onSkip }) {
   const [userType, setUserType] = useState("");
   const [userTypeCustom, setUserTypeCustom] = useState("");
   const [majorOrGoal, setMajorOrGoal] = useState("");
@@ -41,7 +41,10 @@ export default function OnboardingModal({ onDone }) {
   return (
     <div className="share-modal-overlay">
       <div className="share-modal" style={{ maxWidth: 440 }}>
-        <div className="share-modal-header">반가워요! 먼저 간단히 알려주세요</div>
+        <div className="share-modal-header">
+          반가워요! 먼저 간단히 알려주세요
+          <button className="btn-ghost btn-sm" onClick={onSkip} style={{ fontWeight: 400, fontSize: 12 }}>나중에</button>
+        </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
 
           <div>
