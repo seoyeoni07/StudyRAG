@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..core.quiz import generate_quiz, grade_short_answer
-from ..db.models import Document, QuizHistory, QuizReport, QuizSession, WrongAnswer
+from ..db.models import Document, QuizHistory, QuizReport, QuizSession, WrongAnswer, UserProfile
 from ..db.session import SessionLocal
 
 _REVIEW_INTERVALS = [1, 3, 7, 14, 30]  # 스페이스드 리피티션 간격 (일)
@@ -66,11 +66,13 @@ async def generate(req: GenerateRequest, x_user_id: str | None = Header(default=
     from ..core.learning import doc_concepts
     doc = db.query(Document).filter(Document.id == req.doc_id).first()
     concepts = doc_concepts(doc) if doc else []
+    up = db.query(UserProfile).filter(UserProfile.uid == (x_user_id or "")).first()
+    user_profile = {"user_type": up.user_type, "major_or_goal": up.major_or_goal} if up else None
     try:
         questions = await asyncio.to_thread(
             generate_quiz, req.doc_id, max(1, min(15, req.n)), req.focus_difficulty, weak_hints,
             concepts, (req.focus_concept or "").strip()[:120] or None, req.context_text,
-            req.selected_difficulty)
+            req.selected_difficulty, user_profile)
     except ValueError as e:
         raise HTTPException(404, str(e))
 

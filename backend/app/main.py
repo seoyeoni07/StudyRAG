@@ -18,6 +18,7 @@ from .api.learning import router as learning_router
 from .api.exam import router as exam_router
 from .api.group_learning import router as group_learning_router
 from .api.assessments import router as assessments_router
+from .api.stats import router as stats_router
 from .db.models import Base  # noqa: F401
 from .db.session import engine
 
@@ -197,6 +198,7 @@ app.include_router(learning_router)
 app.include_router(exam_router)
 app.include_router(group_learning_router)
 app.include_router(assessments_router)
+app.include_router(stats_router)
 
 
 @app.get("/health")

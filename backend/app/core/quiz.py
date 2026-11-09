@@ -21,6 +21,9 @@ _GENERATE_PROMPT = """\
 - 각 문제의 "concept"에는 그 문제가 확인하는 개념 이름을 짧게(2~15글자) 쓰세요.{concept_rule}
 - ⚠️ 그림, 도표, 도식, 수식 그림 등을 직접 참조하는 문제("그림 3에서...", "아래 표를 보고..." 등)는 절대 출제하지 마세요. 학생에게 이미지가 표시되지 않으므로 텍스트만으로 풀 수 있는 문제여야 합니다.
 
+학습자 정보: {user_profile_line}
+이 학습자에게 맞는 맥락과 예시를 활용해 문제를 출제하세요.
+
 강의자료:
 {context}
 
@@ -62,7 +65,8 @@ _GRADE_PROMPT = """\
 
 def generate_quiz(doc_id: str, n: int = 5, focus_difficulty: str | None = None, weak_hints: list[str] | None = None,
                   concepts: list[str] | None = None, focus_concept: str | None = None,
-                  context_text: str | None = None, selected_difficulty: str | None = None) -> list[dict]:
+                  context_text: str | None = None, selected_difficulty: str | None = None,
+                  user_profile: dict | None = None) -> list[dict]:
     """context_text: 학생이 자료에서 고른 부분만으로 출제. focus_concept: 그 개념 위주로 출제."""
     if context_text and context_text.strip():
         context = context_text.strip()[:6000]
@@ -96,8 +100,14 @@ def generate_quiz(doc_id: str, n: int = 5, focus_difficulty: str | None = None, 
     if concepts and not focus_concept:
         concept_rule = " 가능하면 다음 목록의 이름 중 하나를 그대로 쓰세요: " + ", ".join(concepts[:10])
 
+    p = user_profile or {}
+    parts = [p.get("user_type", ""), p.get("major_or_goal", "")]
+    user_profile_line = " / ".join(x for x in parts if x) or "일반 학습자"
+
     from .learning import parse_json
-    prompt = _GENERATE_PROMPT.format(n=n, context=context, concept_rule=concept_rule, difficulty_instruction=difficulty_instruction) + adaptive_note
+    prompt = _GENERATE_PROMPT.format(n=n, context=context, concept_rule=concept_rule,
+                                     difficulty_instruction=difficulty_instruction,
+                                     user_profile_line=user_profile_line) + adaptive_note
     for model in [_PRIMARY_MODEL] + _FALLBACK_MODELS:
         try:
             response = _llm(model).invoke(prompt)

@@ -187,6 +187,8 @@ class UserProfile(Base):
     email = Column(String(256), nullable=True, index=True)
     display_name = Column(String(64), nullable=True)
     photo_url = Column(String(512), nullable=True)
+    user_type = Column(String(32), nullable=True)   # 대학생/고등학생/자격증준비/직장인/기타
+    major_or_goal = Column(String(128), nullable=True)  # 전공 or 목표 자격증
     updated_at = Column(DateTime, default=datetime.utcnow)
 
 

@@ -29,6 +29,18 @@ class ProfileUpdate(BaseModel):
     email: str | None = None
     display_name: str | None = None
     photo_url: str | None = None
+    user_type: str | None = None
+    major_or_goal: str | None = None
+
+
+@router.get("/me")
+def get_profile(x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
+    user_id = _require_user(x_user_id)
+    p = db.query(UserProfile).filter(UserProfile.uid == user_id).first()
+    if not p:
+        return {"user_type": None, "major_or_goal": None}
+    return {"user_type": p.user_type, "major_or_goal": p.major_or_goal,
+            "email": p.email, "display_name": p.display_name}
 
 
 @router.put("/me")
@@ -36,15 +48,15 @@ def upsert_profile(body: ProfileUpdate, x_user_id: str | None = Header(default=N
     user_id = _require_user(x_user_id)
     p = db.query(UserProfile).filter(UserProfile.uid == user_id).first()
     if p:
-        if body.email is not None:
-            p.email = body.email
-        if body.display_name is not None:
-            p.display_name = body.display_name
-        if body.photo_url is not None:
-            p.photo_url = body.photo_url
+        if body.email is not None: p.email = body.email
+        if body.display_name is not None: p.display_name = body.display_name
+        if body.photo_url is not None: p.photo_url = body.photo_url
+        if body.user_type is not None: p.user_type = body.user_type
+        if body.major_or_goal is not None: p.major_or_goal = body.major_or_goal
         p.updated_at = datetime.utcnow()
     else:
-        p = UserProfile(uid=user_id, email=body.email, display_name=body.display_name, photo_url=body.photo_url)
+        p = UserProfile(uid=user_id, email=body.email, display_name=body.display_name,
+                        photo_url=body.photo_url, user_type=body.user_type, major_or_goal=body.major_or_goal)
         db.add(p)
     db.commit()
     return {"ok": True}

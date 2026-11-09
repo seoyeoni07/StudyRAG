@@ -19,6 +19,7 @@ import { CardDeck } from "./components/learn/Flashcards";
 import { generateCards, generateQuiz } from "./components/learn/learnApi";
 import SettingsPage from "./components/SettingsPage";
 import LoginPage from "./components/LoginPage";
+import OnboardingModal from "./components/OnboardingModal";
 import Sidebar, { tabsFor } from "./components/Sidebar";
 import { ancestorsOf } from "./components/NoteTree";
 import { NoteIcon, DocIcon, renderNoteIcon, KeyIcon, ShareIcon, UsersIcon, SparkleIcon, MessageIcon } from "./components/Icons.jsx";
@@ -105,6 +106,7 @@ function timeAgo(iso) {
 
 export default function App() {
   const [user, setUser] = useState(undefined);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   // view: { type: "home" } | { type: "doc", docId, filename, tab, groupId? } | { type: "note", noteId }
   //     | { type: "group-start" } | { type: "group", groupId } | { type: "gnote", groupId, noteId }
   const [view, setView] = useState(() => { try { return hashToView(window.location.hash); } catch { return { type: "home" }; } });
@@ -403,6 +405,7 @@ export default function App() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: u.email, display_name: u.displayName || u.email?.split("@")[0] }),
         }).catch(() => {});
+        apiFetch("/users/me").then(p => { if (!p.user_type) setShowOnboarding(true); }).catch(() => {});
         loadGroups();
       } else {
         setUserId(null);
@@ -491,6 +494,8 @@ export default function App() {
       window.history.pushState(null, "", "#login");
     }} />;
   }
+
+  if (showOnboarding) return <OnboardingModal onDone={() => setShowOnboarding(false)} />;
 
   async function handleDeleteDoc(doc_id) {
     try {

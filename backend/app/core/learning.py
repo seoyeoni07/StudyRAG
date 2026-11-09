@@ -98,7 +98,13 @@ def clean_concept(c) -> str | None:
 # ── 개념 이해도 ───────────────────────────────────────
 
 def _score(results: list[bool]) -> float:
-    """최근 풀이일수록 크게 (최신 → 과거 순으로 들어온다)."""
+    """최근 풀이일수록 크게 반영하는 지수 감쇠 가중 정답률.
+
+    표준 SM-2는 단순 평균 또는 누적 EF로 이해도를 표현하지만,
+    오래된 풀이가 최근 이해도를 희석하는 문제가 있다.
+    여기서는 w = 0.7^i (i=0이 최신) 로 최신 풀이에 지수적으로 높은 가중치를 부여한다.
+    예: 최근 3번 연속 정답 → score ≈ 1.0 / 오래된 연속 정답 뒤 최근 오답 → score 급락.
+    """
     w_sum = s = 0.0
     for i, ok in enumerate(results[:8]):
         w = 0.7 ** i
@@ -161,7 +167,9 @@ GRADES = {0: "다시", 1: "어려움", 2: "알맞음", 3: "쉬움"}
 
 
 def next_schedule(ease: int, interval: int, reps: int, grade: int) -> tuple[int, int, int]:
-    """(ease×100, interval일, reps) — grade 0 다시 / 1 어려움 / 2 알맞음 / 3 쉬움"""
+    """SM-2 기반 간격 반복 스케줄러. 표준 SM-2(grade 0-5)를 4단계(0-3)로 단순화하고
+    ease 범위를 1.3–3.5로 좁혀 무료 LLM 채점 오차에 의한 EF 폭주를 방지한다.
+    (ease×100, interval일, reps) — grade 0 다시 / 1 어려움 / 2 알맞음 / 3 쉬움"""
     ef = ease / 100
     if grade == 0:
         return max(130, int((ef - 0.2) * 100)), 0, 0
