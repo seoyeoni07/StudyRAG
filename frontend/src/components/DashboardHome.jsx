@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect, useRef } from "react";
+import { motion } from "motion/react";
 import { apiFetch } from "../api";
 import { NoteIcon, renderNoteIcon, UploadIcon } from "./Icons.jsx";
 
@@ -127,8 +128,14 @@ export default function DashboardHome({
             <span className="launcher-section-count">{filteredDocs.length}</span>
           </h2>
           <div className="launcher-doc-grid">
-            {filteredDocs.map(d => (
-              <div key={d.doc_id} className="launcher-doc-card" onClick={() => onSelectDoc(d.doc_id, d.filename)}>
+            {filteredDocs.map((d, i) => (
+              <motion.div key={d.doc_id} className="launcher-doc-card"
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.22, delay: i * 0.05, ease: [0.22,1,0.36,1] }}
+                whileHover={{ y: -3, boxShadow: "0 6px 20px rgba(74,74,74,.14)" }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => onSelectDoc(d.doc_id, d.filename)}>
                 <div className="launcher-doc-card-top">
                   <span className="launcher-doc-name" title={d.filename}>
                     {d.filename.replace(/\.(pdf|jpe?g|png|webp|gif)$/i, "")}
@@ -147,7 +154,7 @@ export default function DashboardHome({
                 {d.snippet && d.status !== "failed" && (
                   <p className="launcher-doc-snippet">{d.snippet}</p>
                 )}
-              </div>
+              </motion.div>
             ))}
             {/* 자료 추가 카드 */}
             {!q && (

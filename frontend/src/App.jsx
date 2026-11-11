@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect, useCallback, lazy, Suspense } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, logout } from "./firebase";
 import { apiFetch, setUserId } from "./api";
@@ -973,6 +974,7 @@ export default function App() {
           )}
 
           {view.type === "home" && (
+            <motion.div key="home" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22, ease: [0.22,1,0.36,1] }}>
             <DashboardHome
               onFileAccepted={handleFilesAccepted}
               onSelectDoc={(id, name) => selectDoc(id, name, "summary")}
@@ -989,6 +991,7 @@ export default function App() {
               onOpenNote={(noteId) => setView({ type: "note", noteId })}
               onCreateNote={() => createNote()}
             />
+            </motion.div>
           )}
 
           {view.type === "planner" && (
@@ -1234,7 +1237,16 @@ export default function App() {
                   <div key={key} className="tab-panel" role="tabpanel" id={`panel-${key}`}
                     aria-labelledby={`tab-${key}`}
                     style={{ display: currentTab?.[0] === key ? "" : "none" }}>
-                    {el}
+                    {currentTab?.[0] === key ? (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                        key={key}
+                      >
+                        {el}
+                      </motion.div>
+                    ) : el}
                   </div>
                 ))}
               </div>}
