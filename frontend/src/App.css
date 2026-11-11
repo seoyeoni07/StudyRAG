@@ -46,8 +46,9 @@
   --shadow-lg: 0 10px 40px rgba(74,74,74,.14), 0 2px 8px rgba(74,74,74,.08);
 
   --r-sm:   6px;
-  --r-md:   8px;
-  --r-lg:   12px;
+  --r-md:   10px;
+  --r-lg:   14px;
+  --r-xl:   20px;
   --r-pill: 999px;
 
   --sidebar-w: 240px;
@@ -321,7 +322,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
   position: absolute; right: 0; top: calc(100% + 8px);
   width: 320px; max-height: 380px; overflow-y: auto;
   background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--r-lg); box-shadow: var(--shadow-lg); z-index: 100;
+  border-radius: var(--r-xl); box-shadow: var(--shadow-lg); z-index: 100;
 }
 .notif-panel-head {
   display: flex; align-items: center; justify-content: space-between;
@@ -632,7 +633,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 .example-chip::before { content: "›  "; color: var(--text-4); }
 .example-chip:hover { background: var(--hover); color: var(--text-1); }
 
-.answer-box { background: var(--bg); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 16px 18px; animation: fadeUp .2s ease both; box-shadow: var(--shadow-sm); }
+.answer-box { background: var(--bg); border: 1px solid var(--border); border-radius: var(--r-xl); padding: 20px 22px; animation: fadeUp .2s ease both; box-shadow: var(--shadow-sm); }
 .answer-text  { line-height: 1.7; color: var(--text-1); font-size: 15px; }
 .answer-text p { margin: 0 0 8px; }
 .answer-text p:last-child { margin-bottom: 0; }
@@ -673,8 +674,8 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 /* ── Question cards ───────────────────────── */
 .question-item {
   border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  padding: 18px 20px;
+  border-radius: var(--r-xl);
+  padding: 20px 22px;
   margin-bottom: 12px;
   background: var(--bg);
   box-shadow: var(--shadow-sm);
@@ -697,8 +698,8 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 /* ── Score header ─────────────────────────── */
 .score-header {
   display: flex; align-items: center; gap: 20px;
-  margin-bottom: 24px; padding: 18px 20px;
-  border-radius: var(--r-md);
+  margin-bottom: 24px; padding: 22px 24px;
+  border-radius: var(--r-xl);
   animation: scaleIn .2s ease both;
 }
 .score-header.good { background: var(--green-bg); }
@@ -734,8 +735,8 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 .wrong-item {
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  padding: 14px 18px;
+  border-radius: var(--r-xl);
+  padding: 18px 22px;
   margin-bottom: 10px;
   box-shadow: var(--shadow-sm);
 }
@@ -1030,7 +1031,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 .lp-tech-card {
   background: var(--bg-card); border: 1px solid var(--border);
   border-top: 3px solid var(--primary);
-  border-radius: var(--r-lg); padding: 28px 24px;
+  border-radius: var(--r-xl); padding: 28px 24px;
   display: flex; flex-direction: column; gap: 10px;
   transition: box-shadow .18s, transform .18s;
 }
@@ -1710,9 +1711,40 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 /* ── Dashboard welcome header ── */
 /* ── Launcher Dashboard ─────────────────────── */
 .launcher-wrap {
-  display: flex; flex-direction: column; gap: 28px;
+  display: flex; flex-direction: column; gap: 24px;
   max-width: 860px; margin: 0 auto; padding: 32px 0 80px;
 }
+
+/* ── Bento stat cards ──────────────────────────── */
+.launcher-bento-stats {
+  display: flex; gap: 10px;
+}
+.launcher-stat-card {
+  flex: 1; display: flex; flex-direction: column; justify-content: flex-end; gap: 3px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 18px; padding: 20px 22px 18px;
+  box-shadow: var(--shadow-sm); min-height: 96px;
+}
+button.launcher-stat-card { cursor: pointer; text-align: left; }
+.launcher-stat-card--click {
+  transition: background .12s, box-shadow .15s, transform .12s cubic-bezier(.34,1.56,.64,1);
+}
+.launcher-stat-card--click:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.launcher-stat-card--amber {
+  background: var(--amber-bg); border-color: var(--amber-border);
+}
+.launcher-stat-card--done {
+  background: var(--green-bg); border-color: var(--green-border);
+}
+.launcher-stat-num {
+  font-size: 2.2rem; font-weight: 800; color: var(--text-1);
+  line-height: 1; letter-spacing: -.04em; display: flex; align-items: baseline; gap: 2px;
+}
+.launcher-stat-num--add { font-size: 2rem; color: var(--text-3); }
+.launcher-stat-unit { font-size: 1rem; font-weight: 600; color: var(--text-3); letter-spacing: 0; }
+.launcher-stat-label { font-size: 12px; color: var(--text-3); font-weight: 500; }
+.launcher-stat-card--done .launcher-stat-num { color: var(--green); }
+.launcher-stat-card--amber .launcher-stat-num { color: var(--amber); }
 
 .launcher-status-bar {
   display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
@@ -1802,7 +1834,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 .launcher-doc-card {
   display: flex; flex-direction: column; gap: 8px;
   background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--r-lg); padding: 16px 18px; cursor: pointer;
+  border-radius: 16px; padding: 18px 20px; cursor: pointer;
   transition: border-color .15s;
   position: relative;
   box-shadow: var(--shadow-sm);

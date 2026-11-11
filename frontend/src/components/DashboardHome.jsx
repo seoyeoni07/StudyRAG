@@ -60,27 +60,35 @@ export default function DashboardHome({
   return (
     <div className="launcher-wrap">
 
-      {/* ── 상단 상태 바 ── */}
-      {(reviewDue > 0 || plannerTotal > 0) && (
-        <div className="launcher-status-bar">
-          {reviewDue > 0 && (
-            <span className="launcher-status-pill launcher-status-pill--amber">
-              오답노트 복습 {reviewDue}개 대기
-            </span>
+      {/* ── 벤토 스탯 카드 ── */}
+      <div className="launcher-bento-stats">
+        {streak > 0 && (
+          <div className="launcher-stat-card">
+            <span className="launcher-stat-num">{streak}<span className="launcher-stat-unit">일</span></span>
+            <span className="launcher-stat-label">연속 학습</span>
+          </div>
+        )}
+        <button className={`launcher-stat-card launcher-stat-card--click${plannerDone === plannerTotal && plannerTotal > 0 ? " launcher-stat-card--done" : ""}`}
+          onClick={onOpenPlanner} style={{ flex: 2 }}>
+          {plannerTotal > 0 ? (
+            <>
+              <span className="launcher-stat-num">{Math.round(plannerDone / plannerTotal * 100)}<span className="launcher-stat-unit">%</span></span>
+              <span className="launcher-stat-label">오늘 할 일 {plannerDone}/{plannerTotal}{plannerDone === plannerTotal ? " 완료" : ""}</span>
+            </>
+          ) : (
+            <>
+              <span className="launcher-stat-num launcher-stat-num--add">+</span>
+              <span className="launcher-stat-label">오늘 할 일 추가</span>
+            </>
           )}
-          {plannerTotal > 0 && (
-            <button className="launcher-status-pill launcher-status-pill--planner" onClick={onOpenPlanner}>
-              오늘 할 일 {plannerDone}/{plannerTotal} ({Math.round(plannerDone / plannerTotal * 100)}%)
-              {plannerDone === plannerTotal && " ✓"}
-            </button>
-          )}
-          {plannerTotal === 0 && (
-            <button className="launcher-status-pill launcher-status-pill--muted" onClick={onOpenPlanner}>
-              오늘 할 일 추가하기 →
-            </button>
-          )}
-        </div>
-      )}
+        </button>
+        {reviewDue > 0 && (
+          <div className="launcher-stat-card launcher-stat-card--amber">
+            <span className="launcher-stat-num">{reviewDue}<span className="launcher-stat-unit">개</span></span>
+            <span className="launcher-stat-label">오답 복습 대기</span>
+          </div>
+        )}
+      </div>
 
       {/* ── 검색 / 업로드 ── */}
       <div className="launcher-search-row">
