@@ -1467,7 +1467,8 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 .qa-threads { display: flex; flex-direction: column; gap: 24px; padding-bottom: 8px; }
 .qa-thread { display: flex; flex-direction: column; gap: 10px; }
 .qa-bubble { padding: 8px 12px; border-radius: var(--r-lg); max-width: 92%; line-height: 1.65; font-size: 15px; }
-.qa-bubble--user { align-self: flex-end; background: var(--bg-callout); color: var(--text-1); }
+.qa-bubble--user { align-self: flex-end; background: var(--bg-callout); color: var(--text-1); display: flex; flex-direction: column; gap: 4px; }
+.qa-bubble-date { font-size: 11px; color: var(--text-4); align-self: flex-end; }
 .qa-bubble--ai { align-self: flex-start; background: transparent; padding: 0; width: 100%; max-width: 100%; }
 .qa-bubble--loading { padding: 8px 0; }
 
