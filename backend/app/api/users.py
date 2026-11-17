@@ -68,7 +68,10 @@ def upsert_profile(body: ProfileUpdate, x_user_id: str | None = Header(default=N
                         learning_purpose=body.learning_purpose, skill_level=body.skill_level)
         db.add(p)
     db.commit()
-    return {"ok": True}
+    db.refresh(p)
+    return {"user_type": p.user_type, "user_type_custom": p.user_type_custom,
+            "major_or_goal": p.major_or_goal, "learning_purpose": p.learning_purpose,
+            "skill_level": p.skill_level, "email": p.email, "display_name": p.display_name}
 
 
 @router.get("/search")
