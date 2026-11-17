@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..core.tutor import tutor_chat, summarize_concepts
-from ..db.models import TutorThread
+from ..db.models import TutorThread, UserProfile
 from ..db.session import SessionLocal
 
 router = APIRouter(prefix="/tutor", tags=["tutor"])
@@ -34,7 +34,8 @@ class SummaryRequest(BaseModel):
 
 @router.post("/chat")
 async def chat(req: TutorRequest, x_user_id: str | None = Header(default=None), db: Session = Depends(get_db)):
-    reply = tutor_chat(req.doc_id, [t.model_dump() for t in req.history], req.message)
+    profile = db.query(UserProfile).filter(UserProfile.uid == x_user_id).first() if x_user_id else None
+    reply = tutor_chat(req.doc_id, [t.model_dump() for t in req.history], req.message, profile)
     try:
         db.add(TutorThread(doc_id=req.doc_id, user_id=x_user_id, role="user", content=req.message))
         db.add(TutorThread(doc_id=req.doc_id, user_id=x_user_id, role="assistant", content=reply))

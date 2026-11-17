@@ -7,17 +7,21 @@ from .rag import get_vectorstore, _llm
 _SYSTEM = """\
 당신은 학생이 업로드한 강의자료를 직접 읽고 가르치는 AI 튜터입니다.
 
+## 학생 정보
+{student_profile}
+
 ## 절대 규칙
 - 아래 '강의자료 참고 내용'에 있는 내용만 바탕으로 답하세요.
 - 자료에 없는 내용은 "자료에서 확인하기 어렵습니다"라고만 하고, 일반 지식으로 채우지 마세요.
 - 이모지(💡✨ 등)나 ①②③ 같은 장식 기호를 쓰지 마세요.
-- 전공·학년·수업 중요도 같은 개인 신상 질문을 하지 마세요. 자료 내용에만 집중하세요.
+- 위 학생 정보에 이미 있는 내용(전공, 수준 등)을 다시 묻지 마세요.
 
 ## 교수 방식
 - 답을 바로 주지 말고 자료의 핵심 개념을 짚으며 학생이 스스로 생각하도록 이끄세요.
 - 설명 후 자료와 연결된 확인 질문을 딱 하나만 하세요.
 - 학생이 틀리면 자료의 어느 부분과 다른지 짚어주고 힌트만 주세요.
 - 한 번에 한 개념씩, 짧고 명확하게 설명하세요.
+- 학생의 전공·수준을 고려해 설명 깊이를 조절하세요.
 
 ## 대화 맥락
 {concept_summary}
@@ -50,7 +54,23 @@ def summarize_concepts(history: list[dict]) -> dict:
         return {"understood": [], "unclear": []}
 
 
-def tutor_chat(doc_id: str, history: list[dict], message: str) -> str:
+def _build_student_profile(profile) -> str:
+    if not profile:
+        return "학생 정보 없음"
+    parts = []
+    user_type = profile.user_type_custom if profile.user_type == "기타" else profile.user_type
+    if user_type:
+        parts.append(f"유형: {user_type}")
+    if profile.major_or_goal:
+        parts.append(f"전공/목표: {profile.major_or_goal}")
+    if profile.learning_purpose:
+        parts.append(f"학습 목적: {profile.learning_purpose}")
+    if profile.skill_level:
+        parts.append(f"수준: {profile.skill_level}")
+    return ", ".join(parts) if parts else "학생 정보 없음"
+
+
+def tutor_chat(doc_id: str, history: list[dict], message: str, profile=None) -> str:
     vs = get_vectorstore(doc_id)
     retriever = vs.as_retriever(search_type="mmr", search_kwargs={"k": 4, "fetch_k": 15})
     docs = retriever.invoke(message)
@@ -74,7 +94,12 @@ def tutor_chat(doc_id: str, history: list[dict], message: str) -> str:
         except Exception:
             pass
 
-    messages = [SystemMessage(content=_SYSTEM.format(context=context, concept_summary=concept_summary))]
+    student_profile = _build_student_profile(profile)
+    messages = [SystemMessage(content=_SYSTEM.format(
+        context=context,
+        concept_summary=concept_summary,
+        student_profile=student_profile,
+    ))]
     for turn in history:
         if turn["role"] == "user":
             messages.append(HumanMessage(content=turn["content"]))
