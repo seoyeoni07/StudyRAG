@@ -1,6 +1,20 @@
 import json
+import re
 
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+
+_EMOJI_RE = re.compile(
+    "[\U0001F300-\U0001F9FF"
+    "\U00002700-\U000027BF"
+    "\U0001FA00-\U0001FA6F"
+    "\U0001FA70-\U0001FAFF"
+    "☀-⛿✀-➿"
+    "️‍⃣]+",
+    flags=re.UNICODE,
+)
+
+def _strip_emoji(text: str) -> str:
+    return _EMOJI_RE.sub("", text)
 
 from .rag import get_vectorstore, _llm
 
@@ -120,4 +134,4 @@ def tutor_chat(doc_id: str, history: list[dict], message: str, profile=None) -> 
             messages.append(AIMessage(content=turn["content"]))
     messages.append(HumanMessage(content=message))
 
-    return _llm().invoke(messages).content
+    return _strip_emoji(_llm().invoke(messages).content)
