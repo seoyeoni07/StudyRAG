@@ -849,9 +849,39 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
   max-height: 540px; overflow-y: auto;
   padding: 4px 2px 8px; margin-bottom: 12px;
 }
-.tutor-bubble { max-width: 85%; padding: 8px 12px; border-radius: var(--r-lg); font-size: 15px; line-height: 1.65; }
+.tutor-bubble { max-width: 86%; padding: 8px 12px; border-radius: var(--r-lg); font-size: 15px; line-height: 1.65; }
 .tutor-bubble--user { align-self: flex-end; background: var(--primary); color: #fff; }
-.tutor-bubble--assistant { align-self: flex-start; background: transparent; color: var(--text-1); padding-left: 0; }
+.tutor-bubble--assistant {
+  align-self: flex-start;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text-1);
+  padding: 14px 16px;
+  max-width: 92%;
+}
+.tutor-bubble--assistant p { margin: 0 0 8px; }
+.tutor-bubble--assistant p:last-child { margin-bottom: 0; }
+.tutor-bubble--assistant strong { color: var(--primary); font-weight: 600; }
+.tutor-section-head {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--primary); padding-bottom: 6px;
+  border-bottom: 1.5px solid var(--border);
+  margin: 14px 0 10px;
+}
+.tutor-section-head:first-child { margin-top: 0; }
+.tutor-section-head--question { color: #0ea5e9; border-bottom-color: #bae6fd; }
+.tutor-hint-card {
+  background: #fef9ec; border-left: 3px solid #f59e0b;
+  border-radius: 0 var(--r-md) var(--r-md) 0;
+  padding: 10px 14px; margin: 8px 0 0; font-size: 13.5px; color: var(--text-2);
+}
+.tutor-hint-card p { margin: 0; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .tutor-hint-card { background: rgba(245,158,11,.1); }
+  :root:not([data-theme="light"]) .tutor-section-head--question { border-bottom-color: rgba(14,165,233,.3); }
+}
+[data-theme="dark"] .tutor-hint-card { background: rgba(245,158,11,.1); }
+[data-theme="dark"] .tutor-section-head--question { border-bottom-color: rgba(14,165,233,.3); }
 .tutor-bubble--loading { padding: 10px 0; }
 .tutor-dots { display: flex; gap: 4px; align-items: center; }
 .tutor-dots span {

@@ -107,7 +107,24 @@ export default function TutorSection({ docId }) {
         {history.map((turn, i) => (
           <div key={i} className={`tutor-bubble tutor-bubble--${turn.role}`}>
             {turn.role === "assistant" ? (
-              <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+              <ReactMarkdown
+                remarkPlugins={[remarkMath]}
+                rehypePlugins={[rehypeKatex]}
+                components={{
+                  h2: ({ children }) => {
+                    const text = String(children);
+                    const isQuestion = text.includes("확인 질문") || text.includes("질문");
+                    return (
+                      <div className={`tutor-section-head${isQuestion ? " tutor-section-head--question" : ""}`}>
+                        {children}
+                      </div>
+                    );
+                  },
+                  blockquote: ({ children }) => (
+                    <div className="tutor-hint-card">{children}</div>
+                  ),
+                }}
+              >
                 {turn.content}
               </ReactMarkdown>
             ) : (
