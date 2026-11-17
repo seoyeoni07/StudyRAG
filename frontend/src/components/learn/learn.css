@@ -176,10 +176,25 @@
 .ex-new-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
 .ex-pane { margin-top: 14px; }
 .ex-pane-foot { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
-.ex-sheet { border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--bg-card); padding: 20px 24px; line-height: 1.7; }
-.ex-sheet h2 { font-size: 17px; margin: 16px 0 6px; color: var(--primary-deeper); }
+.ex-sheet {
+  border: 1px solid var(--border); border-radius: var(--r-lg);
+  background: var(--bg-card); padding: 24px 28px; line-height: 1.85;
+}
+.ex-sheet h2 {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--primary); padding-bottom: 7px; border-bottom: 1.5px solid var(--border);
+  margin: 28px 0 14px;
+}
 .ex-sheet h2:first-child { margin-top: 0; }
-.ex-sheet ul { padding-left: 20px; }
+.ex-sheet h3 { font-size: 14px; font-weight: 600; color: var(--text-1); margin: 16px 0 6px; }
+.ex-sheet p { margin: 0 0 10px; }
+.ex-sheet ul, .ex-sheet ol { padding-left: 20px; margin-bottom: 12px; }
+.ex-sheet li { margin-bottom: 6px; }
+.ex-sheet strong { color: var(--primary); font-weight: 600; }
+.ex-sheet table { width: 100%; border-collapse: collapse; margin: 10px 0 16px; font-size: 13.5px; }
+.ex-sheet th { background: var(--hover); font-weight: 600; padding: 7px 10px; border: 1px solid var(--border); text-align: left; }
+.ex-sheet td { padding: 6px 10px; border: 1px solid var(--border); vertical-align: top; }
+.ex-sheet hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
 .ex-qs { display: flex; flex-direction: column; gap: 10px; }
 .ex-q { border: 1px solid var(--border); border-radius: var(--r-md); background: var(--bg-card); padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
 .ex-q-top { display: flex; gap: 10px; align-items: flex-start; }
