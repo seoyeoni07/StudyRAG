@@ -991,6 +991,8 @@ export default function App() {
               notes={notes}
               onOpenNote={(noteId) => setView({ type: "note", noteId })}
               onCreateNote={() => createNote()}
+              profileIncomplete={profileIncomplete}
+              onOpenSettings={() => setView({ type: "settings" })}
             />
             </motion.div>
           )}

@@ -20,6 +20,7 @@ export default function DashboardHome({
   onPastDocsChange, onSelectDocTab, notesSlot, reviewDue = 0,
   onAskMulti, onOpenPlanner, streak = 0,
   notes = [], onOpenNote, onCreateNote,
+  profileIncomplete = false, onOpenSettings,
 }) {
   const [planner, setPlanner] = useState(null);
   const [q, setQ] = useState("");
@@ -59,6 +60,20 @@ export default function DashboardHome({
 
   return (
     <div className="launcher-wrap">
+
+      {/* ── 학습 프로필 안내 ── */}
+      {profileIncomplete && (
+        <div className="callout callout--profile-nudge">
+          <span style={{ fontSize: 18, flexShrink: 0 }}>✏️</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <strong style={{ fontSize: 14 }}>학습 프로필을 채워주세요</strong>
+            <p style={{ margin: "2px 0 0", fontSize: 13, color: "var(--text-3)" }}>입력하면 맞춤 퀴즈와 AI 학습 계획을 받을 수 있어요.</p>
+          </div>
+          {onOpenSettings && (
+            <button className="btn-secondary btn-sm" onClick={onOpenSettings} style={{ flexShrink: 0 }}>지금 채우기</button>
+          )}
+        </div>
+      )}
 
       {/* ── 벤토 스탯 카드 ── */}
       <div className="launcher-bento-stats">

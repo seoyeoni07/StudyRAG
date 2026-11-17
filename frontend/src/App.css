@@ -448,6 +448,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
   margin-bottom: 16px; box-shadow: var(--shadow-sm);
 }
 .callout--amber, .server-waking-banner { background: var(--amber-bg); border-color: var(--amber-border); }
+.callout--profile-nudge { background: var(--primary-light); border-color: var(--primary-muted); align-items: center; }
 
 .error-banner {
   background: var(--red-bg);
