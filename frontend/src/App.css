@@ -4,10 +4,10 @@
 
 /* ── Tokens ───────────────────────────────── */
 :root {
-  --text-1:  #4A4A4A;
-  --text-2:  #5e5e5e;
-  --text-3:  #8a8a8a;
-  --text-4:  #CBCBCB;
+  --text-1:  #3a3a3a;
+  --text-2:  #545454;
+  --text-3:  #6b6b6b;
+  --text-4:  #b4b4b4;
 
   --primary:        #6D8196;
   --primary-dark:   #5c6e82;
@@ -66,7 +66,7 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --text-1: #d0d0d0; --text-2: #a8a8a8; --text-3: #707070; --text-4: #484848;
+    --text-1: #e0e0e0; --text-2: #b8b8b8; --text-3: #9a9a9a; --text-4: #585858;
     --primary: #8fa8bf; --primary-dark: #7f98af; --primary-deeper: #6f889f;
     --primary-light: rgba(143,168,191,.14); --primary-muted: rgba(143,168,191,.30);
     --green: #52a070; --green-bg: #1e2e26; --green-border: rgba(82,160,112,.25);
@@ -84,7 +84,7 @@
   }
 }
 :root[data-theme="dark"] {
-  --text-1: #d0d0d0; --text-2: #a8a8a8; --text-3: #707070; --text-4: #484848;
+  --text-1: #e0e0e0; --text-2: #b8b8b8; --text-3: #9a9a9a; --text-4: #585858;
   --primary: #8fa8bf; --primary-dark: #7f98af; --primary-deeper: #6f889f;
   --primary-light: rgba(143,168,191,.14); --primary-muted: rgba(143,168,191,.30);
   --green: #52a070; --green-bg: #1e2e26; --green-border: rgba(82,160,112,.25);
@@ -140,6 +140,21 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
   outline-offset: 3px;
 }
 
+/* ── Skip navigation — 접근성: 키보드/스크린리더 ─ */
+.skip-nav {
+  position: absolute; left: -9999px; top: 8px; z-index: 9999;
+  padding: 8px 16px; background: var(--primary); color: #fff;
+  border-radius: var(--r-md); font-size: 14px; font-weight: 600;
+  text-decoration: none; white-space: nowrap; outline: none;
+}
+.skip-nav:focus { left: 8px; }
+
+/* ── Screen-reader only utility ───────────── */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
 /* ── Keyframes ────────────────────────────── */
 @keyframes spin      { to { transform: rotate(360deg); } }
 @keyframes fadeUp    { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
@@ -158,10 +173,11 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 .skeleton-block { height: 40px; width: 100%; border-radius: var(--r-md); }
 
 /* ── Empty state ──────────────────────────── */
-.empty-state { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 40px 16px; color: var(--text-3); text-align: center; }
-.empty-state svg { opacity: .35; }
-.empty-state-title { font-size: 14px; font-weight: 600; color: var(--text-2); }
-.empty-state-sub   { font-size: 13px; max-width: 260px; line-height: 1.6; }
+.empty-state { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 48px 24px; color: var(--text-3); text-align: center; }
+.empty-state svg { opacity: .3; }
+.empty-state-title { font-size: 15px; font-weight: 700; color: var(--text-1); letter-spacing: -.01em; }
+.empty-state-sub   { font-size: 14px; max-width: 280px; line-height: 1.65; color: var(--text-3); }
+.empty-state-cta   { margin-top: 4px; }
 @keyframes scaleIn   { from { opacity: 0; transform: scale(.98); } to { opacity: 1; transform: scale(1); } }
 
 /* ── App shell ────────────────────────────── */
@@ -435,24 +451,27 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 
 .error-banner {
   background: var(--red-bg);
-  border-radius: var(--r-md);
-  padding: 12px 16px;
-  color: #9f2f2d;
+  border: 1px solid var(--red-border);
+  border-radius: var(--r-lg);
+  padding: 14px 16px;
+  color: #8c2727;
   font-size: 14px;
   line-height: 1.6;
   margin-bottom: 16px;
   display: flex;
   gap: 10px;
-  align-items: center;
+  align-items: flex-start;
+  box-shadow: var(--shadow-sm);
 }
 .error-icon { font-size: 15px; flex-shrink: 0; }
 
 .toast {
   position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%);
-  background: #2f2f2f; color: #fff; font-size: 14px;
-  padding: 9px 16px; border-radius: var(--r-md);
-  box-shadow: var(--shadow-md); z-index: 300;
-  animation: fadeUp .2s ease both;
+  background: #1f1f1f; color: #fff; font-size: 14px; font-weight: 500;
+  padding: 10px 18px; border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg); z-index: 300;
+  animation: fadeUp .22s cubic-bezier(.22,1,.36,1) both;
+  max-width: calc(100vw - 32px); text-align: center;
 }
 
 /* ── Upload (legacy hooks) ────────────────── */
@@ -544,11 +563,12 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 /* ── Inputs ───────────────────────────────── */
 .input {
   width: 100%;
-  padding: 7px 11px;
+  padding: 9px 12px;
+  min-height: 44px;
   border: 1px solid var(--border);
   border-radius: var(--r-md);
   font-size: 14px;
-  line-height: 1.6;
+  line-height: 1.5;
   outline: none;
   background: var(--bg);
   color: var(--text-1);
@@ -560,7 +580,8 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 
 /* ── Buttons ──────────────────────────────── */
 .btn-primary {
-  padding: 8px 18px;
+  padding: 10px 20px;
+  min-height: 44px;
   background: var(--primary);
   color: #fff;
   border: none;
@@ -581,7 +602,8 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 .btn-primary:disabled { opacity: .4; cursor: not-allowed; }
 
 .btn-secondary {
-  padding: 7px 15px;
+  padding: 9px 17px;
+  min-height: 44px;
   background: var(--bg);
   color: var(--text-1);
   border: 1px solid var(--border);
@@ -595,6 +617,12 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 .btn-secondary:active { transform: scale(0.95) translateY(0); box-shadow: none; }
 .btn-secondary:disabled { opacity: .4; cursor: not-allowed; }
 
+/* ── Form utilities — KRDS 폼 패턴 ───────── */
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-label { font-size: 13px; font-weight: 600; color: var(--text-2); }
+.form-hint  { font-size: 12px; color: var(--text-3); line-height: 1.5; }
+.form-error { font-size: 12px; color: var(--red); line-height: 1.5; display: flex; align-items: center; gap: 4px; }
+
 .btn-ghost {
   padding: 5px 10px; background: transparent; border: none;
   border-radius: var(--r-md); cursor: pointer;
@@ -603,20 +631,27 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 }
 .btn-ghost:hover { background: var(--hover); color: var(--text-1); }
 .btn-ghost:active { transform: scale(0.95); }
+/* 컴팩트 버튼 변형 — 작은 공간용 */
+.btn-sm {
+  padding: 5px 12px; min-height: 32px;
+  font-size: 13px; font-weight: 500;
+}
+
 .btn-danger {
-  padding: 6px 14px; background: var(--red); color: #fff; border: none;
+  padding: 10px 16px; min-height: 44px; background: var(--red); color: #fff; border: none;
   border-radius: var(--r-md); cursor: pointer; font-size: 13px; font-weight: 600;
   transition: background .1s, transform .12s cubic-bezier(.34,1.56,.64,1);
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
 }
 .btn-danger:hover { background: #b91c1c; transform: translateY(-1px); }
 .btn-danger:active { transform: scale(0.95); }
 
 /* ── Loading ──────────────────────────────── */
-.loading-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 56px 0; }
+.loading-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 56px 0; }
 .spinner {
-  width: 24px; height: 24px;
-  border: 2px solid var(--border-strong);
-  border-top-color: var(--text-3);
+  width: 22px; height: 22px;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
   border-radius: 50%;
   animation: spin .7s linear infinite;
   flex-shrink: 0;
@@ -701,7 +736,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 }
 .option-label input { accent-color: var(--primary); }
 .option-label:hover { background: var(--hover); }
-.option-label:has(input:checked) { background: var(--primary-light); color: var(--text-1); font-weight: 500; }
+.option-label:has(input:checked) { background: var(--primary-light); border-color: var(--primary); color: var(--text-1); font-weight: 600; }
 
 .quiz-submit-row { margin-top: 20px; display: flex; justify-content: flex-end; }
 
@@ -1398,7 +1433,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 .login-error { font-size: 13px; color: var(--red); margin: 0; }
 .login-google-btn {
   display: flex; align-items: center; justify-content: center; gap: 8px;
-  width: 100%; height: 42px; padding: 0 14px;
+  width: 100%; height: 44px; padding: 0 14px;
   border: 1px solid var(--border-strong); border-radius: var(--r-md);
   background: var(--bg); font-size: 14px; font-weight: 500; color: var(--text-1);
   cursor: pointer; transition: background .15s;
@@ -1415,8 +1450,8 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 .login-tab.active { background: var(--bg); color: var(--text-1); box-shadow: rgba(15,15,15,.1) 0 1px 2px; }
 .login-tab:not(.active):hover { color: var(--text-1); }
 .login-email-form { display: flex; flex-direction: column; gap: 8px; }
-.login-email-form .input { height: 40px; }
-.login-submit-btn { width: 100%; height: 40px; margin-top: 2px; }
+.login-email-form .input { height: 44px; }
+.login-submit-btn { width: 100%; height: 44px; margin-top: 2px; }
 .login-mode-toggle { font-size: 13px; color: var(--text-3); }
 .login-mode-btn {
   background: none; border: none; color: var(--primary); font-weight: 500;
@@ -2395,7 +2430,7 @@ button.launcher-stat-card { cursor: pointer; text-align: left; }
   border: 1px solid var(--border); border-radius: var(--r-xl);
   padding: 24px 26px; background: var(--bg-card); box-shadow: var(--shadow-sm);
 }
-.settings-section-title { font-size: 13px; font-weight: 700; color: var(--text-3); margin-bottom: 18px; text-transform: uppercase; letter-spacing: .06em; }
+.settings-section-title { font-size: 11px; font-weight: 700; color: var(--text-3); margin-bottom: 20px; text-transform: uppercase; letter-spacing: .08em; }
 
 .settings-avatar-edit { display: flex; align-items: center; gap: 14px; }
 .settings-avatar-wrap {
@@ -2416,11 +2451,12 @@ button.launcher-stat-card { cursor: pointer; text-align: left; }
 .settings-provider { font-size: 12px; color: var(--text-3); margin-top: 2px; }
 
 .settings-form { display: flex; flex-direction: column; gap: 8px; }
-.settings-label { font-size: 12px; color: var(--text-3); }
+.settings-label { font-size: 13px; font-weight: 600; color: var(--text-2); margin-bottom: 2px; }
+.settings-profile-row { display: flex; flex-direction: column; }
 
-.settings-msg { font-size: 13px; margin-top: 8px; }
+.settings-msg { font-size: 13px; margin-top: 8px; display: flex; align-items: center; gap: 6px; }
 .settings-msg--ok  { color: var(--green); }
-.settings-msg--err { color: var(--red); }
+.settings-msg--err { color: var(--red); font-weight: 500; }
 
 .settings-verified   { font-size: 13px; color: var(--green); }
 .settings-unverified { font-size: 13px; color: var(--amber); margin-bottom: 10px; }

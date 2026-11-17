@@ -818,6 +818,7 @@ export default function App() {
 
   return (
     <div className="app-shell">
+      <a href="#main-content" className="skip-nav">본문 바로가기</a>
       <Sidebar
         user={user} view={view} onNavigate={setView}
         pastDocs={pastDocs} notes={notes} wrongCount={wrongCount} reviewDue={reviewDue}
@@ -845,7 +846,7 @@ export default function App() {
           onClose={() => setSource(null)} actions={sourceActions(source.docId)} />
       )}
 
-      <div className="main">
+      <div className="main" id="main-content" role="main">
         <div className="topbar">
           <button className="topbar-menu" onClick={() => setSidebarOpen(true)} aria-label="메뉴 열기">
             <svg width="18" height="18" viewBox="0 0 18 18"><path d="M3 5h12M3 9h12M3 13h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
