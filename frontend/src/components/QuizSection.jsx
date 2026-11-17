@@ -191,41 +191,47 @@ export default function QuizSection({ docId, onGoToWrong, initialSession, onClea
       <div>
         <ErrorBox msg={error} />
         <div className="generate-form">
-          <span className="generate-label">문제 수</span>
-          <div className="n-btn-group">
-            {[3, 5, 7, 10].map(v => (
-              <button key={v} className={n === v ? "btn-primary" : "btn-secondary"}
-                style={{ padding: "4px 14px" }} onClick={() => setN(v)}>{v}문제</button>
-            ))}
+          <div className="generate-row">
+            <span className="generate-label">문제 수</span>
+            <div className="n-btn-group">
+              {[3, 5, 7, 10].map(v => (
+                <button key={v} className={n === v ? "btn-primary" : "btn-secondary"}
+                  style={{ padding: "4px 14px" }} onClick={() => setN(v)}>{v}문제</button>
+              ))}
+            </div>
           </div>
-          <span className="generate-label" style={{ marginTop: 8 }}>문제 유형</span>
-          <div className="n-btn-group">
-            {[
-              { value: null, label: "혼합" },
-              { value: "multiple_choice", label: "객관식만" },
-              { value: "short_answer", label: "단답형만" },
-            ].map(({ value, label }) => (
-              <button key={label}
-                className={questionType === value ? "btn-primary" : "btn-secondary"}
-                style={{ padding: "4px 14px" }}
-                onClick={() => setQuestionType(value)}>{label}</button>
-            ))}
+          <div className="generate-row">
+            <span className="generate-label">문제 유형</span>
+            <div className="n-btn-group">
+              {[
+                { value: null, label: "혼합" },
+                { value: "multiple_choice", label: "객관식만" },
+                { value: "short_answer", label: "단답형만" },
+              ].map(({ value, label }) => (
+                <button key={label}
+                  className={questionType === value ? "btn-primary" : "btn-secondary"}
+                  style={{ padding: "4px 14px" }}
+                  onClick={() => setQuestionType(value)}>{label}</button>
+              ))}
+            </div>
           </div>
-          <span className="generate-label" style={{ marginTop: 8 }}>난이도</span>
-          <div className="n-btn-group">
-            {[
-              { value: null, label: "혼합" },
-              { value: "기본", label: "기본" },
-              { value: "응용", label: "응용" },
-              { value: "심화", label: "심화" },
-            ].map(({ value, label }) => (
-              <button key={label}
-                className={selectedDifficulty === value ? "btn-primary" : "btn-secondary"}
-                style={{ padding: "4px 14px" }}
-                onClick={() => setSelectedDifficulty(value)}>{label}</button>
-            ))}
+          <div className="generate-row">
+            <span className="generate-label">난이도</span>
+            <div className="n-btn-group">
+              {[
+                { value: null, label: "혼합" },
+                { value: "기본", label: "기본" },
+                { value: "응용", label: "응용" },
+                { value: "심화", label: "심화" },
+              ].map(({ value, label }) => (
+                <button key={label}
+                  className={selectedDifficulty === value ? "btn-primary" : "btn-secondary"}
+                  style={{ padding: "4px 14px" }}
+                  onClick={() => setSelectedDifficulty(value)}>{label}</button>
+              ))}
+            </div>
           </div>
-          <button className="btn-primary" onClick={handleGenerate}>퀴즈 생성</button>
+          <button className="btn-primary generate-submit" onClick={handleGenerate}>퀴즈 생성</button>
         </div>
         <label className="adaptive-toggle">
           <input type="checkbox" checked={adaptive} onChange={(e) => setAdaptive(e.target.checked)}

@@ -714,8 +714,10 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 }
 
 /* ── Quiz generate ────────────────────────── */
-.generate-form  { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.generate-label { font-size: 14px; color: var(--text-2); }
+.generate-form   { display: flex; flex-direction: column; gap: 10px; }
+.generate-row    { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.generate-label  { font-size: 13px; font-weight: 600; color: var(--text-2); min-width: 54px; flex-shrink: 0; }
+.generate-submit { align-self: flex-start; margin-top: 6px; }
 
 /* ── Question cards ───────────────────────── */
 .question-item {
