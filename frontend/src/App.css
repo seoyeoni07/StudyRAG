@@ -714,10 +714,20 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
 }
 
 /* ── Quiz generate ────────────────────────── */
-.generate-form   { display: flex; flex-direction: column; gap: 10px; }
-.generate-row    { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.generate-label  { font-size: 13px; font-weight: 600; color: var(--text-2); min-width: 54px; flex-shrink: 0; }
-.generate-submit { align-self: flex-start; margin-top: 6px; }
+.quiz-setup-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 20px 20px 16px;
+}
+.generate-form  { display: flex; flex-direction: column; gap: 0; margin-bottom: 16px; }
+.generate-row   { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 0; }
+.generate-row:first-child { padding-top: 0; }
+.generate-row + .generate-row { border-top: 1px solid var(--border); }
+.generate-label { font-size: 13px; font-weight: 600; color: var(--text-2); min-width: 54px; flex-shrink: 0; }
+.quiz-setup-foot {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding-top: 14px; border-top: 1.5px solid var(--border);
+}
+.generate-submit { flex: 1; min-width: 100px; }
 
 /* ── Question cards ───────────────────────── */
 .question-item {
