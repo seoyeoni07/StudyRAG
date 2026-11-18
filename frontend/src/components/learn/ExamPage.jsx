@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
+import remarkGfm from "remark-gfm";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import { apiFetch } from "../../api";
@@ -8,7 +9,7 @@ import { json } from "./learnApi";
 import { DocIcon, TargetIcon, TrashIcon, UploadIcon, SparkleIcon, WarningIcon } from "../Icons.jsx";
 import "./learn.css";
 
-const Md = ({ children }) => <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>{children || ""}</ReactMarkdown>;
+const Md = ({ children }) => <ReactMarkdown remarkPlugins={[remarkMath, remarkGfm]} rehypePlugins={[rehypeKatex]}>{children || ""}</ReactMarkdown>;
 
 export function ddayOf(dateStr) {
   if (!dateStr) return null;
