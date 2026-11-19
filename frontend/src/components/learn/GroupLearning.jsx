@@ -229,7 +229,6 @@ export function GroupRanking({ groupId, me }) {
 
   const shift = (n) => { const d = new Date(start + "T00:00:00"); d.setDate(d.getDate() + n * 7); setStart(keyOf(d)); };
   const max = Math.max(60, ...(data?.rows || []).map(r => r.minutes));
-  const WD = ["월", "화", "수", "목", "금", "토", "일"];
 
   return (
     <div className="rk">
@@ -250,9 +249,6 @@ export function GroupRanking({ groupId, me }) {
                 <div className="rk-meta lr-muted">
                   공부 {fmtMin(r.minutes)} · 끝낸 할 일 {r.tasks_done} · 맞힌 문제 {r.correct}/{r.solved} · 낸 문제 {r.made}
                 </div>
-              </div>
-              <div className="rk-days" aria-label="요일별 공부 시간">
-                {r.daily.map((m, i) => <span key={i} title={`${WD[i]} ${fmtMin(m)}`} style={{ opacity: m ? Math.min(1, 0.25 + m / 240) : 0.08 }} />)}
               </div>
             </div>
           ))}
