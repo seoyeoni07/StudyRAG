@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../api";
 import NoteEditor, { useCollabDoc } from "./NoteEditor";
-import { NoteIcon, renderNoteIcon } from "./Icons.jsx";
+import { NoteIcon, ICON_DEFS, renderNoteIcon } from "./Icons.jsx";
 
 export default function GroupNotePage({ noteId, user, group, onSaved, onDeleted, pages }) {
   const { state, error } = useCollabDoc(noteId);
@@ -9,13 +9,18 @@ export default function GroupNotePage({ noteId, user, group, onSaved, onDeleted,
   const [delError, setDelError] = useState("");
   const [showVersions, setShowVersions] = useState(false);
   const [versionsPublic, setVersionsPublic] = useState(null); // null = 로드 전
+  const [icon, setIcon] = useState(null);
+  const [iconOpen, setIconOpen] = useState(false);
 
-  // meta에서 versions_public 초기값 세팅
   useEffect(() => {
     if (state?.meta?.versions_public !== undefined) {
       setVersionsPublic(state.meta.versions_public);
     }
   }, [state?.meta?.versions_public]);
+
+  useEffect(() => {
+    if (state?.meta?.icon !== undefined) setIcon(state.meta.icon);
+  }, [state?.meta?.icon]);
 
   if (error) return <div className="error-banner"><span>{error}</span></div>;
   if (!state) return <div className="loading-wrap"><div className="spinner" /></div>;
@@ -23,8 +28,21 @@ export default function GroupNotePage({ noteId, user, group, onSaved, onDeleted,
   const { meta } = state;
   const isCreator = meta.user_id === user.uid;
   const isOwner = group?.my_role === "owner";
-  const canManage = isCreator || isOwner;      // 작성자·그룹장
+  const canManage = isCreator || isOwner;
   const canSeeVersions = canManage || versionsPublic;
+
+  async function updateIcon(key) {
+    setIcon(key);
+    setIconOpen(false);
+    try {
+      await apiFetch(`/notes/${noteId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ icon: key }),
+      });
+      onSaved?.();
+    } catch (err) { setDelError(err.message); }
+  }
 
   async function handleDelete() {
     try {
@@ -47,7 +65,21 @@ export default function GroupNotePage({ noteId, user, group, onSaved, onDeleted,
 
   return (
     <div className="note-page">
-      <div className="page-icon">{renderNoteIcon(meta.icon, "1.4em") || <NoteIcon size="1.4em" />}</div>
+      <div className="note-icon-wrap">
+        <button className="note-icon" onClick={() => setIconOpen(o => !o)} title="아이콘 변경">
+          {renderNoteIcon(icon, "1em") || <NoteIcon size="1em" />}
+        </button>
+        {iconOpen && (
+          <div className="note-icon-picker" role="listbox">
+            {ICON_DEFS.map(({ key, Comp, label }) => (
+              <button key={key} className={`note-icon-option ${icon === key ? "active" : ""}`}
+                title={label} onClick={() => updateIcon(key)}>
+                <Comp size="1.2em" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       <NoteEditor noteId={noteId} doc={state.doc} provider={state.provider} user={user} onSaved={onSaved} pages={pages}
         showVersions={showVersions && canSeeVersions} canRestore={canManage}
         onCloseVersions={() => setShowVersions(false)} />
