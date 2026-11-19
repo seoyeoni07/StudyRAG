@@ -136,6 +136,9 @@ def build_plan(*, start: date, end: date, subjects: list[dict], daily_minutes: i
     # 과목별 마지막 공부일(시험 전날)과 가중치
     for s in subjects:
         ex = s.get("exam_date")
+        # 시험일이 계획 시작일 이전이면 무시 (기간 내 태스크가 0개 되는 버그 방지)
+        if ex and date.fromisoformat(ex) <= start:
+            ex = None
         s["_last"] = min(end, date.fromisoformat(ex) - timedelta(days=1)) if ex else end
         s["_w"] = max(1, min(3, int(s.get("priority") or 2))) * (1.5 if ex else 1.0)
 

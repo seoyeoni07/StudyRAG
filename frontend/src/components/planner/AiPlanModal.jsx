@@ -12,7 +12,7 @@ export default function AiPlanModal({ planner, startDate, onClose, onApplied, on
   const [start, setStart] = useState(startDate || today());
   const [end, setEnd] = useState(addDays(startDate || today(), 6));
   const [subjects, setSubjects] = useState(() => planner.subjects.map(s => ({
-    name: s.name, on: true, priority: 2, exam_date: planner.dday?.date || "", doc_ids: [], note_ids: [],
+    name: s.name, on: true, priority: 2, exam_date: "", doc_ids: [], note_ids: [],
   })));
   const [newSubj, setNewSubj] = useState("");
   const [dailyH, setDailyH] = useState(3);
