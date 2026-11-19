@@ -109,7 +109,7 @@ export default function ChatApp({ me, groups = [], groupDetails = {} }) {
           )}
         </div>
 
-        <div className="sub-tabs" style={{ padding: "0 12px 8px" }}>
+        <div className="sub-tabs" style={{ padding: "10px 12px 10px" }}>
           <button className={tab === "dm" ? "btn-primary" : "btn-secondary"}
             style={{ fontSize: 13, padding: "4px 14px" }}
             onClick={() => setTab("dm")}>DM</button>
