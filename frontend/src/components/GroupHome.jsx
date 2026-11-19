@@ -297,7 +297,7 @@ export default function GroupHome({
               </div>
             ) : (
               <div className="dash-doc-table">
-                <div className="group-row group-row--head" style={{ padding: "6px 16px" }}>
+                <div className="group-row--head" style={{ display: "flex", gap: 8, padding: "6px 16px 6px 12px" }}>
                   <span style={{ flex: 1 }}>제목</span>
                   <span style={{ width: 80 }}>마지막 편집</span>
                   <span style={{ width: 80 }}>수정 시각</span>
@@ -363,7 +363,7 @@ export default function GroupHome({
                 <span className="dash-panel-title">멤버 활동량</span>
               </div>
               <div className="dash-doc-table">
-                <div className="group-row group-row--head" style={{ padding: "6px 16px" }}>
+                <div className="group-row--head" style={{ display: "flex", gap: 8, padding: "6px 16px 6px 12px" }}>
                   <span style={{ flex: 1 }}>멤버</span>
                   <span style={{ width: 80 }}>자료 업로드</span>
                   <span style={{ width: 80 }}>노트 작성</span>
