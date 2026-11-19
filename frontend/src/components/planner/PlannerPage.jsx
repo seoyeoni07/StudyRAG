@@ -21,6 +21,7 @@ export default function PlannerPage({ user, groupId, groupName, onOpenLink }) {
   const [mode, setMode] = useState("day");                 // day | week | month
   const [data, setData] = useState({ days: {}, tasks: [] }); // 지금 보는 범위
   const [aiOpen, setAiOpen] = useState(false);
+  const [aiNextStart, setAiNextStart] = useState(null);
   const [decoOpen, setDecoOpen] = useState(false);
   const [helperMenuOpen, setHelperMenuOpen] = useState(false);
   const [editTitle, setEditTitle] = useState(null);
@@ -263,10 +264,12 @@ export default function PlannerPage({ user, groupId, groupName, onOpenLink }) {
       </div>
 
       {aiOpen && (
-        <AiPlanModal planner={planner} startDate={date} onClose={() => setAiOpen(false)}
+        <AiPlanModal planner={planner} startDate={aiNextStart || date}
+          onClose={() => { setAiOpen(false); setAiNextStart(null); }}
           onSubjectsChange={(subs) => savePlanner({ subjects: subs })}
-          onApplied={(first) => {
+          onApplied={(first, last) => {
             setAiOpen(false);
+            if (last) setAiNextStart(addDays(last, 1));
             const target = weekStart(first || date);
             rangeRef.current = target;   // load의 stale-ref early-return 방지
             if (first) setDate(first);

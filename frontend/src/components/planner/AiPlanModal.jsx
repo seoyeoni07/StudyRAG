@@ -78,8 +78,9 @@ export default function AiPlanModal({ planner, startDate, onClose, onApplied, on
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ days: preview.days, replace }),
       });
-      onApplied(preview.days[0]?.date);
-    } catch (err) { setError(err.message); setBusy(false); }
+      onApplied(preview.days[0]?.date, preview.days[preview.days.length - 1]?.date);
+    } catch (err) { setError(err.message); }
+    finally { setBusy(false); }
   }
 
   const removeTask = (di, ti) => setPreview(p => ({
