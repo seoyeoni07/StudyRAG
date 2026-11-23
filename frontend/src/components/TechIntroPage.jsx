@@ -28,11 +28,11 @@ export default function TechIntroPage() {
         <div className="tech-step-content">
           <h2 className="tech-step-title">RAG — 검색 증강 생성</h2>
           <p className="tech-step-desc">
-            문서를 청크로 나눠 <strong>ChromaDB</strong> 벡터스토어에 임베딩합니다. Q&A·AI 튜터 질문이 들어오면
+            문서를 청크로 나눠 <strong>pgvector</strong> 벡터스토어에 임베딩합니다. Q&A·AI 튜터 질문이 들어오면
             관련 청크를 빠르게 검색해 LLM에게 전달합니다. 환각 없이 자료에만 기반한 답변이 가능한 이유입니다.
           </p>
           <div className="tech-chips">
-            <span className="tech-chip">ChromaDB</span>
+            <span className="tech-chip">pgvector</span>
             <span className="tech-chip">LangChain</span>
             <span className="tech-chip">텍스트 임베딩</span>
             <span className="tech-chip">코사인 유사도 검색</span>
@@ -106,7 +106,7 @@ export default function TechIntroPage() {
           </div>
           <div className="tech-stack-col">
             <span className="tech-stack-label">벡터 DB</span>
-            <span>ChromaDB (임베딩 검색)</span>
+            <span>pgvector (임베딩 검색)</span>
           </div>
           <div className="tech-stack-col">
             <span className="tech-stack-label">데이터베이스</span>
