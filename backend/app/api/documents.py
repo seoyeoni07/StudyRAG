@@ -2,7 +2,6 @@ import asyncio
 import logging
 import os
 import shutil
-import threading
 import uuid
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Header, HTTPException, UploadFile

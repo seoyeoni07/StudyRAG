@@ -282,13 +282,10 @@
 .rk-bar { height: 8px; background: var(--bg-subtle); border-radius: 4px; overflow: hidden; }
 .rk-bar span { display: block; height: 100%; background: var(--primary); border-radius: 4px; }
 .rk-meta { font-size: 12px; }
-.rk-days { display: grid; grid-template-columns: repeat(7, 10px); gap: 3px; flex-shrink: 0; }
-.rk-days span { width: 10px; height: 22px; border-radius: 2px; background: var(--primary); }
 .rk-foot { margin-top: 12px; display: flex; gap: 4px; align-items: flex-start; }
 
 @media (max-width: 600px) {
   .fc-grades { grid-template-columns: repeat(2, 1fr); }
-  .rk-days { display: none; }
   .ex-topic { grid-template-columns: minmax(70px, 110px) 1fr 24px; }
   .ex-topic > :last-child { display: none; }
   .sv-modal { height: 92vh; }
